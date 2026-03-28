@@ -9,11 +9,10 @@ st.set_page_config(
 )
 
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=300)
 def load_data():
-    return pd.read_parquet("/opt/sofascore-scraper/fpl_players.parquet")
-
-df = load_data()
+    url = "http://194.99.22.193:8000/fpl_players"
+    return pd.read_parquet(url)
 
 # ========================== ВСТАНОВЛЕННЯ ПОРЯДКУ КОЛОНОК ==========================
 desired_order = [
