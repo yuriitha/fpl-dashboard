@@ -28,20 +28,16 @@ def calculate_age(birth_date):
     except:
         return None
 
-# Якщо колонка 'birth_date' все ще є — використовуємо її, інакше Age вже має бути в parquet
 if 'birth_date' in df.columns:
     df['Age'] = df['birth_date'].apply(calculate_age)
     df = df.drop(columns=['birth_date'])
-else:
-    # Якщо Age вже є в parquet — нічого не робимо
-    pass
 
 # ========================== ВСТАНОВЛЕННЯ ПОРЯДКУ КОЛОНОК ==========================
 desired_order = [
     "id", "full_name", "Age", "element_type", "Play Pos", "team_short_name",
     "Foot", "now_cost", "M Price", "points_per_game", "selected_by_percent",
     "top_10k", "top_100k", "transfers_in_event", "transfers_out_event",
-    "news", "news_added", "Contract"
+    "news", "news_added"
 ]
 
 desired_order = [col for col in desired_order if col in df.columns]
@@ -60,7 +56,16 @@ min_cost = float(df['now_cost'].min())
 max_cost = float(df['now_cost'].max())
 cost_range = st.sidebar.slider("Price (£m)", min_value=min_cost, max_value=max_cost, value=(min_cost, max_cost), step=0.1)
 
-search_name = st.sidebar.text_input("Search by name", "")
+# Новий фільтр по Top 100k володінню
+min_ownership = float(df['top_100k'].min())
+max_ownership = float(df['top_100k'].max())
+ownership_range = st.sidebar.slider(
+    "Top 100k Ownership %", 
+    min_value=min_ownership, 
+    max_value=max_ownership, 
+    value=(min_ownership, max_ownership), 
+    step=0.5
+)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 filtered_df = df.copy()
@@ -77,10 +82,11 @@ if cost_range:
         (filtered_df['now_cost'] <= cost_range[1])
     ]
 
-if search_name:
-    filtered_df = filtered_df[
-        filtered_df['full_name'].str.contains(search_name, case=False, na=False)
-    ]
+# Фільтр по Top 100k володінню
+filtered_df = filtered_df[
+    (filtered_df['top_100k'] >= ownership_range[0]) & 
+    (filtered_df['top_100k'] <= ownership_range[1])
+]
 
 # ========================== ТАБЛИЦЯ ==========================
 st.subheader(f"Знайдено гравців: {len(filtered_df)}")
@@ -108,7 +114,6 @@ st.dataframe(
         "transfers_out_event": st.column_config.NumberColumn("Out", width=5),
         "news": st.column_config.TextColumn("News", width="auto"),
         "news_added": st.column_config.TextColumn("Updated", width="auto"),
-        "Contract": st.column_config.TextColumn("Contract", width="small"),
     }
 )
 
