@@ -112,4 +112,4 @@ st.dataframe(
     }
 )
 
-st.caption(f"Останнє оновлення: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')}")
+st.caption(f"Останнє оновлення: {pd.Timestamp.now('Europe/Kiev').strftime('%Y-%m-%d %H:%M')}")
