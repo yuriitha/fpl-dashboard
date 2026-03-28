@@ -8,32 +8,38 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
+# ========================== ЗАВАНТАЖЕННЯ ДАНИХ З API ==========================
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
     return pd.read_parquet(url)
 
+df = load_data()
+
+# ========================== РОЗРАХУНОК ВІКУ ==========================
+def calculate_age(birth_date):
+    if pd.isna(birth_date):
+        return None
+    try:
+        birth = pd.to_datetime(birth_date)
+        today = datetime.today()
+        age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+        return age
+    except:
+        return None
+
+df['Age'] = df['birth_date'].apply(calculate_age)
+
+# Видаляємо непотрібну колонку
+if 'birth_date' in df.columns:
+    df = df.drop(columns=['birth_date'])
+
 # ========================== ВСТАНОВЛЕННЯ ПОРЯДКУ КОЛОНОК ==========================
 desired_order = [
-    "id", 
-    "full_name", 
-    "Age", 
-    "element_type", 
-    "Play Pos",           # нова колонка
-    "team_short_name", 
-    "Foot",               # нова колонка
-    "now_cost", 
-    "M Price",            # нова колонка
-    "points_per_game", 
-    "selected_by_percent", 
-    "top_10k", 
-    "top_100k", 
-    "transfers_in_event", 
-    "transfers_out_event", 
-    "news", 
-    "news_added",
-    "Contract"            # нова колонка в кінці
+    "id", "full_name", "Age", "element_type", "Play Pos", "team_short_name",
+    "Foot", "now_cost", "M Price", "points_per_game", "selected_by_percent",
+    "top_10k", "top_100k", "transfers_in_event", "transfers_out_event",
+    "news", "news_added", "Contract"
 ]
 
 # Залишаємо тільки ті колонки, які реально є в df
@@ -100,8 +106,8 @@ st.dataframe(
         "transfers_in_event": st.column_config.NumberColumn("In", width=5),
         "transfers_out_event": st.column_config.NumberColumn("Out", width=5),
         "news": st.column_config.TextColumn("News", width="auto"),
-        "news_added": st.column_config.TextColumn("Updated", width=20),
-        "Contract": st.column_config.TextColumn("Contract", width=5),
+        "news_added": st.column_config.TextColumn("Updated", width="auto"),
+        "Contract": st.column_config.TextColumn("Contract", width="small"),
     }
 )
 
