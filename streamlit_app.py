@@ -37,6 +37,7 @@ desired_order = [
     "id", "full_name", "Age", "element_type", "Play Pos", "team_short_name",
     "Foot", "now_cost", "M Price", "points_per_game", "selected_by_percent",
     "top_10k", "top_100k", "transfers_in_event", "transfers_out_event",
+    "min_played", "matches_played", "matches_started", "av_rating", "av_rating_alt",   # нові колонки
     "news", "news_added"
 ]
 
@@ -56,7 +57,6 @@ min_cost = float(df['now_cost'].min())
 max_cost = float(df['now_cost'].max())
 cost_range = st.sidebar.slider("Price (£m)", min_value=min_cost, max_value=max_cost, value=(min_cost, max_cost), step=0.1)
 
-# Новий фільтр по Top 100k володінню
 min_ownership = float(df['top_100k'].min())
 max_ownership = float(df['top_100k'].max())
 ownership_range = st.sidebar.slider(
@@ -82,11 +82,11 @@ if cost_range:
         (filtered_df['now_cost'] <= cost_range[1])
     ]
 
-# Фільтр по Top 100k володінню
-filtered_df = filtered_df[
-    (filtered_df['top_100k'] >= ownership_range[0]) & 
-    (filtered_df['top_100k'] <= ownership_range[1])
-]
+if ownership_range:
+    filtered_df = filtered_df[
+        (filtered_df['top_100k'] >= ownership_range[0]) & 
+        (filtered_df['top_100k'] <= ownership_range[1])
+    ]
 
 # ========================== ТАБЛИЦЯ ==========================
 st.subheader(f"Знайдено гравців: {len(filtered_df)}")
@@ -112,6 +112,14 @@ st.dataframe(
         "top_100k": st.column_config.NumberColumn("Top 100k %", format="%.1f", width=5),
         "transfers_in_event": st.column_config.NumberColumn("In", width=5),
         "transfers_out_event": st.column_config.NumberColumn("Out", width=5),
+        
+        # Нові колонки зі статистики
+        "min_played": st.column_config.NumberColumn("Min Played", width=5),
+        "matches_played": st.column_config.NumberColumn("Matches", width=5),
+        "matches_started": st.column_config.NumberColumn("Started", width=5),
+        "av_rating": st.column_config.NumberColumn("Avg Rating", format="%.2f", width=5),
+        "av_rating_alt": st.column_config.NumberColumn("Avg Rating Alt", format="%.2f", width=5),
+        
         "news": st.column_config.TextColumn("News", width="auto"),
         "news_added": st.column_config.TextColumn("Updated", width="auto"),
     }
