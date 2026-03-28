@@ -28,11 +28,13 @@ def calculate_age(birth_date):
     except:
         return None
 
-df['Age'] = df['birth_date'].apply(calculate_age)
-
-# Видаляємо непотрібну колонку
+# Якщо колонка 'birth_date' все ще є — використовуємо її, інакше Age вже має бути в parquet
 if 'birth_date' in df.columns:
+    df['Age'] = df['birth_date'].apply(calculate_age)
     df = df.drop(columns=['birth_date'])
+else:
+    # Якщо Age вже є в parquet — нічого не робимо
+    pass
 
 # ========================== ВСТАНОВЛЕННЯ ПОРЯДКУ КОЛОНОК ==========================
 desired_order = [
@@ -42,11 +44,10 @@ desired_order = [
     "news", "news_added", "Contract"
 ]
 
-# Залишаємо тільки ті колонки, які реально є в df
 desired_order = [col for col in desired_order if col in df.columns]
 df = df[desired_order]
 
-# ========================== ФІЛЬТРИ У Сайдбарі ==========================
+# ========================== ФІЛЬТРИ ==========================
 st.sidebar.header("Filters")
 
 positions = sorted(df['element_type'].unique())
@@ -81,7 +82,7 @@ if search_name:
         filtered_df['full_name'].str.contains(search_name, case=False, na=False)
     ]
 
-# ========================== ВІДОБРАЖЕННЯ ТАБЛИЦІ ==========================
+# ========================== ТАБЛИЦЯ ==========================
 st.subheader(f"Знайдено гравців: {len(filtered_df)}")
 
 st.dataframe(
