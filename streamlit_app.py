@@ -37,8 +37,8 @@ desired_order = [
     "id", "full_name", "Age", "element_type", "Play Pos", "team_short_name",
     "Foot", "now_cost", "M Price", "points_per_game", "selected_by_percent",
     "top_10k", "top_100k", "transfers_in_event", "transfers_out_event",
-    "min_played", "matches_played", "matches_started",
-    "avg_mins", "60_min", "returns", "av_rating", "av_rating_alt",
+    "min_played", "matches_played", "matches_started", "avg_mins", 
+    "60_min", "returns", "av_rating", "av_rating_alt",
     "news", "news_added"
 ]
 
@@ -48,7 +48,6 @@ df = df[desired_order]
 # ========================== ФІЛЬТРИ ==========================
 st.sidebar.header("Filters")
 
-# Основні фільтри
 positions = sorted(df['element_type'].unique())
 selected_positions = st.sidebar.multiselect("Position", options=positions, default=positions)
 
@@ -68,56 +67,6 @@ ownership_range = st.sidebar.slider(
     value=(min_ownership, max_ownership), 
     step=0.5
 )
-
-# ====================== НОВІ ФІЛЬТРИ ======================
-st.sidebar.subheader("Performance Filters")
-
-# Matches Played
-if 'matches_played' in df.columns:
-    min_matches = int(df['matches_played'].min())
-    max_matches = int(df['matches_played'].max())
-    matches_range = st.sidebar.slider(
-        "Matches Played", 
-        min_value=min_matches, 
-        max_value=max_matches, 
-        value=(min_matches, max_matches)
-    )
-
-# Avg Mins
-if 'avg_mins' in df.columns:
-    min_avg_mins = float(df['avg_mins'].min())
-    max_avg_mins = float(df['avg_mins'].max())
-    avg_mins_range = st.sidebar.slider(
-        "Average Minutes", 
-        min_value=min_avg_mins, 
-        max_value=max_avg_mins, 
-        value=(min_avg_mins, max_avg_mins), 
-        step=1.0
-    )
-
-# 60_min
-if '60_min' in df.columns:
-    min_60 = float(df['60_min'].min())
-    max_60 = float(df['60_min'].max())
-    min_60_range = st.sidebar.slider(
-        "60+ Min %", 
-        min_value=min_60, 
-        max_value=max_60, 
-        value=(min_60, max_60), 
-        step=0.5
-    )
-
-# Returns
-if 'returns' in df.columns:
-    min_returns = float(df['returns'].min())
-    max_returns = float(df['returns'].max())
-    returns_range = st.sidebar.slider(
-        "Returns", 
-        min_value=min_returns, 
-        max_value=max_returns, 
-        value=(min_returns, max_returns), 
-        step=0.01
-    )
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 filtered_df = df.copy()
@@ -140,26 +89,38 @@ if ownership_range:
         (filtered_df['top_100k'] <= ownership_range[1])
     ]
 
-# Застосування нових фільтрів
-if 'matches_played' in df.columns:
+# Фільтри по новій статистиці
+if 'matches_played' in filtered_df.columns:
+    min_matches = int(df['matches_played'].min())
+    max_matches = int(df['matches_played'].max())
+    matches_range = st.sidebar.slider("Matches Played", min_value=min_matches, max_value=max_matches, value=(min_matches, max_matches))
     filtered_df = filtered_df[
         (filtered_df['matches_played'] >= matches_range[0]) & 
         (filtered_df['matches_played'] <= matches_range[1])
     ]
 
-if 'avg_mins' in df.columns:
+if 'avg_mins' in filtered_df.columns:
+    min_avg = float(df['avg_mins'].min())
+    max_avg = float(df['avg_mins'].max())
+    avg_mins_range = st.sidebar.slider("Avg Minutes", min_value=min_avg, max_value=max_avg, value=(min_avg, max_avg), step=1.0)
     filtered_df = filtered_df[
         (filtered_df['avg_mins'] >= avg_mins_range[0]) & 
         (filtered_df['avg_mins'] <= avg_mins_range[1])
     ]
 
-if '60_min' in df.columns:
+if '60_min' in filtered_df.columns:
+    min_60 = float(df['60_min'].min())
+    max_60 = float(df['60_min'].max())
+    sixty_range = st.sidebar.slider("60+ Min %", min_value=min_60, max_value=max_60, value=(min_60, max_60), step=0.5)
     filtered_df = filtered_df[
-        (filtered_df['60_min'] >= min_60_range[0]) & 
-        (filtered_df['60_min'] <= min_60_range[1])
+        (filtered_df['60_min'] >= sixty_range[0]) & 
+        (filtered_df['60_min'] <= sixty_range[1])
     ]
 
-if 'returns' in df.columns:
+if 'returns' in filtered_df.columns:
+    min_ret = float(df['returns'].min())
+    max_ret = float(df['returns'].max())
+    returns_range = st.sidebar.slider("Returns %", min_value=min_ret, max_value=max_ret, value=(min_ret, max_ret), step=0.1)
     filtered_df = filtered_df[
         (filtered_df['returns'] >= returns_range[0]) & 
         (filtered_df['returns'] <= returns_range[1])
@@ -188,15 +149,15 @@ st.dataframe(
         "top_10k": st.column_config.NumberColumn("Top 10k %", format="%.1f", width=5),
         "top_100k": st.column_config.NumberColumn("Top 100k %", format="%.1f", width=5),
         "transfers_in_event": st.column_config.NumberColumn("In", width=5),
-        "transfers_out_event": st.column_config.NumberColumn("Out", width=5),
+        "transfers_out_event": st.column_config.NumberColumn("Out", width=5),     
         "min_played": st.column_config.NumberColumn("Min Played", width=5),
         "matches_played": st.column_config.NumberColumn("Matches", width=5),
         "matches_started": st.column_config.NumberColumn("Started", width=5),
         "avg_mins": st.column_config.NumberColumn("Avg Mins", format="%.1f", width=5),
-        "60_min": st.column_config.NumberColumn("60+ Min", format="%.1f", width=5),
-        "returns": st.column_config.NumberColumn("Returns", format="%.2f", width=5),
+        "60_min": st.column_config.NumberColumn("60+ Min %", format="%.1f", width=5),
+        "returns": st.column_config.NumberColumn("Returns %", format="%.1f", width=5),
         "av_rating": st.column_config.NumberColumn("Avg Rating", format="%.2f", width=5),
-        "av_rating_alt": st.column_config.NumberColumn("Avg Rating Alt", format="%.2f", width=5), 
+        "av_rating_alt": st.column_config.NumberColumn("Avg Rating Alt", format="%.2f", width=5),     
         "news": st.column_config.TextColumn("News", width="auto"),
         "news_added": st.column_config.TextColumn("Updated", width="auto"),
     }
