@@ -8,6 +8,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+pg = st.navigation([
+    st.Page("streamlit_app.py", title="🏠 FPL Main Info", icon="🏠"),
+    st.Page("pages/1_rating_graph.py", title="📈 xGI Rating Graph", icon="📈"),
+])
+
+pg.run()
+
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
 def load_data():
