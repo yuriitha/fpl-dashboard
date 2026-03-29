@@ -4,9 +4,9 @@ import plotly.express as px
 
 st.set_page_config(page_title="xGI vs Rating", layout="wide")
 
-st.title("?? xGI_norm vs Avg Rating Alt")
+st.title("ðŸ“ˆ xGI_norm vs Avg Rating Alt")
 
-# Çàâàíòàæåííÿ äàíèõ
+# Ð—Ð°Ð²Ð°Ð½Ñ‚Ð°Ð¶ÐµÐ½Ð½Ñ Ð´Ð°Ð½Ð¸Ñ…
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
@@ -14,20 +14,24 @@ def load_data():
 
 df = load_data()
 
-# Ô³ëüòðè
-st.sidebar.header("Ô³ëüòðè ãðàô³êà")
+# Ð¤Ñ–Ð»ÑŒÑ‚Ñ€Ð¸
+st.sidebar.header("Ð¤Ñ–Ð»ÑŒÑ‚Ñ€Ð¸ Ð³Ñ€Ð°Ñ„Ñ–ÐºÐ°")
 
 positions = sorted(df['element_type'].unique())
-selected_pos = st.sidebar.multiselect("Ïîçèö³ÿ", options=positions, default=positions)
+selected_pos = st.sidebar.multiselect("ÐŸÐ¾Ð·Ð¸Ñ†Ñ–Ñ", options=positions, default=positions)
 
 teams = sorted(df['team_short_name'].unique())
-selected_teams = st.sidebar.multiselect("Êîìàíäà", options=teams, default=teams)
+selected_teams = st.sidebar.multiselect("ÐšÐ¾Ð¼Ð°Ð½Ð´Ð°", options=teams, default=teams)
 
-min_cost, max_cost = float(df['now_cost'].min()), float(df['now_cost'].max())
-cost_range = st.sidebar.slider("Ö³íà (?m)", min_value=min_cost, max_value=max_cost, 
-                               value=(min_cost, max_cost), step=0.1)
+min_cost = float(df['now_cost'].min())
+max_cost = float(df['now_cost'].max())
+cost_range = st.sidebar.slider("Ð¦Ñ–Ð½Ð° (Â£m)", 
+                               min_value=min_cost, 
+                               max_value=max_cost, 
+                               value=(min_cost, max_cost), 
+                               step=0.1)
 
-# Çàñòîñóâàííÿ ô³ëüòð³â
+# Ð—Ð°ÑÑ‚Ð¾ÑÑƒÐ²Ð°Ð½Ð½Ñ Ñ„Ñ–Ð»ÑŒÑ‚Ñ€Ñ–Ð²
 plot_df = df.copy()
 if selected_pos:
     plot_df = plot_df[plot_df['element_type'].isin(selected_pos)]
@@ -35,7 +39,7 @@ if selected_teams:
     plot_df = plot_df[plot_df['team_short_name'].isin(selected_teams)]
 plot_df = plot_df[(plot_df['now_cost'] >= cost_range[0]) & (plot_df['now_cost'] <= cost_range[1])]
 
-# Ãðàô³ê
+# Ð“Ñ€Ð°Ñ„Ñ–Ðº
 if not plot_df.empty:
     fig = px.scatter(
         plot_df,
@@ -47,9 +51,9 @@ if not plot_df.empty:
         hover_data=["team_short_name", "G_90", "xG_90", "xGI_90", "matches_played"],
         title="xGI_norm vs Avg Rating Alt",
         labels={
-            "av_rating_alt": "Average Rating Alt (âåñü ñåçîí)",
+            "av_rating_alt": "Average Rating Alt (Ð²ÐµÑÑŒ ÑÐµÐ·Ð¾Ð½)",
             "xGI_norm": "xGI_norm",
-            "element_type": "Ïîçèö³ÿ"
+            "element_type": "ÐŸÐ¾Ð·Ð¸Ñ†Ñ–Ñ"
         },
         template="plotly_white"
     )
@@ -57,10 +61,10 @@ if not plot_df.empty:
     fig.update_traces(marker=dict(opacity=0.8, line=dict(width=0.5)))
     st.plotly_chart(fig, use_container_width=True)
 else:
-    st.warning("Íåìàº äàíèõ äëÿ â³äîáðàæåííÿ ãðàô³êà")
+    st.warning("ÐÐµÐ¼Ð°Ñ” Ð´Ð°Ð½Ð¸Ñ… Ð´Ð»Ñ Ð²Ñ–Ð´Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð½Ñ Ð³Ñ€Ð°Ñ„Ñ–ÐºÐ°")
 
-# Òàáëèöÿ
-st.subheader("Äàí³ ãðàâö³â")
+# Ð¢Ð°Ð±Ð»Ð¸Ñ†Ñ
+st.subheader("Ð”Ð°Ð½Ñ– Ð³Ñ€Ð°Ð²Ñ†Ñ–Ð²")
 st.dataframe(
     plot_df[["full_name", "team_short_name", "element_type", "now_cost", 
              "av_rating_alt", "xGI_norm", "xGI_90", "G_90"]].round(2),
@@ -68,4 +72,4 @@ st.dataframe(
     hide_index=True
 )
 
-st.caption(f"Îñòàííº îíîâëåííÿ: {pd.Timestamp.now('Europe/Kiev').strftime('%Y-%m-%d %H:%M')}")
+st.caption(f"ÐžÑÑ‚Ð°Ð½Ð½Ñ” Ð¾Ð½Ð¾Ð²Ð»ÐµÐ½Ð½Ñ: {pd.Timestamp.now('Europe/Kiev').strftime('%Y-%m-%d %H:%M')}")
