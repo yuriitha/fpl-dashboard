@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="xGI vs Rating", layout="wide")
 
 st.title("📈 xGI_norm vs Avg Rating Alt")
 
-# Завантаження даних
+# Завантаження даних (без змін)
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
@@ -98,40 +99,63 @@ if '60_min' in df.columns:
 
 # ========================== ГРАФІК ==========================
 if not plot_df.empty:
-    # Нелінійне масштабування розміру (краще для маленьких значень)
     plot_df = plot_df.copy()
-    # Використовуємо sqrt + невелике зміщення, щоб уникнути нульових розмірів
-    plot_df['size_for_plot'] = np.sqrt(plot_df['avg_mins'].clip(lower=1))  
+    plot_df['size_for_plot'] = np.power(plot_df['avg_mins'].clip(lower=0.1), 0.58) 
 
+    # Додаємо колонку для тексту (тільки для достатньо великих avg_mins)
+    min_mins_for_label = 48
+    plot_df['label_text'] = np.where(
+        plot_df['avg_mins'] >= min_mins_for_label,
+        plot_df['web_name'],
+        None
+    )
+
+    # Створюємо графік через px, потім конвертуємо в go.Figure для кращого контролю
     fig = px.scatter(
         plot_df,
         x="av_rating_alt",
         y="xGI_norm",
         color="element_type",
         size="size_for_plot",
-        size_max=18,
-        hover_name="web_name",
-        hover_data=["full_name", "team_short_name", "G_90", "xG_90", "xGI_90", 
+        hover_name="full_name",           # залишається full_name
+        hover_data=["web_name", "team_short_name", "G_90", "xG_90", "xGI_90", 
                     "matches_played", "60_min", "avg_mins"],
+        text="label_text",                # ← додаємо текст
         title="xGI_norm vs Avg Rating Alt",
         labels={
-            "av_rating_alt": "Average Rating Alt (весь сезон)",
+            "av_rating_alt": "Average Rating",
             "xGI_norm": "xGI_norm",
-            "element_type": "Позиція"
+            "element_type": "Pos"
         },
         template="plotly_white"
     )
 
+    # Конвертуємо в Graph Objects і налаштовуємо
+    fig = go.Figure(fig)
+
     fig.update_traces(
+        mode='markers+text',              # показуємо і кружечки, і текст
+        textposition='top center',        # позиція тексту (можна 'bottom center', 'middle right' тощо)
+        textfont=dict(size=10, color='DarkSlateGrey'),
         marker=dict(
-            opacity=0.78, 
-            line=dict(width=0.4, color='DarkSlateGrey')
-        )
+            opacity=0.82, 
+            line=dict(width=0.5, color='DarkSlateGrey')
+        ),
+        # sizeref дає кращий контроль над масштабом розміру
+        marker_sizeref = plot_df['size_for_plot'].max() / 35
+    )
+
+    # Додаткові налаштування вигляду
+    fig.update_layout(
+        height=700,
+        legend_title="Позиція"
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
 else:
     st.warning("Немає даних, що відповідають обраним фільтрам.")
+
 
 # ========================== ТАБЛИЦЯ ==========================
 st.subheader("Дані гравців")
