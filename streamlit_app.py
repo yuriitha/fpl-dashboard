@@ -49,58 +49,76 @@ df = df[desired_order]
 if 'av_rating_alt' in df.columns:
     df = df.sort_values(by="av_rating_alt", ascending=False).reset_index(drop=True)
 
-# ========================== УМОВНЕ ФОРМАТУВАННЯ ==========================
+# ========================== УМОВНЕ ФОРМАТУВАННЯ (БЕЗ MATPLOTLIB) ==========================
 def conditional_formatting(df):
-    """Повертає Styler з гарним форматуванням"""
+    """Умовне форматування для ключових колонок"""
+    def style_value(val, col_name):
+        if pd.isna(val) or not isinstance(val, (int, float)):
+            return ''
+        
+        # Avg Rating Alt — найважливіша колонка
+        if col_name == 'av_rating_alt':
+            if val >= 7.5:
+                return 'background-color: #006400; color: white; font-weight: bold'
+            elif val >= 7.0:
+                return 'background-color: #90EE90; font-weight: bold'
+            elif val >= 6.0:
+                return 'background-color: #FFFF99'
+            else:
+                return 'background-color: #FFB3B3'
+        
+        # Інші колонки (чим вище — тим краще)
+        if col_name == 'av_rating':
+            if val >= 7.5:
+                return 'background-color: #006400; color: white; font-weight: bold'
+            elif val >= 7.0:
+                return 'background-color: #90EE90; font-weight: bold'
+            elif val >= 6.0:
+                return 'background-color: #FFFF99'
+            else:
+                return 'background-color: #FFB3B3'
+        
+        elif col_name == 'avg_mins':
+            if val >= 80:
+                return 'background-color: #006400; color: white; font-weight: bold'
+            elif val >= 70:
+                return 'background-color: #90EE90; font-weight: bold'
+            elif val >= 60:
+                return 'background-color: #FFFF99'
+            else:
+                return 'background-color: #FFB3B3'
+        
+        elif col_name == '60_min':
+            if val >= 80:
+                return 'background-color: #006400; color: white; font-weight: bold'
+            elif val >= 60:
+                return 'background-color: #90EE90; font-weight: bold'
+            elif val >= 40:
+                return 'background-color: #FFFF99'
+            else:
+                return 'background-color: #FFB3B3'
+        
+        elif col_name == 'returns':
+            if val >= 25:
+                return 'background-color: #006400; color: white; font-weight: bold'
+            elif val >= 15:
+                return 'background-color: #90EE90; font-weight: bold'
+            elif val >= 8:
+                return 'background-color: #FFFF99'
+            else:
+                return 'background-color: #FFB3B3'
+        
+        return ''
+
     styled = df.style
 
-    # Градієнт для Avg Rating Alt (найважливіша колонка)
-    if 'av_rating_alt' in df.columns:
-        styled = styled.background_gradient(
-            cmap='RdYlGn', 
-            subset=['av_rating_alt'],
-            vmin=5.0,
-            vmax=8.0
-        ).applymap(
-            lambda x: 'font-weight: bold; color: darkgreen' if x >= 7.5 else '',
-            subset=['av_rating_alt']
-        )
-
-    # Градієнт для Avg Rating
-    if 'av_rating' in df.columns:
-        styled = styled.background_gradient(
-            cmap='RdYlGn', 
-            subset=['av_rating'],
-            vmin=5.0,
-            vmax=8.0
-        )
-
-    # Градієнт для Avg Mins
-    if 'avg_mins' in df.columns:
-        styled = styled.background_gradient(
-            cmap='RdYlGn', 
-            subset=['avg_mins'],
-            vmin=30,
-            vmax=90
-        )
-
-    # Градієнт для 60+ Min %
-    if '60_min' in df.columns:
-        styled = styled.background_gradient(
-            cmap='RdYlGn', 
-            subset=['60_min'],
-            vmin=0,
-            vmax=100
-        )
-
-    # Градієнт для Returns %
-    if 'returns' in df.columns:
-        styled = styled.background_gradient(
-            cmap='RdYlGn', 
-            subset=['returns'],
-            vmin=0,
-            vmax=30
-        )
+    # Застосовуємо форматування до потрібних колонок
+    for col in ['av_rating_alt', 'av_rating', 'avg_mins', '60_min', 'returns']:
+        if col in df.columns:
+            styled = styled.applymap(
+                lambda x, c=col: style_value(x, c), 
+                subset=[col]
+            )
 
     # Форматування чисел
     styled = styled.format({
@@ -115,7 +133,7 @@ def conditional_formatting(df):
 
     return styled
 
-# ========================== ФІЛЬТРИ (без змін) ==========================
+# ========================== ФІЛЬТРИ ==========================
 st.sidebar.header("Filters")
 
 positions = sorted(df['element_type'].unique())
@@ -156,7 +174,6 @@ if 'matches_played' in df.columns:
 if 'avg_mins' in df.columns:
     min_avg = float(df['avg_mins'].min())
     max_avg = float(df['avg_mins'].max())
-    # Захист, якщо min == max
     if min_avg == max_avg:
         avg_mins_range = st.sidebar.slider("Avg Minutes", min_value=min_avg, max_value=max_avg + 1, value=(min_avg, max_avg))
     else:
@@ -219,7 +236,7 @@ if '60_min' in df.columns:
 if 'returns' in df.columns:
     filtered_df = filtered_df[(filtered_df['returns'] >= returns_range[0]) & (filtered_df['returns'] <= returns_range[1])]
 
-# ========================== ТАБЛИЦЯ З ФОРМАТУВАННЯМ ==========================
+# ========================== ТАБЛИЦЯ ==========================
 st.subheader(f"Знайдено гравців: {len(filtered_df)}")
 
 # Застосовуємо стилізацію
