@@ -35,16 +35,19 @@ if 'birth_date' in df.columns:
 # ========================== ВСТАНОВЛЕННЯ ПОРЯДКУ КОЛОНОК ==========================
 desired_order = [
     "id", "full_name", "Age", "element_type", "Play Pos", "team_short_name",
-    "Foot", "now_cost", "M Price", "points_per_game", "selected_by_percent",
+    "now_cost", "points_per_game",
     "top_10k", "top_100k", "transfers_in_event", "transfers_out_event",
     "min_played", "matches_played", "matches_started", "avg_mins", 
     "60_min", "returns", "av_rating", "av_rating_alt",
-    "shot_value", "pass_value", "dribble_value", "def_value", "gk_value",   # нові колонки
     "news", "news_added"
 ]
 
 desired_order = [col for col in desired_order if col in df.columns]
 df = df[desired_order]
+
+# ========================== СОРТУВАННЯ ЗА ЗАМОВЧУВАННЯМ ==========================
+if 'av_rating_alt' in df.columns:
+    df = df.sort_values(by="av_rating_alt", ascending=False).reset_index(drop=True)
 
 # ========================== ФІЛЬТРИ ==========================
 st.sidebar.header("Filters")
@@ -69,6 +72,56 @@ ownership_range = st.sidebar.slider(
     step=0.5
 )
 
+# ====================== PERFORMANCE FILTERS ======================
+st.sidebar.subheader("Performance Filters")
+
+# Matches Played (за замовчуванням ≥ 7)
+if 'matches_played' in df.columns:
+    min_matches = int(df['matches_played'].min())
+    max_matches = int(df['matches_played'].max())
+    matches_range = st.sidebar.slider(
+        "Matches Played", 
+        min_value=min_matches, 
+        max_value=max_matches, 
+        value=(7, max_matches)   # ← дефолт від 7 матчів
+    )
+
+# Avg Minutes
+if 'avg_mins' in df.columns:
+    min_avg = float(df['avg_mins'].min())
+    max_avg = float(df['avg_mins'].max())
+    avg_mins_range = st.sidebar.slider(
+        "Avg Minutes", 
+        min_value=min_avg, 
+        max_value=max_avg, 
+        value=(min_avg, max_avg), 
+        step=1.0
+    )
+
+# 60+ Min %
+if '60_min' in df.columns:
+    min_60 = float(df['60_min'].min())
+    max_60 = float(df['60_min'].max())
+    sixty_range = st.sidebar.slider(
+        "60+ Min %", 
+        min_value=min_60, 
+        max_value=max_60, 
+        value=(min_60, max_60), 
+        step=0.5
+    )
+
+# Returns %
+if 'returns' in df.columns:
+    min_ret = float(df['returns'].min())
+    max_ret = float(df['returns'].max())
+    returns_range = st.sidebar.slider(
+        "Returns %", 
+        min_value=min_ret, 
+        max_value=max_ret, 
+        value=(min_ret, max_ret), 
+        step=0.1
+    )
+
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 filtered_df = df.copy()
 
@@ -90,38 +143,26 @@ if ownership_range:
         (filtered_df['top_100k'] <= ownership_range[1])
     ]
 
-# Фільтри по статистиці
+# Застосування Performance фільтрів
 if 'matches_played' in df.columns:
-    min_matches = int(df['matches_played'].min())
-    max_matches = int(df['matches_played'].max())
-    matches_range = st.sidebar.slider("Matches Played", min_value=min_matches, max_value=max_matches, value=(min_matches, max_matches))
     filtered_df = filtered_df[
         (filtered_df['matches_played'] >= matches_range[0]) & 
         (filtered_df['matches_played'] <= matches_range[1])
     ]
 
 if 'avg_mins' in df.columns:
-    min_avg = float(df['avg_mins'].min())
-    max_avg = float(df['avg_mins'].max())
-    avg_mins_range = st.sidebar.slider("Avg Minutes", min_value=min_avg, max_value=max_avg, value=(min_avg, max_avg), step=1.0)
     filtered_df = filtered_df[
         (filtered_df['avg_mins'] >= avg_mins_range[0]) & 
         (filtered_df['avg_mins'] <= avg_mins_range[1])
     ]
 
 if '60_min' in df.columns:
-    min_60 = float(df['60_min'].min())
-    max_60 = float(df['60_min'].max())
-    sixty_range = st.sidebar.slider("60+ Min %", min_value=min_60, max_value=max_60, value=(min_60, max_60), step=0.5)
     filtered_df = filtered_df[
         (filtered_df['60_min'] >= sixty_range[0]) & 
         (filtered_df['60_min'] <= sixty_range[1])
     ]
 
 if 'returns' in df.columns:
-    min_ret = float(df['returns'].min())
-    max_ret = float(df['returns'].max())
-    returns_range = st.sidebar.slider("Returns %", min_value=min_ret, max_value=max_ret, value=(min_ret, max_ret), step=0.1)
     filtered_df = filtered_df[
         (filtered_df['returns'] >= returns_range[0]) & 
         (filtered_df['returns'] <= returns_range[1])
@@ -142,11 +183,8 @@ st.dataframe(
         "element_type": st.column_config.TextColumn("Pos", width=5),
         "Play Pos": st.column_config.TextColumn("Play Pos", width=5),
         "team_short_name": st.column_config.TextColumn("Team", width=5),
-        "Foot": st.column_config.TextColumn("Foot", width=5),
         "now_cost": st.column_config.NumberColumn("Price", format="%.1f", width=5),
-        "M Price": st.column_config.NumberColumn("M Price", format="%.1f", width=5),
         "points_per_game": st.column_config.NumberColumn("Pts/Game", format="%.1f", width=5),
-        "selected_by_percent": st.column_config.NumberColumn("Selected %", format="%.1f", width=5),
         "top_10k": st.column_config.NumberColumn("Top 10k %", format="%.1f", width=5),
         "top_100k": st.column_config.NumberColumn("Top 100k %", format="%.1f", width=5),
         "transfers_in_event": st.column_config.NumberColumn("In", width=5),
@@ -159,11 +197,6 @@ st.dataframe(
         "returns": st.column_config.NumberColumn("Returns %", format="%.1f", width=5),
         "av_rating": st.column_config.NumberColumn("Avg Rating", format="%.2f", width=5),
         "av_rating_alt": st.column_config.NumberColumn("Avg Rating Alt", format="%.2f", width=5),
-        "shot_value": st.column_config.NumberColumn("Shot Value", format="%.3f", width=5),
-        "pass_value": st.column_config.NumberColumn("Pass Value", format="%.3f", width=5),
-        "dribble_value": st.column_config.NumberColumn("Dribble Value", format="%.3f", width=5),
-        "def_value": st.column_config.NumberColumn("Def Value", format="%.3f", width=5),
-        "gk_value": st.column_config.NumberColumn("GK Value", format="%.3f", width=5),      
         "news": st.column_config.TextColumn("News", width="auto"),
         "news_added": st.column_config.TextColumn("Updated", width="auto"),
     }
