@@ -90,7 +90,7 @@ st.dataframe(
     hide_index=True,
     height=800,
     column_config={
-        "full_name": st.column_config.TextColumn("Player", width=40, pinned=True),
+        "full_name": st.column_config.TextColumn("Player", width="small", pinned=True),
         "Age": st.column_config.NumberColumn("Age", width=3, format="%d"),
         "element_type": st.column_config.TextColumn("Pos", width=4),
         "Play Pos": st.column_config.TextColumn("Pl Pos", width=4),
@@ -111,7 +111,7 @@ st.dataframe(
         "av_rating_alt": st.column_config.NumberColumn("RtA", width=4, format="%.2f"),
         "transfers_in_event": st.column_config.NumberColumn("In", width=7),
         "transfers_out_event": st.column_config.NumberColumn("Out", width=7),
-        "news": st.column_config.TextColumn("News", width=40),
+        "news": st.column_config.TextColumn("News", width=75),
         "news_added": st.column_config.TextColumn("Updated", width=18),
     }
 )
