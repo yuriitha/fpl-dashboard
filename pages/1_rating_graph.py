@@ -4,6 +4,8 @@ import plotly.express as px
 
 st.set_page_config(page_title="xGI vs Rating", layout="wide")
 
+st.title("?? xGI_norm vs Avg Rating Alt")
+
 # Завантаження даних
 @st.cache_data(ttl=300)
 def load_data():
