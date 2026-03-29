@@ -8,7 +8,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ========================== ЗАВАНТАЖЕННЯ ДАНИХ З API ==========================
+# ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
@@ -32,7 +32,7 @@ if 'birth_date' in df.columns:
     df['Age'] = df['birth_date'].apply(calculate_age)
     df = df.drop(columns=['birth_date'])
 
-# ========================== ВСТАНОВЛЕННЯ ПОРЯДКУ КОЛОНОК ==========================
+# ========================== ПОРЯДОК КОЛОНОК ==========================
 desired_order = [
     "id", "full_name", "Age", "element_type", "Play Pos", "team_short_name",
     "now_cost", "points_per_game",
@@ -45,11 +45,77 @@ desired_order = [
 desired_order = [col for col in desired_order if col in df.columns]
 df = df[desired_order]
 
-# ========================== СОРТУВАННЯ ЗА ЗАМОВЧУВАННЯМ ==========================
+# Сортування за замовчуванням
 if 'av_rating_alt' in df.columns:
     df = df.sort_values(by="av_rating_alt", ascending=False).reset_index(drop=True)
 
-# ========================== ФІЛЬТРИ ==========================
+# ========================== УМОВНЕ ФОРМАТУВАННЯ ==========================
+def conditional_formatting(df):
+    """Повертає Styler з гарним форматуванням"""
+    styled = df.style
+
+    # Градієнт для Avg Rating Alt (найважливіша колонка)
+    if 'av_rating_alt' in df.columns:
+        styled = styled.background_gradient(
+            cmap='RdYlGn', 
+            subset=['av_rating_alt'],
+            vmin=5.0,
+            vmax=8.0
+        ).applymap(
+            lambda x: 'font-weight: bold; color: darkgreen' if x >= 7.5 else '',
+            subset=['av_rating_alt']
+        )
+
+    # Градієнт для Avg Rating
+    if 'av_rating' in df.columns:
+        styled = styled.background_gradient(
+            cmap='RdYlGn', 
+            subset=['av_rating'],
+            vmin=5.0,
+            vmax=8.0
+        )
+
+    # Градієнт для Avg Mins
+    if 'avg_mins' in df.columns:
+        styled = styled.background_gradient(
+            cmap='RdYlGn', 
+            subset=['avg_mins'],
+            vmin=30,
+            vmax=90
+        )
+
+    # Градієнт для 60+ Min %
+    if '60_min' in df.columns:
+        styled = styled.background_gradient(
+            cmap='RdYlGn', 
+            subset=['60_min'],
+            vmin=0,
+            vmax=100
+        )
+
+    # Градієнт для Returns %
+    if 'returns' in df.columns:
+        styled = styled.background_gradient(
+            cmap='RdYlGn', 
+            subset=['returns'],
+            vmin=0,
+            vmax=30
+        )
+
+    # Форматування чисел
+    styled = styled.format({
+        "avg_mins": "{:.1f}",
+        "60_min": "{:.1f}",
+        "returns": "{:.1f}",
+        "av_rating": "{:.2f}",
+        "av_rating_alt": "{:.2f}",
+        "now_cost": "{:.1f}",
+        "points_per_game": "{:.1f}",
+    })
+
+    return styled
+
+# ========================== ФІЛЬТРИ (без змін) ==========================
 st.sidebar.header("Filters")
 
 positions = sorted(df['element_type'].unique())
@@ -72,107 +138,57 @@ ownership_range = st.sidebar.slider(
     step=0.5
 )
 
-# ====================== PERFORMANCE FILTERS ======================
 st.sidebar.subheader("Performance Filters")
 
-# Matches Played (за замовчуванням ≥ 7)
 if 'matches_played' in df.columns:
     min_matches = int(df['matches_played'].min())
     max_matches = int(df['matches_played'].max())
-    matches_range = st.sidebar.slider(
-        "Matches Played", 
-        min_value=min_matches, 
-        max_value=max_matches, 
-        value=(7, max_matches)   # ← дефолт від 7 матчів
-    )
+    matches_range = st.sidebar.slider("Matches Played", min_value=min_matches, max_value=max_matches, value=(7, max_matches))
 
-# Avg Minutes
 if 'avg_mins' in df.columns:
     min_avg = float(df['avg_mins'].min())
     max_avg = float(df['avg_mins'].max())
-    avg_mins_range = st.sidebar.slider(
-        "Avg Minutes", 
-        min_value=min_avg, 
-        max_value=max_avg, 
-        value=(min_avg, max_avg), 
-        step=1.0
-    )
+    avg_mins_range = st.sidebar.slider("Avg Minutes", min_value=min_avg, max_avg=max_avg, value=(min_avg, max_avg), step=1.0)
 
-# 60+ Min %
 if '60_min' in df.columns:
     min_60 = float(df['60_min'].min())
     max_60 = float(df['60_min'].max())
-    sixty_range = st.sidebar.slider(
-        "60+ Min %", 
-        min_value=min_60, 
-        max_value=max_60, 
-        value=(min_60, max_60), 
-        step=0.5
-    )
+    sixty_range = st.sidebar.slider("60+ Min %", min_value=min_60, max_value=max_60, value=(min_60, max_60), step=0.5)
 
-# Returns %
 if 'returns' in df.columns:
     min_ret = float(df['returns'].min())
     max_ret = float(df['returns'].max())
-    returns_range = st.sidebar.slider(
-        "Returns %", 
-        min_value=min_ret, 
-        max_value=max_ret, 
-        value=(min_ret, max_ret), 
-        step=0.1
-    )
+    returns_range = st.sidebar.slider("Returns %", min_value=min_ret, max_value=max_ret, value=(min_ret, max_ret), step=0.1)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 filtered_df = df.copy()
 
 if selected_positions:
     filtered_df = filtered_df[filtered_df['element_type'].isin(selected_positions)]
-
 if selected_teams:
     filtered_df = filtered_df[filtered_df['team_short_name'].isin(selected_teams)]
-
 if cost_range:
-    filtered_df = filtered_df[
-        (filtered_df['now_cost'] >= cost_range[0]) & 
-        (filtered_df['now_cost'] <= cost_range[1])
-    ]
-
+    filtered_df = filtered_df[(filtered_df['now_cost'] >= cost_range[0]) & (filtered_df['now_cost'] <= cost_range[1])]
 if ownership_range:
-    filtered_df = filtered_df[
-        (filtered_df['top_100k'] >= ownership_range[0]) & 
-        (filtered_df['top_100k'] <= ownership_range[1])
-    ]
+    filtered_df = filtered_df[(filtered_df['top_100k'] >= ownership_range[0]) & (filtered_df['top_100k'] <= ownership_range[1])]
 
-# Застосування Performance фільтрів
 if 'matches_played' in df.columns:
-    filtered_df = filtered_df[
-        (filtered_df['matches_played'] >= matches_range[0]) & 
-        (filtered_df['matches_played'] <= matches_range[1])
-    ]
-
+    filtered_df = filtered_df[(filtered_df['matches_played'] >= matches_range[0]) & (filtered_df['matches_played'] <= matches_range[1])]
 if 'avg_mins' in df.columns:
-    filtered_df = filtered_df[
-        (filtered_df['avg_mins'] >= avg_mins_range[0]) & 
-        (filtered_df['avg_mins'] <= avg_mins_range[1])
-    ]
-
+    filtered_df = filtered_df[(filtered_df['avg_mins'] >= avg_mins_range[0]) & (filtered_df['avg_mins'] <= avg_mins_range[1])]
 if '60_min' in df.columns:
-    filtered_df = filtered_df[
-        (filtered_df['60_min'] >= sixty_range[0]) & 
-        (filtered_df['60_min'] <= sixty_range[1])
-    ]
-
+    filtered_df = filtered_df[(filtered_df['60_min'] >= sixty_range[0]) & (filtered_df['60_min'] <= sixty_range[1])]
 if 'returns' in df.columns:
-    filtered_df = filtered_df[
-        (filtered_df['returns'] >= returns_range[0]) & 
-        (filtered_df['returns'] <= returns_range[1])
-    ]
+    filtered_df = filtered_df[(filtered_df['returns'] >= returns_range[0]) & (filtered_df['returns'] <= returns_range[1])]
 
-# ========================== ТАБЛИЦЯ ==========================
+# ========================== ТАБЛИЦЯ З ФОРМАТУВАННЯМ ==========================
 st.subheader(f"Знайдено гравців: {len(filtered_df)}")
 
+# Застосовуємо стилізацію
+styled_df = conditional_formatting(filtered_df)
+
 st.dataframe(
-    filtered_df,
+    styled_df,
     use_container_width=True,
     hide_index=True,
     height=720,
