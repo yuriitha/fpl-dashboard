@@ -88,7 +88,7 @@ display_columns = [
     "transfers_out_event", "news", "news_added"
 ]
 
-st.subheader(f"Players: {len(filtered_df)}")
+st.subheader(f"Players filtered: {len(filtered_df)}")
 
 st.dataframe(
     filtered_df[display_columns],
@@ -118,6 +118,6 @@ st.dataframe(
         "transfers_in_event": st.column_config.NumberColumn("In", width=60),
         "transfers_out_event": st.column_config.NumberColumn("Out", width=60),
         "news": st.column_config.TextColumn("News", width="medium"),
-        "news_added": st.column_config.TextColumn("Updated", width="small"),
+        "news_added": st.column_config.TextColumn("Updated", width=225),
     }
 )
