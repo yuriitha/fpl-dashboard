@@ -139,6 +139,8 @@ if not plot_df.empty:
 
     fig = go.Figure(fig)
 
+    max_size_value = plot_df['size_for_plot'].max() 
+
     # Налаштування маркерів і тексту
     max_size = plot_df['size_for_plot'].max()
 
