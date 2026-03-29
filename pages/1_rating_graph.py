@@ -98,9 +98,10 @@ if '60_min' in df.columns:
 
 # ========================== ГРАФІК ==========================
 if not plot_df.empty:
-    # Нелінійне масштабування розміру: sqrt(avg_mins) робить маленькі значення ще меншими
+    # Нелінійне масштабування розміру (краще для маленьких значень)
     plot_df = plot_df.copy()
-    plot_df['size_for_plot'] = np.sqrt(plot_df['avg_mins'])
+    # Використовуємо sqrt + невелике зміщення, щоб уникнути нульових розмірів
+    plot_df['size_for_plot'] = np.sqrt(plot_df['avg_mins'].clip(lower=1))  
 
     fig = px.scatter(
         plot_df,
@@ -110,13 +111,13 @@ if not plot_df.empty:
         size="size_for_plot",
         size_max=18,
         hover_name="web_name",
-        hover_data=["full_name", "team_short_name", "G_90", "xG_90", "xGI_90", "matches_played", "60_min", "avg_mins"],
+        hover_data=["full_name", "team_short_name", "G_90", "xG_90", "xGI_90", 
+                    "matches_played", "60_min", "avg_mins"],
         title="xGI_norm vs Avg Rating Alt",
         labels={
             "av_rating_alt": "Average Rating Alt (весь сезон)",
             "xGI_norm": "xGI_norm",
-            "element_type": "Позиція",
-            "avg_mins": "Avg Minutes"
+            "element_type": "Позиція"
         },
         template="plotly_white"
     )
