@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import numpy as np
 
 st.set_page_config(page_title="xGI vs Rating", layout="wide")
 
@@ -97,16 +98,20 @@ if '60_min' in df.columns:
 
 # ========================== ГРАФІК ==========================
 if not plot_df.empty:
+    # Нелінійне масштабування розміру: sqrt(avg_mins) робить маленькі значення ще меншими
+    plot_df = plot_df.copy()
+    plot_df['size_for_plot'] = np.sqrt(plot_df['avg_mins'])
+
     fig = px.scatter(
         plot_df,
         x="av_rating_alt",
         y="xGI_norm",
         color="element_type",
-        size="avg_mins",
+        size="size_for_plot",
         size_max=18,
-        hover_name="full_name",
-        hover_data=["team_short_name", "G_90", "xG_90", "xGI_90", "matches_played", "60_min"],
-        title="xGI_norm vs Avg Rating Alt (розмір кружечка = Avg Mins)",
+        hover_name="web_name",
+        hover_data=["full_name", "team_short_name", "G_90", "xG_90", "xGI_90", "matches_played", "60_min", "avg_mins"],
+        title="xGI_norm vs Avg Rating Alt",
         labels={
             "av_rating_alt": "Average Rating Alt (весь сезон)",
             "xGI_norm": "xGI_norm",
@@ -116,10 +121,9 @@ if not plot_df.empty:
         template="plotly_white"
     )
 
-    # Додатково зменшуємо opacity і робимо обводку тоншою
     fig.update_traces(
         marker=dict(
-            opacity=0.75, 
+            opacity=0.78, 
             line=dict(width=0.4, color='DarkSlateGrey')
         )
     )
@@ -131,7 +135,7 @@ else:
 # ========================== ТАБЛИЦЯ ==========================
 st.subheader("Дані гравців")
 st.dataframe(
-    plot_df[["full_name", "team_short_name", "element_type", "now_cost", 
+    plot_df[["web_name", "full_name", "team_short_name", "element_type", "now_cost", 
              "av_rating_alt", "xGI_norm", "xGI_90", "avg_mins", "G_90"]].round(2),
     use_container_width=True,
     hide_index=True
