@@ -40,7 +40,10 @@ desired_order = [
     "min_played", "matches_played", "matches_started", "avg_mins", 
     "60_min", "returns", "av_rating", "av_rating_alt",
     
-    # === НОВІ КОЛОНКИ ===
+    # === Рейтинги за останні 8 матчів команди ===
+    "av_rating_8", "av_rating_alt_8",
+    
+    # === Інші перформанс колонки ===
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "Sh_90", "ShoT_90", "DC_90", "DC_hit",
     
     "news", "news_added"
@@ -192,7 +195,7 @@ st.dataframe(
         "team_short_name": st.column_config.TextColumn("Team", width=5),
         "now_cost": st.column_config.NumberColumn("Price", format="%.1f", width=5),
         "points_per_game": st.column_config.NumberColumn("Pts/Game", format="%.1f", width=5),
-        "bonus": st.column_config.NumberColumn("Bonus", format="%.0f", width=5),           # ← новий
+        "bonus": st.column_config.NumberColumn("Bonus", format="%.0f", width=5),
         "top_10k": st.column_config.NumberColumn("Top 10k %", format="%.1f", width=5),
         "top_100k": st.column_config.NumberColumn("Top 100k %", format="%.1f", width=5),
         "transfers_in_event": st.column_config.NumberColumn("In", width=5),
@@ -205,6 +208,8 @@ st.dataframe(
         "returns": st.column_config.NumberColumn("Returns %", format="%.1f", width=5),
         "av_rating": st.column_config.NumberColumn("Avg Rating", format="%.2f", width=5),
         "av_rating_alt": st.column_config.NumberColumn("Avg Rating Alt", format="%.2f", width=5),
+        "av_rating_8": st.column_config.NumberColumn("Avg Rating 8", format="%.2f", width=5),
+        "av_rating_alt_8": st.column_config.NumberColumn("Avg Rating Alt 8", format="%.2f", width=5),
         "G_90": st.column_config.NumberColumn("G/90", format="%.2f", width=5),
         "xG_90": st.column_config.NumberColumn("xG/90", format="%.2f", width=5),
         "xGoT_90": st.column_config.NumberColumn("xGoT/90", format="%.2f", width=5),
@@ -213,7 +218,7 @@ st.dataframe(
         "Sh_90": st.column_config.NumberColumn("Sh/90", format="%.1f", width=5),
         "ShoT_90": st.column_config.NumberColumn("ShoT/90", format="%.1f", width=5),
         "DC_90": st.column_config.NumberColumn("DC/90", format="%.1f", width=5),
-        "DC_hit": st.column_config.NumberColumn("DC Hit %", format="%.1f", width=5),
+        "DC_hit": st.column_config.NumberColumn("DC Hit %", format="%.1f", width=5),    
         "news": st.column_config.TextColumn("News", width="auto"),
         "news_added": st.column_config.TextColumn("Updated", width="auto"),
     }
