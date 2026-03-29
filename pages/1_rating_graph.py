@@ -103,7 +103,7 @@ if not plot_df.empty:
     
     # === КРАЩЕ МАСШТАБУВАННЯ РОЗМІРУ КРУЖЕЧКІВ ===
     # М’якше притискання малих значень + clip для уникнення нуля
-    plot_df['size_for_plot'] = np.power(plot_df['avg_mins'].clip(lower=0.5), 0.65)
+    plot_df['size_for_plot'] = np.power(plot_df['avg_mins'].clip(lower=0.1), 0.55)
     
     # Поріг для відображення підпису web_name
     min_mins_for_label = 48
@@ -151,8 +151,8 @@ if not plot_df.empty:
             line=dict(width=0.6, color='DarkSlateGrey')
         ),
         # Правильне масштабування розміру
-        marker_sizeref = 2 * max_size / (35 ** 2),   # формула для кращого розмаху
-        marker_sizemin = 3.5                        # мінімальний видимий розмір
+        marker_sizeref = max_size_value / 28,
+        marker_sizemin = 3.5
     )
 
     fig.update_layout(
