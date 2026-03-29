@@ -208,8 +208,8 @@ st.dataframe(
         "returns": st.column_config.NumberColumn("Returns %", format="%.1f", width=5),
         "av_rating": st.column_config.NumberColumn("Avg Rating", format="%.2f", width=5),
         "av_rating_alt": st.column_config.NumberColumn("Avg Rating Alt", format="%.2f", width=5),
-        "av_rating_8": st.column_config.NumberColumn("Avg Rating 8", format="%.2f", width=5),
-        "av_rating_alt_8": st.column_config.NumberColumn("Avg Rating Alt 8", format="%.2f", width=5),
+        "av_rating_8": st.column_config.NumberColumn("Rating 8", format="%.2f", width=5),
+        "av_rating_alt_8": st.column_config.NumberColumn("Rating Alt 8", format="%.2f", width=5),
         "G_90": st.column_config.NumberColumn("G/90", format="%.2f", width=5),
         "xG_90": st.column_config.NumberColumn("xG/90", format="%.2f", width=5),
         "xGoT_90": st.column_config.NumberColumn("xGoT/90", format="%.2f", width=5),
@@ -218,10 +218,9 @@ st.dataframe(
         "Sh_90": st.column_config.NumberColumn("Sh/90", format="%.1f", width=5),
         "ShoT_90": st.column_config.NumberColumn("ShoT/90", format="%.1f", width=5),
         "DC_90": st.column_config.NumberColumn("DC/90", format="%.1f", width=5),
-        "DC_hit": st.column_config.NumberColumn("DC Hit %", format="%.1f", width=5),    
+        "DC_hit": st.column_config.NumberColumn("DC Hit %", format="%.1f", width=5),   
         "news": st.column_config.TextColumn("News", width="auto"),
         "news_added": st.column_config.TextColumn("Updated", width="auto"),
     }
 )
-
 st.caption(f"Останнє оновлення: {pd.Timestamp.now('Europe/Kiev').strftime('%Y-%m-%d %H:%M')}")
