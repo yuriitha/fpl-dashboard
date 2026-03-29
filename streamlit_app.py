@@ -8,7 +8,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ========================== ЗАВАНТАЖЕННЯ ДАНИХ З API ==========================
+# ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
@@ -32,27 +32,22 @@ if 'birth_date' in df.columns:
     df['Age'] = df['birth_date'].apply(calculate_age)
     df = df.drop(columns=['birth_date'])
 
-# ========================== ВСТАНОВЛЕННЯ ПОРЯДКУ КОЛОНОК ==========================
+# ========================== ПОРЯДОК КОЛОНОК ==========================
 desired_order = [
     "id", "full_name", "Age", "element_type", "Play Pos", "team_short_name",
-    "now_cost", "points_per_game", "bonus",                    # bonus після Pts/Game
+    "now_cost", "points_per_game", "bonus",
     "top_10k", "top_100k", "transfers_in_event", "transfers_out_event",
     "min_played", "matches_played", "matches_started", "avg_mins", 
     "60_min", "returns", "av_rating", "av_rating_alt",
-    
-    # === Рейтинги за останні 8 матчів команди ===
-    "av_rating_8", "av_rating_alt_8",
-    
-    # === Інші перформанс колонки ===
+    "av_rating_8", "av_rating_alt_8",          # нові колонки
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "Sh_90", "ShoT_90", "DC_90", "DC_hit",
-    
     "news", "news_added"
 ]
 
 desired_order = [col for col in desired_order if col in df.columns]
 df = df[desired_order]
 
-# ========================== СОРТУВАННЯ ЗА ЗАМОВЧУВАННЯМ ==========================
+# Сортування за замовчуванням
 if 'av_rating_alt' in df.columns:
     df = df.sort_values(by="av_rating_alt", ascending=False).reset_index(drop=True)
 
@@ -60,14 +55,21 @@ if 'av_rating_alt' in df.columns:
 st.sidebar.header("Filters")
 
 positions = sorted(df['element_type'].unique())
-selected_positions = st.sidebar.multiselect("Position", options=positions, default=positions)
+selected_positions = st.sidebar.multiselect(
+    "Position", options=positions, default=positions, key="pos_filter"
+)
 
 teams = sorted(df['team_short_name'].unique())
-selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
+selected_teams = st.sidebar.multiselect(
+    "Team", options=teams, default=teams, key="team_filter"
+)
 
 min_cost = float(df['now_cost'].min())
 max_cost = float(df['now_cost'].max())
-cost_range = st.sidebar.slider("Price (£m)", min_value=min_cost, max_value=max_cost, value=(min_cost, max_cost), step=0.1)
+cost_range = st.sidebar.slider(
+    "Price (£m)", min_value=min_cost, max_value=max_cost, 
+    value=(min_cost, max_cost), step=0.1, key="cost_filter"
+)
 
 min_ownership = float(df['top_100k'].min())
 max_ownership = float(df['top_100k'].max())
@@ -76,7 +78,8 @@ ownership_range = st.sidebar.slider(
     min_value=min_ownership, 
     max_value=max_ownership, 
     value=(min_ownership, max_ownership), 
-    step=0.5
+    step=0.5,
+    key="ownership_filter"
 )
 
 # ====================== PERFORMANCE FILTERS ======================
@@ -87,10 +90,8 @@ if 'matches_played' in df.columns:
     min_matches = int(df['matches_played'].min())
     max_matches = int(df['matches_played'].max())
     matches_range = st.sidebar.slider(
-        "Matches Played", 
-        min_value=min_matches, 
-        max_value=max_matches, 
-        value=(7, max_matches)
+        "Matches Played", min_value=min_matches, max_value=max_matches, 
+        value=(7, max_matches), key="matches_filter"
     )
 
 # Avg Minutes
@@ -179,7 +180,7 @@ if 'returns' in df.columns:
     ]
 
 # ========================== ТАБЛИЦЯ ==========================
-st.subheader(f"Знайдено гравців: {len(filtered_df)}")
+st.subheader(f"Знайдено гравців {len(filtered_df)}")          # ← прибрано ":"
 
 st.dataframe(
     filtered_df,
@@ -218,9 +219,10 @@ st.dataframe(
         "Sh_90": st.column_config.NumberColumn("Sh/90", format="%.1f", width=5),
         "ShoT_90": st.column_config.NumberColumn("ShoT/90", format="%.1f", width=5),
         "DC_90": st.column_config.NumberColumn("DC/90", format="%.1f", width=5),
-        "DC_hit": st.column_config.NumberColumn("DC Hit %", format="%.1f", width=5),   
+        "DC_hit": st.column_config.NumberColumn("DC Hit %", format="%.1f", width=5),
         "news": st.column_config.TextColumn("News", width="auto"),
         "news_added": st.column_config.TextColumn("Updated", width="auto"),
     }
 )
-st.caption(f"Останнє оновлення: {pd.Timestamp.now('Europe/Kiev').strftime('%Y-%m-%d %H:%M')}")
+
+st.caption(f"Останнє оновлення {pd.Timestamp.now('Europe/Kiev').strftime('%Y-%m-%d %H:%M')}")
