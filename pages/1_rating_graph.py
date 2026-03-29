@@ -31,7 +31,6 @@ cost_range = st.sidebar.slider("Ціна (£m)",
                                value=(min_cost, max_cost), 
                                step=0.1)
 
-# === Додаткові фільтри ===
 st.sidebar.subheader("Додаткові фільтри")
 
 if 'av_rating_alt' in df.columns:
@@ -104,10 +103,10 @@ if not plot_df.empty:
         y="xGI_norm",
         color="element_type",
         size="avg_mins",
-        size_max=25,
+        size_max=18,
         hover_name="full_name",
         hover_data=["team_short_name", "G_90", "xG_90", "xGI_90", "matches_played", "60_min"],
-        title="xGI_norm vs Avg Rating Alt (розмір = Avg Mins)",
+        title="xGI_norm vs Avg Rating Alt (розмір кружечка = Avg Mins)",
         labels={
             "av_rating_alt": "Average Rating Alt (весь сезон)",
             "xGI_norm": "xGI_norm",
@@ -117,7 +116,14 @@ if not plot_df.empty:
         template="plotly_white"
     )
 
-    fig.update_traces(marker=dict(opacity=0.75, line=dict(width=0.5)))
+    # Додатково зменшуємо opacity і робимо обводку тоншою
+    fig.update_traces(
+        marker=dict(
+            opacity=0.75, 
+            line=dict(width=0.4, color='DarkSlateGrey')
+        )
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.warning("Немає даних, що відповідають обраним фільтрам.")
