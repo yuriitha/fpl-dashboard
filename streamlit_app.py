@@ -33,30 +33,30 @@ selected_positions = st.sidebar.multiselect("Pos", options=positions, default=po
 teams = sorted(df['team_short_name'].unique())
 selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
 
-# Числові фільтри з дефолтними значеннями
-# 1. Matches Played (Default: 5+)
-m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
-f_matches = st.sidebar.slider("Min Matches", m_min, m_max, (5, m_max))
-
-# 2. 60 Min % (Default: 37.0+)
-min_60 = float(df['60_min'].min())
-max_60 = float(df['60_min'].max())
-f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
-
-# 3. Price
+# 1. Price
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
-f_cost = st.sidebar.slider("Price", c_min, c_max, (c_min, c_max), 0.1)
+f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1)
 
-# 4. Ownerships (Крок 0.1)
+# 2. Matches Played (Default: 5+)
+m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
+f_matches = st.sidebar.slider("Matches", m_min, m_max, (5, m_max))
+
+# 3. Ownerships (Крок 0.1)
 s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
 f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
 
 o_min, o_max = float(df['top_100k'].min()), float(df['top_100k'].max())
 f_top100k = st.sidebar.slider("Top 100k %", o_min, o_max, (o_min, o_max), 0.1)
 
-# 5. Avg Mins (Крок 1)
+# 4. Average Mins (Крок 1)
 am_min, am_max = float(df['avg_mins'].min()), float(df['avg_mins'].max())
-f_avg_mins = st.sidebar.slider("Avg Mins", am_min, am_max, (am_min, am_max), 1.0)
+f_avg_mins = st.sidebar.slider("Average Mins", am_min, am_max, (am_min, am_max), 1.0)
+
+# 5. 60 Min % (Default: 37.0+)
+min_60 = float(df['60_min'].min())
+max_60 = float(df['60_min'].max())
+f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
+
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
@@ -91,27 +91,27 @@ st.dataframe(
     height=800,
     column_config={
         "full_name": st.column_config.TextColumn("Player", width="medium", pinned=True),
-        "Age": st.column_config.NumberColumn("Ag", width="small", format="%d"),
-        "element_type": st.column_config.TextColumn("Pos", width="small"),
-        "Play Pos": st.column_config.TextColumn("P.Pos", width="small"),
-        "team_short_name": st.column_config.TextColumn("Tm", width="small"),
-        "now_cost": st.column_config.NumberColumn("£", width="small", format="%.1f"),
-        "Foot": st.column_config.TextColumn("Ft", width="small"),
-        "selected_by_percent": st.column_config.NumberColumn("Sel", width="small", format="%.1f"),
-        "top_10k": st.column_config.NumberColumn("10k", width="small", format="%.1f"),
-        "top_100k": st.column_config.NumberColumn("100k", width="small", format="%.1f"),
-        "min_played": st.column_config.NumberColumn("Min", width="small"),
-        "matches_played": st.column_config.NumberColumn("MP", width="small"),
-        "matches_started": st.column_config.NumberColumn("GS", width="small"),
-        "avg_mins": st.column_config.NumberColumn("AvgM", width="small", format="%d"),
-        "60_min": st.column_config.NumberColumn("60%", width="small", format="%.1f"),
-        "goals_scored": st.column_config.NumberColumn("G", width="small"),
-        "assists": st.column_config.NumberColumn("A", width="small"),
-        "av_rating": st.column_config.NumberColumn("Rt", width="small", format="%.2f"),
-        "av_rating_alt": st.column_config.NumberColumn("RtA", width="small", format="%.2f"),
-        "transfers_in_event": st.column_config.NumberColumn("In", width="small"),
-        "transfers_out_event": st.column_config.NumberColumn("Out", width="small"),
+        "Age": st.column_config.NumberColumn("Age", width=3, format="%d"),
+        "element_type": st.column_config.TextColumn("Pos", width=4),
+        "Play Pos": st.column_config.TextColumn("Pl Pos", width=4),
+        "team_short_name": st.column_config.TextColumn("Team", width=5),
+        "now_cost": st.column_config.NumberColumn("Price", width=4, format="%.1f"),
+        "Foot": st.column_config.TextColumn("Foot", width=4),
+        "selected_by_percent": st.column_config.NumberColumn("Selected", width=4, format="%.1f"),
+        "top_10k": st.column_config.NumberColumn("Top 10k", width=4, format="%.1f"),
+        "top_100k": st.column_config.NumberColumn("Top 100k", width=4, format="%.1f"),
+        "min_played": st.column_config.NumberColumn("Mins", width=5),
+        "matches_played": st.column_config.NumberColumn("MP", width=4),
+        "matches_started": st.column_config.NumberColumn("Starts", width=4),
+        "avg_mins": st.column_config.NumberColumn("AvgM", width=5, format="%d"),
+        "60_min": st.column_config.NumberColumn("60% Mins", width=5, format="%.1f"),
+        "goals_scored": st.column_config.NumberColumn("G", width=3),
+        "assists": st.column_config.NumberColumn("A", width=3),
+        "av_rating": st.column_config.NumberColumn("Rt", width=4, format="%.2f"),
+        "av_rating_alt": st.column_config.NumberColumn("RtA", width=4, format="%.2f"),
+        "transfers_in_event": st.column_config.NumberColumn("In", width=5),
+        "transfers_out_event": st.column_config.NumberColumn("Out", width=5),
         "news": st.column_config.TextColumn("News", width="medium"),
-        "news_added": st.column_config.TextColumn("Upd", width="small"),
+        "news_added": st.column_config.TextColumn("Upd", width=7),
     }
 )
