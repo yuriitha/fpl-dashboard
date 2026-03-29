@@ -138,27 +138,65 @@ ownership_range = st.sidebar.slider(
     step=0.5
 )
 
+# ====================== PERFORMANCE FILTERS ======================
 st.sidebar.subheader("Performance Filters")
 
+# Matches Played (за замовчуванням ≥ 7)
 if 'matches_played' in df.columns:
     min_matches = int(df['matches_played'].min())
     max_matches = int(df['matches_played'].max())
-    matches_range = st.sidebar.slider("Matches Played", min_value=min_matches, max_value=max_matches, value=(7, max_matches))
+    matches_range = st.sidebar.slider(
+        "Matches Played", 
+        min_value=min_matches, 
+        max_value=max_matches, 
+        value=(7, max_matches)
+    )
 
+# Avg Minutes
 if 'avg_mins' in df.columns:
     min_avg = float(df['avg_mins'].min())
     max_avg = float(df['avg_mins'].max())
-    avg_mins_range = st.sidebar.slider("Avg Minutes", min_value=min_avg, max_avg=max_avg, value=(min_avg, max_avg), step=1.0)
+    # Захист, якщо min == max
+    if min_avg == max_avg:
+        avg_mins_range = st.sidebar.slider("Avg Minutes", min_value=min_avg, max_value=max_avg + 1, value=(min_avg, max_avg))
+    else:
+        avg_mins_range = st.sidebar.slider(
+            "Avg Minutes", 
+            min_value=min_avg, 
+            max_value=max_avg, 
+            value=(min_avg, max_avg), 
+            step=1.0
+        )
 
+# 60+ Min %
 if '60_min' in df.columns:
     min_60 = float(df['60_min'].min())
     max_60 = float(df['60_min'].max())
-    sixty_range = st.sidebar.slider("60+ Min %", min_value=min_60, max_value=max_60, value=(min_60, max_60), step=0.5)
+    if min_60 == max_60:
+        sixty_range = st.sidebar.slider("60+ Min %", min_value=min_60, max_value=max_60 + 1, value=(min_60, max_60))
+    else:
+        sixty_range = st.sidebar.slider(
+            "60+ Min %", 
+            min_value=min_60, 
+            max_value=max_60, 
+            value=(min_60, max_60), 
+            step=0.5
+        )
 
+# Returns %
 if 'returns' in df.columns:
     min_ret = float(df['returns'].min())
     max_ret = float(df['returns'].max())
-    returns_range = st.sidebar.slider("Returns %", min_value=min_ret, max_value=max_ret, value=(min_ret, max_ret), step=0.1)
+    if min_ret == max_ret:
+        returns_range = st.sidebar.slider("Returns %", min_value=min_ret, max_value=max_ret + 1, value=(min_ret, max_ret))
+    else:
+        returns_range = st.sidebar.slider(
+            "Returns %", 
+            min_value=min_ret, 
+            max_value=max_ret, 
+            value=(min_ret, max_ret), 
+            step=0.1
+        )
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 filtered_df = df.copy()
