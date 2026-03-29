@@ -90,7 +90,7 @@ st.dataframe(
     hide_index=True,
     height=800,
     column_config={
-        "full_name": st.column_config.TextColumn("Player", width="small", pinned=True),
+        "full_name": st.column_config.TextColumn("Player", width="medium", pinned=True),
         "Age": st.column_config.NumberColumn("Age", width=3, format="%d"),
         "element_type": st.column_config.TextColumn("Pos", width=4),
         "Play Pos": st.column_config.TextColumn("Pl Pos", width=4),
