@@ -31,56 +31,44 @@ cost_range = st.sidebar.slider("Ціна (£m)",
                                value=(min_cost, max_cost), 
                                step=0.1)
 
-# === Нові фільтри ===
+# === Додаткові фільтри ===
 st.sidebar.subheader("Додаткові фільтри")
 
-# Фільтр по av_rating_alt
 if 'av_rating_alt' in df.columns:
     min_rating = float(df['av_rating_alt'].min())
     max_rating = float(df['av_rating_alt'].max())
-    rating_range = st.sidebar.slider(
-        "Avg Rating Alt", 
-        min_value=min_rating, 
-        max_value=max_rating, 
-        value=(min_rating, max_rating), 
-        step=0.1
-    )
+    rating_range = st.sidebar.slider("Avg Rating Alt", 
+                                     min_value=min_rating, 
+                                     max_value=max_rating, 
+                                     value=(min_rating, max_rating), 
+                                     step=0.1)
 
-# Фільтр по xGI_norm
 if 'xGI_norm' in df.columns:
     min_xgi = float(df['xGI_norm'].min())
     max_xgi = float(df['xGI_norm'].max())
-    xgi_range = st.sidebar.slider(
-        "xGI_norm", 
-        min_value=min_xgi, 
-        max_value=max_xgi, 
-        value=(min_xgi, max_xgi), 
-        step=0.05
-    )
+    xgi_range = st.sidebar.slider("xGI_norm", 
+                                  min_value=min_xgi, 
+                                  max_value=max_xgi, 
+                                  value=(min_xgi, max_xgi), 
+                                  step=0.05)
 
-# Фільтр по Matches Played (дефолт ≥ 7)
 if 'matches_played' in df.columns:
     min_matches = int(df['matches_played'].min())
     max_matches = int(df['matches_played'].max())
-    matches_range = st.sidebar.slider(
-        "Matches Played", 
-        min_value=min_matches, 
-        max_value=max_matches, 
-        value=(7, max_matches), 
-        step=1
-    )
+    matches_range = st.sidebar.slider("Matches Played", 
+                                      min_value=min_matches, 
+                                      max_value=max_matches, 
+                                      value=(7, max_matches), 
+                                      step=1)
 
-# Фільтр по 60+ Min % (дефолт ≥ 30.0)
 if '60_min' in df.columns:
     min_60 = float(df['60_min'].min())
     max_60 = float(df['60_min'].max())
-    sixty_range = st.sidebar.slider(
-        "60+ Min %", 
-        min_value=min_60, 
-        max_value=max_60, 
-        value=(30.0, max_60), 
-        step=1.0
-    )
+    sixty_range = st.sidebar.slider("60+ Min %", 
+                                    min_value=min_60, 
+                                    max_value=max_60, 
+                                    value=(30.0, max_60), 
+                                    step=1.0)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 plot_df = df.copy()
@@ -92,7 +80,6 @@ if selected_teams:
 if cost_range:
     plot_df = plot_df[(plot_df['now_cost'] >= cost_range[0]) & (plot_df['now_cost'] <= cost_range[1])]
 
-# Нові фільтри
 if 'av_rating_alt' in df.columns:
     plot_df = plot_df[(plot_df['av_rating_alt'] >= rating_range[0]) & 
                       (plot_df['av_rating_alt'] <= rating_range[1])]
@@ -116,19 +103,21 @@ if not plot_df.empty:
         x="av_rating_alt",
         y="xGI_norm",
         color="element_type",
-        size="now_cost",
+        size="avg_mins",
+        size_max=25,
         hover_name="full_name",
         hover_data=["team_short_name", "G_90", "xG_90", "xGI_90", "matches_played", "60_min"],
-        title="xGI_norm vs Avg Rating Alt",
+        title="xGI_norm vs Avg Rating Alt (розмір = Avg Mins)",
         labels={
             "av_rating_alt": "Average Rating Alt (весь сезон)",
             "xGI_norm": "xGI_norm",
-            "element_type": "Позиція"
+            "element_type": "Позиція",
+            "avg_mins": "Avg Minutes"
         },
         template="plotly_white"
     )
 
-    fig.update_traces(marker=dict(opacity=0.8, line=dict(width=0.5)))
+    fig.update_traces(marker=dict(opacity=0.75, line=dict(width=0.5)))
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.warning("Немає даних, що відповідають обраним фільтрам.")
@@ -137,7 +126,7 @@ else:
 st.subheader("Дані гравців")
 st.dataframe(
     plot_df[["full_name", "team_short_name", "element_type", "now_cost", 
-             "av_rating_alt", "xGI_norm", "xGI_90", "G_90", "matches_played", "60_min"]].round(2),
+             "av_rating_alt", "xGI_norm", "xGI_90", "avg_mins", "G_90"]].round(2),
     use_container_width=True,
     hide_index=True
 )
