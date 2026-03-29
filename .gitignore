@@ -1,0 +1,22 @@
+# Streamlit
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Parquet / data files (якщо не хочеш заливати великі файли)
+*.parquet
+*.csv
+*.log
+
+# Streamlit cache
+.streamlit/
