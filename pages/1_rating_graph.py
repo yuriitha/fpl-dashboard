@@ -35,22 +35,29 @@ teams = sorted(df['team_short_name'].unique())
 selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
 
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
-f_cost = st.sidebar.slider("Price", c_min, c_max, (c_min, c_max), 0.1)
+f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1)
 
-# Matches Played (Default: 5+)
 m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
-f_matches = st.sidebar.slider("Min Matches", m_min, m_max, (5, m_max))
+f_matches = st.sidebar.slider("Matches", m_min, m_max, (5, m_max))
 
-# 60 Min % (Default: 37.0+)
-min_60, max_60 = float(df['60_min'].min()), float(df['60_min'].max())
+s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
+f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
+
+o_min, o_max = float(df['top_100k'].min()), float(df['top_100k'].max())
+f_top100k = st.sidebar.slider("Top 100k %", o_min, o_max, (o_min, o_max), 0.1)
+
+am_min, am_max = float(df['avg_mins'].min()), float(df['avg_mins'].max())
+f_avg_mins = st.sidebar.slider("Average Mins", am_min, am_max, (am_min, am_max), 1.0)
+
+min_60 = float(df['60_min'].min())
+max_60 = float(df['60_min'].max())
 f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
 
-# Rating та xGI фільтри
 r_min, r_max = float(df['av_rating_alt'].min()), float(df['av_rating_alt'].max())
-f_rating = st.sidebar.slider("Avg Rating Alt", r_min, r_max, (r_min, r_max), 0.1)
+f_rating = st.sidebar.slider("Rating", r_min, r_max, (r_min, r_max), 0.1)
 
 xgi_min, xgi_max = float(df['xGI_norm'].min()), float(df['xGI_norm'].max())
-f_xgi = st.sidebar.slider("xGI_norm", xgi_min, xgi_max, (xgi_min, xgi_max), 0.05)
+f_xgi = st.sidebar.slider("xGI", xgi_min, xgi_max, (xgi_min, xgi_max), 0.05)
 
 # ========================== ПІДГОТОВКА ДАНИХ ==========================
 mask = (
@@ -100,21 +107,21 @@ if not plot_df.empty:
             "top_100k": ":.1f",
             "avg_mins": ":.0f",
             "matches_played": True,
-            "size_for_plot": False, # приховуємо технічну колонку
+            "size_for_plot": False,
             "combined_rank": False
         },
         text="label_text",
         labels={
-            "av_rating_alt": "Average Rating Alt",
-            "xGI_norm": "Expected Goal Involvement (Norm)",
+            "av_rating_alt": "Average Rating",
+            "xGI_norm": "Expected Goal Involvement",
             "element_type": "Position"
         },
-        template="plotly_dark", # Змінено на темну тему для охайності
+        template="plotly_dark",
         size_max=25
     )
 
     fig.update_traces(
-        textposition='top center',
+        textposition='bottom center',
         marker=dict(
             opacity=0.75,
             line=dict(width=0.8, color='white')
@@ -122,7 +129,7 @@ if not plot_df.empty:
     )
 
     fig.update_layout(
-        height=800, # Графік на весь екран
+        height=800,
         margin=dict(l=0, r=0, t=40, b=0),
         xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
         yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
@@ -139,5 +146,3 @@ if not plot_df.empty:
 
 else:
     st.warning("Немає даних для обраних фільтрів.")
-
-st.caption(f"Останнє оновлення: {pd.Timestamp.now('Europe/Kiev').strftime('%Y-%m-%d %H:%M')}")
