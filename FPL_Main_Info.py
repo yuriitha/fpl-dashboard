@@ -39,7 +39,7 @@ except Exception as e:
     st.stop()
 
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
-st.sidebar.header("FPL Main Info") # Додаємо заголовок у сайдбар
+st.sidebar.header("FPL Main Info") 
 
 positions = sorted(df['element_type'].unique())
 selected_positions = st.sidebar.multiselect("Pos", options=positions, default=positions)
@@ -80,12 +80,13 @@ mask = (
 filtered_df = df[mask].copy()
 
 # ========================== КОЛОНКИ ТА ВІДОБРАЖЕННЯ ==========================
+# Список колонок з доданими transfers_in_24 та transfers_out_24
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
     "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played", 
     "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored", 
     "assists", "av_rating", "av_rating_alt", "transfers_in_event", 
-    "transfers_out_event", "news", "news_added"
+    "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
 ]
 
 st.subheader(f"Players filtered: {len(filtered_df)}")
@@ -104,8 +105,8 @@ st.dataframe(
         "now_cost": st.column_config.NumberColumn("Price", width=45, format="%.1f"),
         "Foot": st.column_config.TextColumn("Foot", width=45),
         "selected_by_percent": st.column_config.NumberColumn("Selected", width=50, format="%.1f"),
-        "top_10k": st.column_config.NumberColumn("Top 10k", width=50, format="%.1f"),
-        "top_100k": st.column_config.NumberColumn("Ttop 100k", width=55, format="%.1f"),
+        "top_10k": st.column_config.NumberColumn("Top 10k", width=55, format="%.1f"),
+        "top_100k": st.column_config.NumberColumn("Top 100k", width=55, format="%.1f"),
         "min_played": st.column_config.NumberColumn("Mins", width=50),
         "matches_played": st.column_config.NumberColumn("MP", width=35),
         "matches_started": st.column_config.NumberColumn("GS", width=35),
@@ -117,7 +118,9 @@ st.dataframe(
         "av_rating_alt": st.column_config.NumberColumn("RtA", width=45, format="%.2f"),
         "transfers_in_event": st.column_config.NumberColumn("In", width=60),
         "transfers_out_event": st.column_config.NumberColumn("Out", width=60),
+        "transfers_in_24": st.column_config.NumberColumn("In 24", width=60),
+        "transfers_out_24": st.column_config.NumberColumn("Out 24", width=60),
         "news": st.column_config.TextColumn("News", width="medium"),
-        "news_added": st.column_config.TextColumn("Updated", width=190),
+        "news_added": st.column_config.TextColumn("Updated", width=175),
     }
 )
