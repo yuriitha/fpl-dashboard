@@ -24,11 +24,8 @@ st.markdown("""
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
 def load_data():
-    # Використовуємо ту саму URL, що й на головній
     url = "http://194.99.22.193:8000/fpl_players"
     df = pd.read_parquet(url)
-    
-    # Сортування за xGI_norm за замовчуванням (атакувальна сторінка все ж таки)
     if 'xGI_norm' in df.columns:
         df = df.sort_values(by="xGI_norm", ascending=False)
     return df
@@ -40,16 +37,18 @@ except Exception as e:
     st.stop()
 
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
-st.sidebar.header("Attacking Filters") 
+st.sidebar.header("Main Filters") 
 
+# Позиції та Команди
 positions = sorted(df['element_type'].unique())
 selected_positions = st.sidebar.multiselect("Pos", options=positions, default=[p for p in positions if p != "GK"])
 
 teams = sorted(df['team_short_name'].unique())
 selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
 
+# Основні ігрові показники
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
-f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1)
+f_cost = st.sidebar.slider("Price", c_min, c_max, (c_min, c_max), 0.1)
 
 m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
 f_matches = st.sidebar.slider("Matches", m_min, m_max, (5, m_max))
@@ -67,21 +66,47 @@ min_60 = float(df['60_min'].min())
 max_60 = float(df['60_min'].max())
 f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
 
+# Додаткові показники (у розгорнутому списку для зручності)
+with st.sidebar.expander("Advanced Stats Filters", expanded=True):
+    # xG, xA, xGI
+    f_xg = st.slider("xG/90", 0.0, float(df['xG_90'].max()), (0.0, float(df['xG_90'].max())), 0.05)
+    f_xa = st.slider("xA/90", 0.0, float(df['xA_90'].max()), (0.0, float(df['xA_90'].max())), 0.05)
+    f_xgi = st.slider("xGI_n/90", 0.0, float(df['xGI_norm'].max()), (0.0, float(df['xGI_norm'].max())), 0.1)
+    
+    # Shots
+    f_sh = st.slider("Sh/90", 0.0, float(df['Sh_90'].max()), (0.0, float(df['Sh_90'].max())), 0.5)
+    f_shot = st.slider("ShoT/90", 0.0, float(df['ShoT_90'].max()), (0.0, float(df['ShoT_90'].max())), 0.2)
+    
+    # Touches & Passes
+    f_touch = st.slider("Touches/90", 0.0, float(df['Touches_90'].max()), (0.0, float(df['Touches_90'].max())), 5.0)
+    f_pass = st.slider("Pass %", 0.0, 100.0, (0.0, 100.0), 1.0)
+    
+    # Creativity & Carries
+    f_kp = st.slider("KP/90", 0.0, float(df['KP_90'].max()), (0.0, float(df['KP_90'].max())), 0.1)
+    f_bc = st.slider("BC/90", 0.0, float(df['BC_90'].max()), (0.0, float(df['BC_90'].max())), 1.0)
+    f_pbc = st.slider("PBC/90", 0.0, float(df['PBC_90'].max()), (0.0, float(df['PBC_90'].max())), 0.5)
+
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
     df['element_type'].isin(selected_positions) &
     df['team_short_name'].isin(selected_teams) &
     (df['matches_played'] >= f_matches[0]) & (df['matches_played'] <= f_matches[1]) &
-    (df['60_min'] >= f_60min[0]) & (df['60_min'] <= f_60min[1]) &
     (df['now_cost'] >= f_cost[0]) & (df['now_cost'] <= f_cost[1]) &
-    (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
-    (df['top_100k'] >= f_top100k[0]) & (df['top_100k'] <= f_top100k[1]) &
-    (df['avg_mins'] >= f_avg_mins[0]) & (df['avg_mins'] <= f_avg_mins[1])
+    # Нові фільтри
+    (df['xG_90'] >= f_xg[0]) & (df['xG_90'] <= f_xg[1]) &
+    (df['xA_90'] >= f_xa[0]) & (df['xA_90'] <= f_xa[1]) &
+    (df['xGI_norm'] >= f_xgi[0]) & (df['xGI_norm'] <= f_xgi[1]) &
+    (df['Sh_90'] >= f_sh[0]) & (df['Sh_90'] <= f_sh[1]) &
+    (df['ShoT_90'] >= f_shot[0]) & (df['ShoT_90'] <= f_shot[1]) &
+    (df['Touches_90'] >= f_touch[0]) & (df['Touches_90'] <= f_touch[1]) &
+    (df['Pass_pct'] >= f_pass[0]) & (df['Pass_pct'] <= f_pass[1]) &
+    (df['KP_90'] >= f_kp[0]) & (df['KP_90'] <= f_kp[1]) &
+    (df['BC_90'] >= f_bc[0]) & (df['BC_90'] <= f_bc[1]) &
+    (df['PBC_90'] >= f_pbc[0]) & (df['PBC_90'] <= f_pbc[1])
 )
 filtered_df = df[mask].copy()
 
 # ========================== КОЛОНКИ ТА ВІДОБРАЖЕННЯ ==========================
-# Список колонок згідно ТЗ
 display_columns = [
     "full_name", "element_type", "Play Pos", "team_short_name", "now_cost", 
     "top_100k", "min_played", "matches_played", "matches_started", 
@@ -91,7 +116,6 @@ display_columns = [
 
 st.subheader(f"Attacking Stats: {len(filtered_df)} players")
 
-# Налаштування конфігурації колонок
 st.dataframe(
     filtered_df[display_columns],
     use_container_width=True,
