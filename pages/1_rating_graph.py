@@ -27,8 +27,12 @@ except Exception as e:
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
 st.sidebar.header("Graph Filters")
 
+# Отримуємо всі унікальні позиції
 positions = sorted(df['element_type'].unique())
-selected_pos = st.sidebar.multiselect("Pos", options=positions, default=positions)
+
+default_positions = [p for p in positions if p not in ['GK']]
+
+selected_pos = st.sidebar.multiselect("Pos", options=positions, default=default_positions)
 
 teams = sorted(df['team_short_name'].unique())
 selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
@@ -108,7 +112,7 @@ if not plot_df.empty:
         labels={
             "av_rating_alt": "Average Rating",
             "xGI_norm": "Expected Goal Involvement",
-            "element_type": ""  # Прибираємо текст в легенді
+            "element_type": "" 
         },
         template="plotly_dark",
         size_max=20
@@ -116,8 +120,9 @@ if not plot_df.empty:
 
     fig.update_traces(
         textposition='bottom center',
-	textfont=dict(
-            size=10
+        textfont=dict(
+            size=10,
+            color="rgba(255,255,255,0.8)"
         ),
         marker=dict(
             opacity=0.75,
@@ -130,7 +135,7 @@ if not plot_df.empty:
         margin=dict(l=0, r=0, t=40, b=0),
         xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
         yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-        legend_title_text='', # Додатково гарантуємо порожній заголовок легенди
+        legend_title_text='', 
         legend=dict(
             yanchor="top",
             y=0.99,
