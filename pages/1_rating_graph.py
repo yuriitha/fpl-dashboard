@@ -4,120 +4,89 @@ import plotly.express as px
 import numpy as np
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="xGI vs Rating", layout="wide")
-
-st.title("📈 xGI_norm vs Avg Rating Alt")
+# Налаштування сторінки
+st.set_page_config(
+    page_title="FPL Rating Graph",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
-    return pd.read_parquet(url)
+    df = pd.read_parquet(url)
+    return df
 
-df = load_data()
+try:
+    df = load_data()
+except Exception as e:
+    st.error(f"Помилка завантаження: {e}")
+    st.stop()
 
-# ========================== ФІЛЬТРИ ==========================
-st.sidebar.header("Фільтри графіка")
+# ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
+st.sidebar.header("Graph Filters")
 
+# Основні фільтри (аналогічно головній сторінці)
 positions = sorted(df['element_type'].unique())
-selected_pos = st.sidebar.multiselect("Позиція", options=positions, default=positions)
+selected_pos = st.sidebar.multiselect("Pos", options=positions, default=positions)
 
 teams = sorted(df['team_short_name'].unique())
-selected_teams = st.sidebar.multiselect("Команда", options=teams, default=teams)
+selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
 
-min_cost = float(df['now_cost'].min())
-max_cost = float(df['now_cost'].max())
-cost_range = st.sidebar.slider("Ціна (£m)", 
-                               min_value=min_cost, 
-                               max_value=max_cost, 
-                               value=(min_cost, max_cost), 
-                               step=0.1)
+c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
+f_cost = st.sidebar.slider("Price", c_min, c_max, (c_min, c_max), 0.1)
 
-st.sidebar.subheader("Додаткові фільтри")
+# Matches Played (Default: 5+)
+m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
+f_matches = st.sidebar.slider("Min Matches", m_min, m_max, (5, m_max))
 
-if 'av_rating_alt' in df.columns:
-    min_rating = float(df['av_rating_alt'].min())
-    max_rating = float(df['av_rating_alt'].max())
-    rating_range = st.sidebar.slider("Avg Rating Alt", 
-                                     min_value=min_rating, 
-                                     max_value=max_rating, 
-                                     value=(min_rating, max_rating), 
-                                     step=0.1)
+# 60 Min % (Default: 37.0+)
+min_60, max_60 = float(df['60_min'].min()), float(df['60_min'].max())
+f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
 
-if 'xGI_norm' in df.columns:
-    min_xgi = float(df['xGI_norm'].min())
-    max_xgi = float(df['xGI_norm'].max())
-    xgi_range = st.sidebar.slider("xGI_norm", 
-                                  min_value=min_xgi, 
-                                  max_value=max_xgi, 
-                                  value=(min_xgi, max_xgi), 
-                                  step=0.05)
+# Rating та xGI фільтри
+r_min, r_max = float(df['av_rating_alt'].min()), float(df['av_rating_alt'].max())
+f_rating = st.sidebar.slider("Avg Rating Alt", r_min, r_max, (r_min, r_max), 0.1)
 
-if 'matches_played' in df.columns:
-    min_matches = int(df['matches_played'].min())
-    max_matches = int(df['matches_played'].max())
-    matches_range = st.sidebar.slider("Matches Played", 
-                                      min_value=min_matches, 
-                                      max_value=max_matches, 
-                                      value=(7, max_matches), 
-                                      step=1)
+xgi_min, xgi_max = float(df['xGI_norm'].min()), float(df['xGI_norm'].max())
+f_xgi = st.sidebar.slider("xGI_norm", xgi_min, xgi_max, (xgi_min, xgi_max), 0.05)
 
-if '60_min' in df.columns:
-    min_60 = float(df['60_min'].min())
-    max_60 = float(df['60_min'].max())
-    sixty_range = st.sidebar.slider("60+ Min %", 
-                                    min_value=min_60, 
-                                    max_value=max_60, 
-                                    value=(30.0, max_60), 
-                                    step=1.0)
+# ========================== ПІДГОТОВКА ДАНИХ ==========================
+mask = (
+    df['element_type'].isin(selected_pos) &
+    df['team_short_name'].isin(selected_teams) &
+    (df['now_cost'] >= f_cost[0]) & (df['now_cost'] <= f_cost[1]) &
+    (df['matches_played'] >= f_matches[0]) & (df['matches_played'] <= f_matches[1]) &
+    (df['60_min'] >= f_60min[0]) & (df['60_min'] <= f_60min[1]) &
+    (df['av_rating_alt'] >= f_rating[0]) & (df['av_rating_alt'] <= f_rating[1]) &
+    (df['xGI_norm'] >= f_xgi[0]) & (df['xGI_norm'] <= f_xgi[1])
+)
+plot_df = df[mask].copy()
 
-# ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
-plot_df = df.copy()
-
-if selected_pos:
-    plot_df = plot_df[plot_df['element_type'].isin(selected_pos)]
-if selected_teams:
-    plot_df = plot_df[plot_df['team_short_name'].isin(selected_teams)]
-if cost_range:
-    plot_df = plot_df[(plot_df['now_cost'] >= cost_range[0]) & (plot_df['now_cost'] <= cost_range[1])]
-
-if 'av_rating_alt' in df.columns:
-    plot_df = plot_df[(plot_df['av_rating_alt'] >= rating_range[0]) & 
-                      (plot_df['av_rating_alt'] <= rating_range[1])]
-
-if 'xGI_norm' in df.columns:
-    plot_df = plot_df[(plot_df['xGI_norm'] >= xgi_range[0]) & 
-                      (plot_df['xGI_norm'] <= xgi_range[1])]
-
-if 'matches_played' in df.columns:
-    plot_df = plot_df[(plot_df['matches_played'] >= matches_range[0]) & 
-                      (plot_df['matches_played'] <= matches_range[1])]
-
-if '60_min' in df.columns:
-    plot_df = plot_df[(plot_df['60_min'] >= sixty_range[0]) & 
-                      (plot_df['60_min'] <= sixty_range[1])]
-
-# ========================== ГРАФІК ==========================
+# ========================== ЛОГІКА РОЗМІРУ (ПРОЦЕНТИЛІ) ==========================
 if not plot_df.empty:
-    plot_df = plot_df.copy()
+    # Розрахунок процентилів (Rank-based)
+    # ПРИМІТКА: Ми використовуємо весь датафрейм (df) для процентилів, 
+    # щоб розмір був абсолютним відносно всієї ліги, а не лише відфільтрованих
+    plot_df['p_top100k'] = plot_df['top_100k'].rank(pct=True)
+    plot_df['p_avgmins'] = plot_df['avg_mins'].rank(pct=True)
     
-    # === КРАЩЕ МАСШТАБУВАННЯ РОЗМІРУ КРУЖЕЧКІВ ===
-    # М’якше притискання малих значень + clip для уникнення нуля
-    plot_df['size_for_plot'] = np.power(plot_df['avg_mins'].clip(lower=0.1), 0.55)
-    
-    # Поріг для відображення підпису web_name
-    min_mins_for_label = 48
+    # Лінійне поєднання процентилів (50/50) + мінімальний розмір для видимості
+    plot_df['combined_rank'] = (plot_df['p_top100k'] + plot_df['p_avgmins']) / 2
+    plot_df['size_for_plot'] = plot_df['combined_rank'] * 20 + 5 
+
+    # Поріг для підписів імен
+    min_mins_for_label = 60
     plot_df['label_text'] = np.where(
-        plot_df['avg_mins'] >= min_mins_for_label,
+        (plot_df['avg_mins'] >= min_mins_for_label) | (plot_df['combined_rank'] > 0.85),
         plot_df['web_name'],
         ""
     )
 
-    # Визначаємо колір тексту залежно від теми Streamlit
-    theme_base = st.get_option("theme.base")  # 'light' або 'dark'
-    text_color = "white" if theme_base == "dark" else "black"
+    # ========================== ВІЗУАЛІЗАЦІЯ ==========================
+    st.subheader(f"xGI vs Rating (Players: {len(plot_df)})")
 
-    # Створюємо графік
     fig = px.scatter(
         plot_df,
         x="av_rating_alt",
@@ -125,55 +94,50 @@ if not plot_df.empty:
         color="element_type",
         size="size_for_plot",
         hover_name="full_name",
-        hover_data=["web_name", "team_short_name", "G_90", "xG_90", "xGI_90", 
-                    "matches_played", "60_min", "avg_mins"],
-        text="label_text",
-        title="xGI_norm vs Avg Rating Alt",
-        labels={
-            "av_rating_alt": "Average Rating",
-            "xGI_norm": "xGI_norm",
-            "element_type": "Pos"
+        hover_data={
+            "web_name": True,
+            "team_short_name": True,
+            "top_100k": ":.1f",
+            "avg_mins": ":.0f",
+            "matches_played": True,
+            "size_for_plot": False, # приховуємо технічну колонку
+            "combined_rank": False
         },
-        template="plotly_white" if theme_base == "light" else "plotly_dark"
+        text="label_text",
+        labels={
+            "av_rating_alt": "Average Rating Alt",
+            "xGI_norm": "Expected Goal Involvement (Norm)",
+            "element_type": "Position"
+        },
+        template="plotly_dark", # Змінено на темну тему для охайності
+        size_max=25
     )
 
-    fig = go.Figure(fig)
-
-    max_size_value = plot_df['size_for_plot'].max() 
-
-    # Налаштування маркерів і тексту
-    max_size = plot_df['size_for_plot'].max()
-
     fig.update_traces(
-        mode='markers+text',
         textposition='top center',
-        textfont=dict(size=10, color=text_color),   # ← динамічний колір
         marker=dict(
-            opacity=0.82,
-            line=dict(width=0.6, color='DarkSlateGrey')
-        ),
-        # Правильне масштабування розміру
-        marker_sizeref = max_size_value / 28,
-        marker_sizemin = 3.5
+            opacity=0.75,
+            line=dict(width=0.8, color='white')
+        )
     )
 
     fig.update_layout(
-        height=720,
-        legend_title="Позиція"
+        height=800, # Графік на весь екран
+        margin=dict(l=0, r=0, t=40, b=0),
+        xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor="rgba(0,0,0,0.5)"
+        )
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
 else:
-    st.warning("Немає даних, що відповідають обраним фільтрам.")
-
-# ========================== ТАБЛИЦЯ ==========================
-st.subheader("Дані гравців")
-st.dataframe(
-    plot_df[["web_name", "full_name", "team_short_name", "element_type", "now_cost", 
-             "av_rating_alt", "xGI_norm", "xGI_90", "avg_mins", "G_90"]].round(2),
-    use_container_width=True,
-    hide_index=True
-)
+    st.warning("Немає даних для обраних фільтрів.")
 
 st.caption(f"Останнє оновлення: {pd.Timestamp.now('Europe/Kiev').strftime('%Y-%m-%d %H:%M')}")
