@@ -80,12 +80,11 @@ mask = (
 filtered_df = df[mask].copy()
 
 # ========================== КОЛОНКИ ТА ВІДОБРАЖЕННЯ ==========================
-# Список колонок з доданими transfers_in_24 та transfers_out_24
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
     "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played", 
     "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored", 
-    "assists", "av_rating", "av_rating_alt", "transfers_in_event", 
+    "assists", "av_rating", "av_rating_alt", "points_per_game", "transfers_in_event", 
     "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
 ]
 
@@ -110,12 +109,13 @@ st.dataframe(
         "min_played": st.column_config.NumberColumn("Mins", width=45),
         "matches_played": st.column_config.NumberColumn("MP", width=35),
         "matches_started": st.column_config.NumberColumn("GS", width=35),
-        "avg_mins": st.column_config.NumberColumn("AvgM", width=40, format="%d"),
+        "avg_mins": st.column_config.NumberColumn("AvgMins", width=40, format="%d"),
         "60_min": st.column_config.NumberColumn("60% Mins", width=45, format="%.1f"),
         "goals_scored": st.column_config.NumberColumn("G", width=30),
         "assists": st.column_config.NumberColumn("A", width=30),
-        "av_rating": st.column_config.NumberColumn("Rt", width=40, format="%.2f"),
-        "av_rating_alt": st.column_config.NumberColumn("RtA", width=40, format="%.2f"),
+        "av_rating": st.column_config.NumberColumn("Rat", width=40, format="%.2f"),
+        "av_rating_alt": st.column_config.NumberColumn("RatA", width=40, format="%.2f"),
+        "points_per_game": st.column_config.NumberColumn("PPM", width=40, format="%.1f"),
         "transfers_in_event": st.column_config.NumberColumn("In", width=60),
         "transfers_out_event": st.column_config.NumberColumn("Out", width=60),
         "transfers_in_24": st.column_config.NumberColumn("In 24", width=50),
