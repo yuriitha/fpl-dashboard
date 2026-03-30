@@ -111,7 +111,7 @@ if not plot_df.empty:
             "element_type": ""  # Прибираємо текст в легенді
         },
         template="plotly_dark",
-        size_max=25
+        size_max=20
     )
 
     fig.update_traces(
