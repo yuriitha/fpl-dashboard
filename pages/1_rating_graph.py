@@ -117,7 +117,7 @@ if not plot_df.empty:
     fig.update_traces(
         textposition='bottom center',
 	textfont=dict(
-            size=8
+            size=10
         ),
         marker=dict(
             opacity=0.75,
