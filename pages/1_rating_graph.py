@@ -27,7 +27,6 @@ except Exception as e:
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
 st.sidebar.header("Graph Filters")
 
-# Основні фільтри (аналогічно головній сторінці)
 positions = sorted(df['element_type'].unique())
 selected_pos = st.sidebar.multiselect("Pos", options=positions, default=positions)
 
@@ -73,17 +72,12 @@ plot_df = df[mask].copy()
 
 # ========================== ЛОГІКА РОЗМІРУ (ПРОЦЕНТИЛІ) ==========================
 if not plot_df.empty:
-    # Розрахунок процентилів (Rank-based)
-    # ПРИМІТКА: Ми використовуємо весь датафрейм (df) для процентилів, 
-    # щоб розмір був абсолютним відносно всієї ліги, а не лише відфільтрованих
     plot_df['p_top100k'] = plot_df['top_100k'].rank(pct=True)
     plot_df['p_avgmins'] = plot_df['avg_mins'].rank(pct=True)
     
-    # Лінійне поєднання процентилів (50/50) + мінімальний розмір для видимості
     plot_df['combined_rank'] = (plot_df['p_top100k'] + plot_df['p_avgmins']) / 2
     plot_df['size_for_plot'] = plot_df['combined_rank'] * 20 + 5 
 
-    # Поріг для підписів імен
     min_mins_for_label = 60
     plot_df['label_text'] = np.where(
         (plot_df['avg_mins'] >= min_mins_for_label) | (plot_df['combined_rank'] > 0.85),
@@ -114,7 +108,7 @@ if not plot_df.empty:
         labels={
             "av_rating_alt": "Average Rating",
             "xGI_norm": "Expected Goal Involvement",
-            "element_type": "Position"
+            "element_type": ""  # Прибираємо текст в легенді
         },
         template="plotly_dark",
         size_max=25
@@ -133,6 +127,7 @@ if not plot_df.empty:
         margin=dict(l=0, r=0, t=40, b=0),
         xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
         yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
+        legend_title_text='', # Додатково гарантуємо порожній заголовок легенди
         legend=dict(
             yanchor="top",
             y=0.99,
