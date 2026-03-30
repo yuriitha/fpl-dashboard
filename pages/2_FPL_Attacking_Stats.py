@@ -65,7 +65,7 @@ f_avg_mins = st.sidebar.slider("Average Mins", am_min, am_max, (am_min, am_max),
 
 min_60 = float(df['60_min'].min())
 max_60 = float(df['60_min'].max())
-f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (0.0, max_60), 0.5)
+f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
