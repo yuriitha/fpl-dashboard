@@ -110,11 +110,9 @@ existing_cols = [c for c in display_columns if c in filtered_df.columns]
 
 # Створення стилізованого DataFrame
 styled_df = filtered_df[existing_cols].style \
-    .background_gradient(cmap='PuBuGn', subset=[c for c in ['selected_by_percent'] if c in existing_cols]) \
-    .background_gradient(cmap='viridis', subset=[c for c in ['top_100k', 'avg_mins', 'av_rating_alt'] if c in existing_cols]) \
-    .background_gradient(cmap='YlGn', subset=[c for c in ['G_90', 'xG_90', 'xGoT_90'] if c in existing_cols]) \
-    .background_gradient(cmap='BuGn', subset=[c for c in ['A_90', 'xA_90'] if c in existing_cols]) \
-    .background_gradient(cmap='Greens', subset=[c for c in ['xGI_norm'] if c in existing_cols]) \
+    .background_gradient(cmap='YlGn', subset=[c for c in ['top_100k'] if c in existing_cols]) \
+    .background_gradient(cmap='RdYlGn', subset=[c for c in ['avg_mins', 'av_rating_alt'] if c in existing_cols]) \
+    .background_gradient(cmap='YlGn', subset=[c for c in ['G_90', 'xG_90', 'xGoT_90','A_90', 'xA_90', 'xGI_norm'] if c in existing_cols]) \
     .background_gradient(cmap='PuBu', subset=[c for c in ['Sh_90', 'ShoT_90'] if c in existing_cols]) \
     .background_gradient(cmap='YlOrBr', subset=[c for c in ['Touches_90'] if c in existing_cols]) \
     .background_gradient(cmap='GnBu', subset=[c for c in ['Pass_pct'] if c in existing_cols]) \
@@ -136,7 +134,7 @@ st.dataframe(
         "team_short_name": st.column_config.TextColumn("Team", width=45),
         "now_cost": st.column_config.NumberColumn("Price", format="%.1f", width=45),
         "selected_by_percent": st.column_config.NumberColumn("Selected", format="%.1f%%", width=55),
-        "top_100k": st.column_config.NumberColumn("Top 100K", format="%.1f", width=55),
+        "top_100k": st.column_config.NumberColumn("Top 100K", format="%.1f%%", width=55),
         "min_played": st.column_config.NumberColumn("Mins", width=45),
         "matches_played": st.column_config.NumberColumn("MP", width=35),
         "matches_started": st.column_config.NumberColumn("GS", width=35),
