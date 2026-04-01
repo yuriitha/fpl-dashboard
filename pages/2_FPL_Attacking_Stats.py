@@ -39,14 +39,12 @@ except Exception as e:
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
 st.sidebar.header("Main Filters") 
 
-# Позиції та Команди
 positions = sorted(df['element_type'].unique())
 selected_positions = st.sidebar.multiselect("Pos", options=positions, default=[p for p in positions if p != "GK"])
 
 teams = sorted(df['team_short_name'].unique())
 selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
 
-# Основні ігрові показники
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
 f_cost = st.sidebar.slider("Price", c_min, c_max, (c_min, c_max), 0.1)
 
@@ -66,18 +64,14 @@ min_60 = float(df['60_min'].min())
 max_60 = float(df['60_min'].max())
 f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
 
-# Додаткові показники
 with st.sidebar.expander("Advanced Stats Filters", expanded=True):
     f_xg = st.slider("xG/90", 0.0, float(df['xG_90'].max()), (0.0, float(df['xG_90'].max())), 0.05)
     f_xa = st.slider("xA/90", 0.0, float(df['xA_90'].max()), (0.0, float(df['xA_90'].max())), 0.05)
     f_xgi = st.slider("xGI_n/90", 0.0, float(df['xGI_norm'].max()), (0.0, float(df['xGI_norm'].max())), 0.1)
-    
     f_sh = st.slider("Sh/90", 0.0, float(df['Sh_90'].max()), (0.0, float(df['Sh_90'].max())), 0.5)
     f_shot = st.slider("ShoT/90", 0.0, float(df['ShoT_90'].max()), (0.0, float(df['ShoT_90'].max())), 0.2)
-    
     f_touch = st.slider("Touches/90", 0.0, float(df['Touches_90'].max()), (0.0, float(df['Touches_90'].max())), 5.0)
     f_pass = st.slider("Pass %", 0.0, 100.0, (0.0, 100.0), 1.0)
-    
     f_kp = st.slider("KP/90", 0.0, float(df['KP_90'].max()), (0.0, float(df['KP_90'].max())), 0.1)
     f_bc = st.slider("BC/90", 0.0, float(df['BC_90'].max()), (0.0, float(df['BC_90'].max())), 1.0)
     f_pbc = st.slider("PBC/90", 0.0, float(df['PBC_90'].max()), (0.0, float(df['PBC_90'].max())), 0.5)
@@ -103,19 +97,32 @@ mask = (
 )
 filtered_df = df[mask].copy()
 
-# ========================== КОЛОНКИ ТА ВІДОБРАЖЕННЯ ==========================
+# ========================== СТИЛІЗАЦІЯ (HEATMAPS) ==========================
+# Список колонок згідно ТЗ
 display_columns = [
     "full_name", "element_type", "Play Pos", "team_short_name", "now_cost", 
     "top_100k", "min_played", "matches_played", "matches_started", 
-    "avg_mins", "60_min", # Додано сюди після GS
-    "G_90", "xG_90", "A_90", "xA_90", "xGI_norm", "Sh_90", "ShoT_90", 
-    "Touches_90", "Pass_pct", "KP_90", "BC_90", "PBC_90"
+    "avg_mins", "60_min", "G_90", "xG_90", "A_90", "xA_90", "xGI_norm", 
+    "Sh_90", "ShoT_90", "Touches_90", "Pass_pct", "KP_90", "BC_90", "PBC_90"
 ]
 
+# Створення стилізованого DataFrame
+styled_df = filtered_df[display_columns].style \
+    .background_gradient(cmap='YlGn', subset=['G_90', 'xG_90']) \
+    .background_gradient(cmap='BuGn', subset=['A_90', 'xA_90']) \
+    .background_gradient(cmap='Greens', subset=['xGI_norm']) \
+    .background_gradient(cmap='PuBu', subset=['Sh_90', 'ShoT_90']) \
+    .background_gradient(cmap='YlOrBr', subset=['Touches_90']) \
+    .background_gradient(cmap='GnBu', subset=['Pass_pct']) \
+    .background_gradient(cmap='Purples', subset=['KP_90']) \
+    .background_gradient(cmap='OrRd', subset=['BC_90', 'PBC_90']) \
+    .format(precision=2) # Глобальна точність для і числових значень у стилі
+
+# ========================== ВІДОБРАЖЕННЯ ==========================
 st.subheader(f"Attacking Stats: {len(filtered_df)} players")
 
 st.dataframe(
-    filtered_df[display_columns],
+    styled_df,
     use_container_width=True,
     hide_index=True,
     height=800,
@@ -129,19 +136,19 @@ st.dataframe(
         "min_played": st.column_config.NumberColumn("Mins", width=50),
         "matches_played": st.column_config.NumberColumn("MP", width=35),
         "matches_started": st.column_config.NumberColumn("GS", width=35),
-        "avg_mins": st.column_config.NumberColumn("AvgMins", width=50, format="%d"),
+        "avg_mins": st.column_config.NumberColumn("AvgMins", width=50),
         "60_min": st.column_config.NumberColumn("60% Mins", width=55, format="%.1f"),
-        "G_90": st.column_config.NumberColumn("G/90", format="%.2f", width=45),
-        "xG_90": st.column_config.NumberColumn("xG/90", format="%.2f", width=45),
-        "A_90": st.column_config.NumberColumn("A/90", format="%.2f", width=45),
-        "xA_90": st.column_config.NumberColumn("xA/90", format="%.2f", width=45),
-        "xGI_norm": st.column_config.NumberColumn("xGI_n/90", format="%.2f", width=55),
-        "Sh_90": st.column_config.NumberColumn("Sh/90", format="%.2f", width=45),
-        "ShoT_90": st.column_config.NumberColumn("ShoT/90", format="%.2f", width=45),
-        "Touches_90": st.column_config.NumberColumn("Touches/90", format="%.1f", width=55),
-        "Pass_pct": st.column_config.NumberColumn("Pass%", format="%.1f", width=45),
-        "KP_90": st.column_config.NumberColumn("KP/90", format="%.2f", width=45),
-        "BC_90": st.column_config.NumberColumn("BC/90", format="%.1f", width=45),
-        "PBC_90": st.column_config.NumberColumn("PBC/90", format="%.1f", width=45),
+        "G_90": st.column_config.NumberColumn("G/90", width=45),
+        "xG_90": st.column_config.NumberColumn("xG/90", width=45),
+        "A_90": st.column_config.NumberColumn("A/90", width=45),
+        "xA_90": st.column_config.NumberColumn("xA/90", width=45),
+        "xGI_norm": st.column_config.NumberColumn("xGI_n/90", width=55),
+        "Sh_90": st.column_config.NumberColumn("Sh/90", width=45),
+        "ShoT_90": st.column_config.NumberColumn("ShoT/90", width=45),
+        "Touches_90": st.column_config.NumberColumn("Touches/90", width=55),
+        "Pass_pct": st.column_config.NumberColumn("Pass%", width=45),
+        "KP_90": st.column_config.NumberColumn("KP/90", width=45),
+        "BC_90": st.column_config.NumberColumn("BC/90", width=45),
+        "PBC_90": st.column_config.NumberColumn("PBC/90", width=45),
     }
 )
