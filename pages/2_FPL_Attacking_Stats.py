@@ -98,25 +98,23 @@ mask = (
 filtered_df = df[mask].copy()
 
 # ========================== СТИЛІЗАЦІЯ (HEATMAPS) ==========================
-# Список колонок згідно ТЗ
 display_columns = [
-    "full_name", "element_type", "Play Pos", "team_short_name", "now_cost", 
+    "full_name", "element_type", "Play Pos", "team_short_name", "now_cost", "selected_by_percent",
     "top_100k", "min_played", "matches_played", "matches_started", 
-    "avg_mins", "60_min", "G_90", "xG_90", "A_90", "xA_90", "xGI_norm", 
+    "avg_mins", "60_min", "av_rating_alt", "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm", 
     "Sh_90", "ShoT_90", "Touches_90", "Pass_pct", "KP_90", "BC_90", "PBC_90"
 ]
 
-# Створення стилізованого DataFrame
 styled_df = filtered_df[display_columns].style \
-    .background_gradient(cmap='YlGn', subset=['G_90', 'xG_90']) \
+    .background_gradient(cmap='Viridis', subset=['top_100k', 'avg_mins', 'av_rating_alt']) \
+    .background_gradient(cmap='GnBu', subset=['G_90', 'xG_90', 'Pass_pct']) \
     .background_gradient(cmap='BuGn', subset=['A_90', 'xA_90']) \
     .background_gradient(cmap='Greens', subset=['xGI_norm']) \
     .background_gradient(cmap='PuBu', subset=['Sh_90', 'ShoT_90']) \
     .background_gradient(cmap='YlOrBr', subset=['Touches_90']) \
-    .background_gradient(cmap='GnBu', subset=['Pass_pct']) \
     .background_gradient(cmap='Purples', subset=['KP_90']) \
     .background_gradient(cmap='OrRd', subset=['BC_90', 'PBC_90']) \
-    .format(precision=2) # Глобальна точність для і числових значень у стилі
+    .format(precision=2)
 
 # ========================== ВІДОБРАЖЕННЯ ==========================
 st.subheader(f"Attacking Stats: {len(filtered_df)} players")
@@ -132,14 +130,17 @@ st.dataframe(
         "Play Pos": st.column_config.TextColumn("Pl Pos", width=45),
         "team_short_name": st.column_config.TextColumn("Team", width=45),
         "now_cost": st.column_config.NumberColumn("Price", format="%.1f", width=45),
+        "selected_by_percent": st.column_config.NumberColumn("Selected", format="%.1f", width=55),
         "top_100k": st.column_config.NumberColumn("Top 100K", format="%.1f", width=55),
         "min_played": st.column_config.NumberColumn("Mins", width=50),
         "matches_played": st.column_config.NumberColumn("MP", width=35),
         "matches_started": st.column_config.NumberColumn("GS", width=35),
         "avg_mins": st.column_config.NumberColumn("AvgMins", width=50),
         "60_min": st.column_config.NumberColumn("60% Mins", width=55, format="%.1f"),
+        "av_rating_alt": st.column_config.NumberColumn("RatA", format="%.2f", width=45),
         "G_90": st.column_config.NumberColumn("G/90", width=45),
         "xG_90": st.column_config.NumberColumn("xG/90", width=45),
+        "xGoT_90": st.column_config.NumberColumn("xGoT	/90", width=45),
         "A_90": st.column_config.NumberColumn("A/90", width=45),
         "xA_90": st.column_config.NumberColumn("xA/90", width=45),
         "xGI_norm": st.column_config.NumberColumn("xGI_n/90", width=55),
