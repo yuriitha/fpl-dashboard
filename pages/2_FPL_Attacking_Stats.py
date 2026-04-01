@@ -96,20 +96,21 @@ mask = (
 filtered_df = df[mask].copy()
 
 # ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
-# Порядок стовпчиків як ви просили (AvgMins та 60% після GS)
+# Оновлений порядок стовпчиків: Selected тепер між now_cost та top_100k
 display_columns = [
     "full_name", "element_type", "Play Pos", "team_short_name", "now_cost", 
-    "top_100k", "min_played", "matches_played", "matches_started", 
+    "selected_by_percent", "top_100k", "min_played", "matches_played", "matches_started", 
     "avg_mins", "60_min", "av_rating_alt", 
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm", 
     "Sh_90", "ShoT_90", "Touches_90", "Pass_pct", "KP_90", "BC_90", "PBC_90"
 ]
 
-# Фільтруємо список на випадок, якщо якоїсь колонки немає у файлі
+# Перевірка наявності колонок
 existing_cols = [c for c in display_columns if c in filtered_df.columns]
 
-# Створення стилізованого DataFrame з градієнтами
+# Створення стилізованого DataFrame
 styled_df = filtered_df[existing_cols].style \
+    .background_gradient(cmap='PuBuGn', subset=[c for c in ['selected_by_percent'] if c in existing_cols]) \
     .background_gradient(cmap='viridis', subset=[c for c in ['top_100k', 'avg_mins', 'av_rating_alt'] if c in existing_cols]) \
     .background_gradient(cmap='YlGn', subset=[c for c in ['G_90', 'xG_90', 'xGoT_90'] if c in existing_cols]) \
     .background_gradient(cmap='BuGn', subset=[c for c in ['A_90', 'xA_90'] if c in existing_cols]) \
@@ -134,12 +135,26 @@ st.dataframe(
         "Play Pos": st.column_config.TextColumn("Pl Pos", width=45),
         "team_short_name": st.column_config.TextColumn("Team", width=45),
         "now_cost": st.column_config.NumberColumn("Price", format="%.1f", width=45),
+        "selected_by_percent": st.column_config.NumberColumn("Selected", format="%.1f%%", width=55),
         "top_100k": st.column_config.NumberColumn("Top 100K", format="%.1f", width=55),
-        "min_played": st.column_config.NumberColumn("Mins", width=50),
+        "min_played": st.column_config.NumberColumn("Mins", width=45),
         "matches_played": st.column_config.NumberColumn("MP", width=35),
         "matches_started": st.column_config.NumberColumn("GS", width=35),
-        "avg_mins": st.column_config.NumberColumn("AvgMins", width=50),
-        "60_min": st.column_config.NumberColumn("60% Mins", width=55, format="%.1f"),
+        "avg_mins": st.column_config.NumberColumn("AvgMins", width=40),
+        "60_min": st.column_config.NumberColumn("60% Mins", width=50, format="%.1f"),
         "av_rating_alt": st.column_config.NumberColumn("RatA", format="%.2f", width=45),
+	"G_90": st.column_config.NumberColumn("G/90", width=40),
+        "xG_90": st.column_config.NumberColumn("xG/90", width=40),
+        "xGoT_90": st.column_config.NumberColumn("xGoT/90", width=40),
+        "A_90": st.column_config.NumberColumn("A/90", width=40),
+        "xA_90": st.column_config.NumberColumn("xA/90", width=40),
+        "xGI_norm": st.column_config.NumberColumn("xGI_n/90", width=50),
+        "Sh_90": st.column_config.NumberColumn("Sh/90", width=40),
+        "ShoT_90": st.column_config.NumberColumn("ShoT/90", width=40),
+        "Touches_90": st.column_config.NumberColumn("Touches/90", width=50),
+        "Pass_pct": st.column_config.NumberColumn("Pass%", width=45),
+        "KP_90": st.column_config.NumberColumn("KP/90", width=40),
+        "BC_90": st.column_config.NumberColumn("BC/90", width=40),
+        "PBC_90": st.column_config.NumberColumn("PBC/90", width=40),
     }
 )
