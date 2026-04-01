@@ -112,11 +112,8 @@ existing_cols = [c for c in display_columns if c in filtered_df.columns]
 styled_df = filtered_df[existing_cols].style \
     .background_gradient(cmap='YlGn', subset=[c for c in ['top_100k'] if c in existing_cols]) \
     .background_gradient(cmap='RdYlGn', subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
-    .background_gradient(cmap='YlGn', subset=[c for c in ['G_90', 'xG_90', 'xGoT_90','A_90', 'xA_90', 'xGI_norm', 'KP_90'] if c in existing_cols]) \
-    .background_gradient(cmap='PuBu', subset=[c for c in ['Sh_90', 'ShoT_90'] if c in existing_cols]) \
-    .background_gradient(cmap='YlOrBr', subset=[c for c in ['Touches_90'] if c in existing_cols]) \
-    .background_gradient(cmap='GnBu', subset=[c for c in ['Pass_pct'] if c in existing_cols]) \
-    .background_gradient(cmap='OrRd', subset=[c for c in ['BC_90', 'PBC_90'] if c in existing_cols]) \
+    .background_gradient(cmap='YlGn', subset=[c for c in ['G_90', 'xG_90', 'xGoT_90','A_90', 'xA_90', 'xGI_norm', 'Sh_90', 'ShoT_90', 'KP_90'] if c in existing_cols]) \
+    .background_gradient(cmap='GnBu', subset=[c for c in ['Touches_90', 'Pass_pct', 'BC_90', 'PBC_90'] if c in existing_cols]) \
     .format(precision=2)
 
 st.subheader(f"Attacking Stats: {len(filtered_df)} players")
