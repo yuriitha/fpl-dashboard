@@ -8,11 +8,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для відцентрування
+# CSS для відцентрування та стилізації
 st.markdown("""
     <style>
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
+        /* Зменшення відступів між фільтрами у сайдбарі */
+        [data-testid="stSidebarUserContent"] { padding-top: 1rem; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -35,58 +37,91 @@ except Exception as e:
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
 st.sidebar.header("FPL Main Info") 
 
-# 1. Team
-teams = sorted(df['team_short_name'].unique())
-selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
+# --- 1. TEAM (Сітка 4x4 через Pills) ---
+st.sidebar.markdown("**Team**")
+all_teams = sorted(df['team_short_name'].unique())
+selected_teams = []
 
-# 2. Position (Колишній Pos, порядок: GK, DEF, MID, FW)
+# Розбиваємо список команд на групи по 4
+for i in range(0, len(all_teams), 4):
+    batch = all_teams[i:i+4]
+    # Створюємо Pills для кожної четвірки. 
+    # label="" приховує назву, щоб вони виглядали як один блок
+    res = st.sidebar.pills(
+        label=f"team_group_{i}", 
+        options=batch, 
+        default=batch, 
+        selection_mode="multi",
+        label_visibility="collapsed"
+    )
+    if res:
+        selected_teams.extend(res)
+
+st.sidebar.markdown("---")
+
+# --- 2. FPL POSITION (GK, DEF, MID, FW) ---
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
-# Сортуємо згідно з вашим порядком + додаємо інші, якщо раптом з'являться
 sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
 
 selected_positions = st.sidebar.pills(
-    "Position", 
+    "FPL Position", 
     options=sorted_positions, 
     default=sorted_positions, 
     selection_mode="multi"
 )
 
-# 3. Playing Position (У вигляді pills, ваша послідовність)
-pl_pos_order = ['GK', 'CB', 'RB', 'LB', 'DM', 'CM', 'RM', 'LM', 'AM', 'RW', 'LW', 'CF']
+st.sidebar.markdown("---")
+
+# --- 3. PLAYING POSITION (Розбивка по лініях) ---
+st.sidebar.markdown("**Playing Position**")
+pl_lines = [
+    ['GK'],
+    ['CB', 'RB', 'LB'],
+    ['DM', 'CM', 'RM', 'LM'],
+    ['RW', 'AM', 'LW'],
+    ['CF']
+]
+
+# Збираємо всі перелічені позиції, щоб знайти "інші"
+defined_pl_pos = [item for sublist in pl_lines for item in sublist]
 actual_pl_pos = df['Play Pos'].dropna().unique().tolist()
-sorted_pl_positions = [p for p in pl_pos_order if p in actual_pl_pos] + \
-                     sorted([p for p in actual_pl_pos if p not in pl_pos_order])
+others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
 
-selected_pl_pos = st.sidebar.pills(
-    "Playing Position", 
-    options=sorted_pl_positions, 
-    default=sorted_pl_positions, 
-    selection_mode="multi"
-)
+if others:
+    pl_lines.append(others)
 
-# 4. FPL Price
+selected_pl_pos = []
+for idx, line in enumerate(pl_lines):
+    # Відображаємо тільки якщо ці позиції є в даних
+    available_in_line = [p for p in line if p in actual_pl_pos]
+    if available_in_line:
+        line_res = st.sidebar.pills(
+            label=f"pl_line_{idx}",
+            options=available_in_line,
+            default=available_in_line,
+            selection_mode="multi",
+            label_visibility="collapsed"
+        )
+        if line_res:
+            selected_pl_pos.extend(line_res)
+
+st.sidebar.markdown("---")
+
+# --- РЕШТА ФІЛЬТРІВ (Слайдери) ---
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
 f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1)
 
-# 5. Matches
 m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
 f_matches = st.sidebar.slider("Matches", m_min, m_max, (5, m_max))
 
-# 6. Rating (Фільтр > 0)
 rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
-if not rating_series.empty:
-    r_min, r_max = float(rating_series.min()), float(rating_series.max())
-else:
-    r_min, r_max = 0.0, 10.0
-
+r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not rating_series.empty else (0.0, 10.0)
 f_rating = st.sidebar.slider("Rating", r_min, r_max, (r_min, r_max), 0.05, format="%.2f")
 
-# 7. Selected %
 s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
 f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
 
-# Решта фільтрів
 o_min, o_max = float(df['top_100k'].min()), float(df['top_100k'].max())
 f_top100k = st.sidebar.slider("Top 100k %", o_min, o_max, (o_min, o_max), 0.1)
 
@@ -97,10 +132,9 @@ min_60, max_60 = float(df['60_min'].min()), float(df['60_min'].max())
 f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
-# Додаємо перевірку: якщо в pills нічого не обрано, показуємо порожній список (або можна змінити логіку на "показати все")
 mask = (
     df['element_type'].isin(selected_positions if selected_positions else []) &
-    df['team_short_name'].isin(selected_teams) &
+    df['team_short_name'].isin(selected_teams if selected_teams else []) &
     df['Play Pos'].isin(selected_pl_pos if selected_pl_pos else []) &
     (df['av_rating_alt'] >= f_rating[0]) & (df['av_rating_alt'] <= f_rating[1]) &
     (df['matches_played'] >= f_matches[0]) & (df['matches_played'] <= f_matches[1]) &
@@ -112,7 +146,7 @@ mask = (
 )
 filtered_df = df[mask].copy()
 
-# ========================== КОЛОНКИ ТА ВІДОБРАЖЕННЯ ==========================
+# ========================== ВІДОБРАЖЕННЯ ТАБЛИЦІ ==========================
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
     "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played", 
