@@ -152,7 +152,7 @@ st.dataframe(
         "Team": st.column_config.TextColumn("Team", width=45),
         "Team Name": st.column_config.TextColumn("Team Name", width=100),
         "Price": st.column_config.NumberColumn("Price", width=40, format="%.1f"),
-        "TM Value": st.column_config.TextColumn("TM Value", width=45, format="%.1f"),
+        "TM Value": st.column_config.NumberColumn("TM Value", width=50, format="%.1f"),
         "Selected": st.column_config.NumberColumn("Sel %", width=45, format="%.1f"),
         "Top 1K": st.column_config.NumberColumn("Top 1K", width=45, format="%.1f"),
         "Top 5K": st.column_config.NumberColumn("Top 5K", width=45, format="%.1f"),
