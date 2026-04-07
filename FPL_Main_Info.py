@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 
 # Налаштування сторінки
 st.set_page_config(
@@ -9,15 +8,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для відцентрування заголовків та даних у таблиці
+# CSS для відцентрування
 st.markdown("""
     <style>
-        [data-testid="stTable"] th, [data-testid="stDataFrame"] th {
-            text-align: center !important;
-        }
-        [data-testid="stDataFrame"] td {
-            text-align: center !important;
-        }
+        [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
+        [data-testid="stDataFrame"] td { text-align: center !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -27,7 +22,6 @@ def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
     df = pd.read_parquet(url)
     if 'av_rating_alt' in df.columns:
-        # Примусово перетворюємо на числа, щоб уникнути помилок сортування
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce')
         df = df.sort_values(by="av_rating_alt", ascending=False)
     return df
@@ -41,24 +35,35 @@ except Exception as e:
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
 st.sidebar.header("FPL Main Info") 
 
-# 1. Pos (element_type)
-positions = sorted(df['element_type'].unique())
-selected_positions = st.sidebar.multiselect("Pos", options=positions, default=positions)
-
-# 2. Team
+# 1. Team
 teams = sorted(df['team_short_name'].unique())
 selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
 
-# 3. Playing Position (З КОРЕКТНОЮ ПОСЛІДОВНІСТЮ)
-# Визначаємо бажаний порядок
-desired_order = ['GK', 'CB', 'RB', 'LB', 'DM', 'CM', 'RM', 'LM', 'AM', 'RW', 'LW', 'CF']
-# Отримуємо всі унікальні значення з колонки
-actual_positions = df['Play Pos'].dropna().unique().tolist()
-# Сортуємо: спочатку ті, що в списку (в заданому порядку), потім всі інші
-sorted_pl_positions = [p for p in desired_order if p in actual_positions] + \
-                     sorted([p for p in actual_positions if p not in desired_order])
+# 2. Position (Колишній Pos, порядок: GK, DEF, MID, FW)
+pos_order = ['GK', 'DEF', 'MID', 'FW']
+actual_pos = df['element_type'].unique().tolist()
+# Сортуємо згідно з вашим порядком + додаємо інші, якщо раптом з'являться
+sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
 
-selected_pl_pos = st.sidebar.multiselect("Playing Position", options=sorted_pl_positions, default=sorted_pl_positions)
+selected_positions = st.sidebar.pills(
+    "Position", 
+    options=sorted_positions, 
+    default=sorted_positions, 
+    selection_mode="multi"
+)
+
+# 3. Playing Position (У вигляді pills, ваша послідовність)
+pl_pos_order = ['GK', 'CB', 'RB', 'LB', 'DM', 'CM', 'RM', 'LM', 'AM', 'RW', 'LW', 'CF']
+actual_pl_pos = df['Play Pos'].dropna().unique().tolist()
+sorted_pl_positions = [p for p in pl_pos_order if p in actual_pl_pos] + \
+                     sorted([p for p in actual_pl_pos if p not in pl_pos_order])
+
+selected_pl_pos = st.sidebar.pills(
+    "Playing Position", 
+    options=sorted_pl_positions, 
+    default=sorted_pl_positions, 
+    selection_mode="multi"
+)
 
 # 4. FPL Price
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
@@ -68,47 +73,35 @@ f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1)
 m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
 f_matches = st.sidebar.slider("Matches", m_min, m_max, (5, m_max))
 
-# 6. Rating (ФІЛЬТРУЄМО НУЛІ ДЛЯ ШКАЛИ)
-# Беремо значення суворо більше 0 для визначення меж слайдера
+# 6. Rating (Фільтр > 0)
 rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
-
 if not rating_series.empty:
-    r_min = float(rating_series.min())
-    r_max = float(rating_series.max())
+    r_min, r_max = float(rating_series.min()), float(rating_series.max())
 else:
     r_min, r_max = 0.0, 10.0
 
-f_rating = st.sidebar.slider(
-    "Rating", 
-    min_value=r_min, 
-    max_value=r_max, 
-    value=(r_min, r_max), 
-    step=0.05,
-    format="%.2f"
-)
+f_rating = st.sidebar.slider("Rating", r_min, r_max, (r_min, r_max), 0.05, format="%.2f")
 
 # 7. Selected %
 s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
 f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
 
-# 8. Top 100k %
+# Решта фільтрів
 o_min, o_max = float(df['top_100k'].min()), float(df['top_100k'].max())
 f_top100k = st.sidebar.slider("Top 100k %", o_min, o_max, (o_min, o_max), 0.1)
 
-# 9. Average Mins
 am_min, am_max = float(df['avg_mins'].min()), float(df['avg_mins'].max())
 f_avg_mins = st.sidebar.slider("Average Mins", am_min, am_max, (am_min, am_max), 1.0)
 
-# 10. 60 Min %
-min_60 = float(df['60_min'].min())
-max_60 = float(df['60_min'].max())
+min_60, max_60 = float(df['60_min'].min()), float(df['60_min'].max())
 f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
+# Додаємо перевірку: якщо в pills нічого не обрано, показуємо порожній список (або можна змінити логіку на "показати все")
 mask = (
-    df['element_type'].isin(selected_positions) &
+    df['element_type'].isin(selected_positions if selected_positions else []) &
     df['team_short_name'].isin(selected_teams) &
-    df['Play Pos'].isin(selected_pl_pos) &
+    df['Play Pos'].isin(selected_pl_pos if selected_pl_pos else []) &
     (df['av_rating_alt'] >= f_rating[0]) & (df['av_rating_alt'] <= f_rating[1]) &
     (df['matches_played'] >= f_matches[0]) & (df['matches_played'] <= f_matches[1]) &
     (df['60_min'] >= f_60min[0]) & (df['60_min'] <= f_60min[1]) &
