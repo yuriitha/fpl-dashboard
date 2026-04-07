@@ -42,16 +42,24 @@ except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
 
+# ========================== ПІДГОТОВКА СПИСКУ КОЛОНОК ==========================
+# ОЦЕ ТЕ, ЧОГО НЕ ВИСТАЧАЛО (Причина NameError)
+display_columns = [
+    "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
+    "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played", 
+    "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored", 
+    "assists", "av_rating", "av_rating_alt", "points_per_game", "transfers_in_event", 
+    "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
+]
+
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
 st.sidebar.header("FPL Main Info") 
 
-# --- 1. TEAM (Сітка 4x4) ---
+# --- 1. TEAM ---
 all_teams = sorted(df['team_short_name'].unique())
 selected_teams = []
-
 for i in range(0, len(all_teams), 4):
     batch = all_teams[i:i+4]
-    # Назву "Team" даємо тільки першому ряду, решті - collapsed
     res = st.sidebar.pills(
         label="Team" if i == 0 else f"team_group_{i}", 
         options=batch, 
@@ -74,7 +82,7 @@ selected_positions = st.sidebar.pills(
     selection_mode="multi"
 )
 
-# --- 3. PLAYING POSITION (По лініях) ---
+# --- 3. PLAYING POSITION ---
 pl_lines = [
     ['GK'],
     ['RB', 'CB', 'LB'],
@@ -82,7 +90,6 @@ pl_lines = [
     ['RW', 'AM', 'LW'],
     ['CF']
 ]
-
 defined_pl_pos = [item for sublist in pl_lines for item in sublist]
 actual_pl_pos = df['Play Pos'].dropna().unique().tolist()
 others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
@@ -103,7 +110,7 @@ for idx, line in enumerate(pl_lines):
         if line_res:
             selected_pl_pos.extend(line_res)
 
-# --- РЕШТА ФІЛЬТРІВ (Слайдери) ---
+# --- СЛАЙДЕРИ ---
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
 f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1)
 
