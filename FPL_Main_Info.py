@@ -60,9 +60,21 @@ m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
 f_matches = st.sidebar.slider("Matches", m_min, m_max, (5, m_max))
 
 # 6. Rating (НОВИЙ: між Matches та Selected %, крок 0.05)
-r_min = float(df['av_rating_alt'].min())
-r_max = float(df['av_rating_alt'].max())
-f_rating = st.sidebar.slider("Rating", r_min, r_max, (r_min, r_max), 0.05)
+rating_series = df['av_rating_alt'].dropna()
+
+if not rating_series.empty:
+    r_min = float(rating_series.min())
+    r_max = float(rating_series.max())
+else:
+    r_min, r_max = 0.0, 10.0  # Значення за замовчуванням, якщо даних немає
+
+f_rating = st.sidebar.slider(
+    "Rating", 
+    min_value=r_min, 
+    max_value=r_max, 
+    value=(r_min, r_max), 
+    step=0.05
+)
 
 # 7. Selected %
 s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
