@@ -8,13 +8,21 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для відцентрування та стилізації
+# CSS для максимальної компактності та відцентрування
 st.markdown("""
     <style>
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
-        /* Зменшення відступів між фільтрами у сайдбарі */
-        [data-testid="stSidebarUserContent"] { padding-top: 1rem; }
+        
+        /* Зменшення вертикальних відступів у сайдбарі */
+        [data-testid="stVerticalBlock"] {
+            gap: 0.4rem !important;
+        }
+
+        /* Зменшення відступів між Pills у групах без заголовків */
+        [data-testid="stHorizontalBlock"] {
+            gap: 0.1rem !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -37,29 +45,24 @@ except Exception as e:
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
 st.sidebar.header("FPL Main Info") 
 
-# --- 1. TEAM (Сітка 4x4 через Pills) ---
-st.sidebar.markdown("**Team**")
+# --- 1. TEAM (Сітка 4x4) ---
 all_teams = sorted(df['team_short_name'].unique())
 selected_teams = []
 
-# Розбиваємо список команд на групи по 4
 for i in range(0, len(all_teams), 4):
     batch = all_teams[i:i+4]
-    # Створюємо Pills для кожної четвірки. 
-    # label="" приховує назву, щоб вони виглядали як один блок
+    # Назву "Team" даємо тільки першому ряду, решті - collapsed
     res = st.sidebar.pills(
-        label=f"team_group_{i}", 
+        label="Team" if i == 0 else f"team_group_{i}", 
         options=batch, 
         default=batch, 
         selection_mode="multi",
-        label_visibility="collapsed"
+        label_visibility="visible" if i == 0 else "collapsed"
     )
     if res:
         selected_teams.extend(res)
 
-st.sidebar.markdown("---")
-
-# --- 2. FPL POSITION (GK, DEF, MID, FW) ---
+# --- 2. FPL POSITION ---
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
 sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
@@ -71,42 +74,34 @@ selected_positions = st.sidebar.pills(
     selection_mode="multi"
 )
 
-st.sidebar.markdown("---")
-
-# --- 3. PLAYING POSITION (Розбивка по лініях) ---
-st.sidebar.markdown("**Playing Position**")
+# --- 3. PLAYING POSITION (По лініях) ---
 pl_lines = [
     ['GK'],
-    ['CB', 'RB', 'LB'],
-    ['DM', 'CM', 'RM', 'LM'],
+    ['RB', 'CB', 'LB'],
+    ['RM', 'DM', 'CM', 'LM'],
     ['RW', 'AM', 'LW'],
     ['CF']
 ]
 
-# Збираємо всі перелічені позиції, щоб знайти "інші"
 defined_pl_pos = [item for sublist in pl_lines for item in sublist]
 actual_pl_pos = df['Play Pos'].dropna().unique().tolist()
 others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
-
 if others:
     pl_lines.append(others)
 
 selected_pl_pos = []
 for idx, line in enumerate(pl_lines):
-    # Відображаємо тільки якщо ці позиції є в даних
     available_in_line = [p for p in line if p in actual_pl_pos]
     if available_in_line:
         line_res = st.sidebar.pills(
-            label=f"pl_line_{idx}",
+            label="Playing Position" if idx == 0 else f"pl_line_{idx}",
             options=available_in_line,
             default=available_in_line,
             selection_mode="multi",
-            label_visibility="collapsed"
+            label_visibility="visible" if idx == 0 else "collapsed"
         )
         if line_res:
             selected_pl_pos.extend(line_res)
-
-st.sidebar.markdown("---")
 
 # --- РЕШТА ФІЛЬТРІВ (Слайдери) ---
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
@@ -147,14 +142,6 @@ mask = (
 filtered_df = df[mask].copy()
 
 # ========================== ВІДОБРАЖЕННЯ ТАБЛИЦІ ==========================
-display_columns = [
-    "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
-    "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played", 
-    "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored", 
-    "assists", "av_rating", "av_rating_alt", "points_per_game", "transfers_in_event", 
-    "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
-]
-
 st.subheader(f"Players filtered: {len(filtered_df)}")
 
 st.dataframe(
@@ -169,25 +156,6 @@ st.dataframe(
         "Play Pos": st.column_config.TextColumn("Pl Pos", width=45),
         "team_short_name": st.column_config.TextColumn("Team", width=45),
         "now_cost": st.column_config.NumberColumn("Price", width=40, format="%.1f"),
-        "Foot": st.column_config.TextColumn("Foot", width=45),
-        "selected_by_percent": st.column_config.NumberColumn("Selected", width=50, format="%.1f"),
-        "top_10k": st.column_config.NumberColumn("Top 10k", width=50, format="%.1f"),
-        "top_100k": st.column_config.NumberColumn("Top 100k", width=50, format="%.1f"),
-        "min_played": st.column_config.NumberColumn("Mins", width=45),
-        "matches_played": st.column_config.NumberColumn("MP", width=35),
-        "matches_started": st.column_config.NumberColumn("GS", width=35),
-        "avg_mins": st.column_config.NumberColumn("AvgMins", width=40, format="%d"),
-        "60_min": st.column_config.NumberColumn("60% Mins", width=45, format="%.1f"),
-        "goals_scored": st.column_config.NumberColumn("G", width=30),
-        "assists": st.column_config.NumberColumn("A", width=30),
-        "av_rating": st.column_config.NumberColumn("Rat", width=40, format="%.2f"),
         "av_rating_alt": st.column_config.NumberColumn("RatA", width=40, format="%.2f"),
-        "points_per_game": st.column_config.NumberColumn("PPM", width=40, format="%.1f"),
-        "transfers_in_event": st.column_config.NumberColumn("In", width=60),
-        "transfers_out_event": st.column_config.NumberColumn("Out", width=60),
-        "transfers_in_24": st.column_config.NumberColumn("In 24", width=50),
-        "transfers_out_24": st.column_config.NumberColumn("Out 24", width=50),
-        "news": st.column_config.TextColumn("News", width="medium"),
-        "news_added": st.column_config.TextColumn("Updated", width=175),
     }
 )
