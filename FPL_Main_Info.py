@@ -9,14 +9,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для відцентрування заголовків та даних у таблиці (окрім першої колонки та News)
+# CSS для відцентрування заголовків та даних у таблиці
 st.markdown("""
     <style>
-        /* Центрування заголовків */
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th {
             text-align: center !important;
         }
-        /* Центрування текстових даних у комірках */
         [data-testid="stDataFrame"] td {
             text-align: center !important;
         }
@@ -47,11 +45,19 @@ selected_positions = st.sidebar.multiselect("Pos", options=positions, default=po
 teams = sorted(df['team_short_name'].unique())
 selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
 
+# НОВИЙ ФІЛЬТР: Playing Position (між Team та FPL Price)
+pl_positions = sorted(df['Play Pos'].dropna().unique())
+selected_pl_pos = st.sidebar.multiselect("Playing Position", options=pl_positions, default=pl_positions)
+
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
 f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1)
 
 m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
 f_matches = st.sidebar.slider("Matches", m_min, m_max, (5, m_max))
+
+# НОВИЙ ФІЛЬТР: Rating (між Matches та Selected %)
+r_min, r_max = float(df['av_rating_alt'].min()), float(df['av_rating_alt'].max())
+f_rating = st.sidebar.slider("Rating", r_min, r_max, (r_min, r_max), 0.05)
 
 s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
 f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
@@ -70,6 +76,8 @@ f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
 mask = (
     df['element_type'].isin(selected_positions) &
     df['team_short_name'].isin(selected_teams) &
+    df['Play Pos'].isin(selected_pl_pos) & # Фільтр за Pl Pos
+    (df['av_rating_alt'] >= f_rating[0]) & (df['av_rating_alt'] <= f_rating[1]) & # Фільтр за Rating
     (df['matches_played'] >= f_matches[0]) & (df['matches_played'] <= f_matches[1]) &
     (df['60_min'] >= f_60min[0]) & (df['60_min'] <= f_60min[1]) &
     (df['now_cost'] >= f_cost[0]) & (df['now_cost'] <= f_cost[1]) &
