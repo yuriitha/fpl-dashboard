@@ -156,6 +156,7 @@ st.dataframe(
         "Selected": st.column_config.NumberColumn("Sel %", width=45, format="%.1f"),
         "Top 1K": st.column_config.NumberColumn("Top 1K", width=45, format="%.1f"),
         "Top 5K": st.column_config.NumberColumn("Top 5K", width=45, format="%.1f"),
+	"Captain": st.column_config.NumberColumn("Cap", width=45, format="%.1f"),
         "Mins": st.column_config.NumberColumn("Mins", width=40),
         "G": st.column_config.NumberColumn("G", width=30),
         "A": st.column_config.NumberColumn("A", width=30),
