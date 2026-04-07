@@ -14,12 +14,6 @@ st.markdown("""
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
-        [data-testid="stBaseButton-secondary"] {
-            padding: 0.1rem 0.5rem !important;
-            min-height: 1.6rem !important;
-            font-size: 13px !important;
-        }
-
         [data-testid="stVerticalBlock"] {
             gap: 0.4rem !important;
         }
@@ -33,11 +27,10 @@ st.markdown("""
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://194.99.22.193:8000/ucl_players" # Змінено на ucl_players
+    url = "http://194.99.22.193:8000/fpl_players"
     df = pd.read_parquet(url)
-    # Сортування за замовчуванням (наприклад, за ціною або PPM, якщо немає рейтингу)
-    if 'PPM' in df.columns:
-        df = df.sort_values(by="PPM", ascending=False)
+    if 'Price' in df.columns:
+        df = df.sort_values(by="Price", ascending=False)
     return df
 
 try:
