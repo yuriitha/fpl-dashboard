@@ -82,7 +82,7 @@ pl_lines = [
     ['RB', 'CB', 'LB'],
     ['RM', 'DM', 'CM', 'LM'],
     ['RW', 'AM', 'LW'],
-    ['CF']
+    ['SS', 'CF']
 ]
 defined_pl_pos = [item for sublist in pl_lines for item in sublist]
 actual_pl_pos = df['Pl Pos'].dropna().unique().tolist()
