@@ -27,7 +27,7 @@ st.markdown("""
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://194.99.22.193:8000/fpl_players"
+    url = "http://194.99.22.193:8000/ucl_players"
     df = pd.read_parquet(url)
     if 'Price' in df.columns:
         df = df.sort_values(by="Price", ascending=False)
