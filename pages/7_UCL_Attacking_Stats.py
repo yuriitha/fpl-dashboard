@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.set_page_config(page_title=UCL Attacking Stats", layout="wide")
+st.set_page_config(page_title="UCL Attacking Stats", layout="wide")
 
 st.title("UCL Attacking Stats 📊")
 st.info("### 🏗️ Work In Progress")
