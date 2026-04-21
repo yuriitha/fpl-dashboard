@@ -8,48 +8,46 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для максимальної компактності та уніфікації дизайну
+# CSS для максимальної компактності та однакової ширини пігулок
 st.markdown("""
     <style>
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
-        /* 1. Уніфікація всіх заголовків фільтрів */
-        [data-testid="stSidebar"] label, .filter-label {
-            font-weight: 700 !important;
-            font-size: 0.95rem !important;
-            margin-top: 0.8rem !important;
-            margin-bottom: 0.2rem !important;
-            display: block !important;
-        }
+        /* Зменшення вертикальних відступів */
+        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 
-        /* 2. Ширина пігулок (Pills) - 78px */
+        /* Кнопки Pills: 4 в ряд (68px) */
         [data-testid="stSidebar"] button[kind="secondary"] {
-            width: 78px !important;
-            min-width: 78px !important;
-            max-width: 78px !important;
+            width: 68px !important;
+            min-width: 68px !important;
+            max-width: 68px !important;
             justify-content: center !important;
             padding: 0px !important;
             font-size: 0.75rem !important;
-            height: 28px !important;
+            height: 26px !important;
         }
 
-        /* 3. Кнопка Reset (Primary) - на весь рядок */
-        [data-testid="stSidebar"] button[kind="primary"] {
-            width: 100% !important;
-        }
-
-        /* 4. Кнопки All/None у колонках - повертаємо їм гнучкість */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button[kind="secondary"] {
-            width: 100% !important;
-            min-width: 0px !important;
-            max-width: none !important;
+        /* Тільки кнопки All/None робимо маленькими */
+        [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"] button {
             height: 22px !important;
+            min-height: 22px !important;
             font-size: 0.65rem !important;
+            padding: 0px 4px !important;
+            line-height: 1 !important;
         }
 
-        /* 5. Центрування для тактичної схеми */
-        [data-testid="stSidebar"] div[role="group"] {
+        /* Стиль для заголовків фільтрів та слайдерів */
+        .filter-label, [data-testid="stSlider"] label {
+            font-weight: 600 !important;
+            font-size: 0.8rem !important;
+            margin-top: 0.4rem !important;
+            color: inherit !important;
+        }
+
+        /* Центрування для тактичної схеми Playing Position */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
             justify-content: center !important;
         }
 
@@ -61,10 +59,10 @@ st.markdown("""
 
 # Допоміжна функція для заголовків фільтрів з кнопками All/None
 def filter_header(label, options, key_prefix):
-    cols = st.sidebar.columns([1.4, 0.8, 0.8])
+    cols = st.sidebar.columns([1.6, 0.7, 0.7])
     cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
     
-    # Кнопка All
+    # Кнопка All тепер напряму змінює стан віджета
     if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
         st.session_state[f"pills_{key_prefix}"] = options
         if key_prefix == "pl_pos":
@@ -72,7 +70,6 @@ def filter_header(label, options, key_prefix):
                 st.session_state[f"pills_pl_line_{i}"] = [p for p in options if p in line]
         st.rerun()
     
-    # Кнопка None
     if cols[2].button("None", key=f"btn_none_{key_prefix}", use_container_width=True):
         st.session_state[f"pills_{key_prefix}"] = []
         if key_prefix == "pl_pos":
@@ -96,7 +93,8 @@ except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
 
-# ========================== ПІДГОТОВКА СПИСКІВ ==========================
+# ========================== ПІДГОТОВКА СПИСКУ КОЛОНОК ==========================
+# ОЦЕ ТЕ, ЧОГО НЕ ВИСТАЧАЛО (Причина NameError)
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
     "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played", 
@@ -105,61 +103,74 @@ display_columns = [
     "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
 ]
 
+# ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
+# --- ПІДГОТОВКА СПИСКІВ ---
 all_teams = sorted(df['team_short_name'].unique().tolist())
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
 sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
 
-pl_lines = [['GK'], ['RB', 'CB', 'LB'], ['RM', 'DM', 'CM', 'LM'], ['RW', 'AM', 'LW'], ['SS', 'CF']]
+pl_lines = [
+    ['GK'], 
+    ['RB', 'CB', 'LB'], 
+    ['RM', 'DM', 'CM', 'LM'], 
+    ['RW', 'AM', 'LW'], 
+    ['SS', 'CF']
+]
 defined_pl_pos = [item for sublist in pl_lines for item in sublist]
 actual_pl_pos = df['Play Pos'].dropna().unique().tolist()
-all_pl_pos = [p for p in defined_pl_pos if p in actual_pl_pos]
+others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
+if others: pl_lines.append(others)
+all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
 # --- ІНІЦІАЛІЗАЦІЯ СТАНУ ---
 if "pills_teams" not in st.session_state: st.session_state.pills_teams = all_teams
 if "pills_pos" not in st.session_state: st.session_state.pills_pos = sorted_positions
 if "pills_pl_pos" not in st.session_state: st.session_state.pills_pl_pos = all_pl_pos
-for i, line in enumerate(pl_lines):
-    l_key = f"pills_pl_line_{i}"
-    if l_key not in st.session_state:
-        st.session_state[l_key] = [p for p in all_pl_pos if p in line]
 
 # --- САЙДБАР ---
-if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
+if st.sidebar.button("Reset All Filters", use_container_width=True):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.rerun()
 
 search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...")
 
-# 1. FPL Position
+# --- 1. FPL POSITION ---
 filter_header("FPL Position", sorted_positions, "pos")
-selected_positions = st.sidebar.pills(" ", options=sorted_positions, key="pills_pos", selection_mode="multi")
+selected_positions = st.sidebar.pills("FPL Position", options=sorted_positions, key="pills_pos", selection_mode="multi", label_visibility="collapsed")
 
-# 2. FPL Price
+# --- 2. FPL PRICE ---
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
 f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1, key="f_cost")
 
-# 3. Team
+# --- 3. TEAM ---
 filter_header("Team", all_teams, "teams")
-selected_teams = st.sidebar.pills(" ", options=all_teams, key="pills_teams", selection_mode="multi")
+selected_teams = st.sidebar.pills("Team", options=all_teams, key="pills_teams", selection_mode="multi", label_visibility="collapsed")
 
-# 4. Playing Position
+# --- 4. PLAYING POSITION ---
 filter_header("Playing Position", all_pl_pos, "pl_pos")
 selected_pl_pos = []
 for idx, line in enumerate(pl_lines):
     available_in_line = [p for p in line if p in actual_pl_pos]
     if available_in_line:
+        line_key = f"pills_pl_line_{idx}"
+        
+        # Ініціалізація, якщо ключа ще немає
+        if line_key not in st.session_state:
+            st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos if p in available_in_line]
+
         line_res = st.sidebar.pills(
-            label=" ",
+            label=f"pl_line_{idx}",
             options=available_in_line,
-            key=f"pills_pl_line_{idx}",
-            selection_mode="multi"
+            key=line_key,
+            selection_mode="multi",
+            label_visibility="collapsed"
         )
         if line_res:
             selected_pl_pos.extend(line_res)
 
-# Expanders для інших фільтрів
+# --- ДОДАТКОВІ ФІЛЬТРИ В ЕКСПАНДЕРАХ ---
 with st.sidebar.expander("Performance Stats", expanded=False):
     m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
     f_matches = st.slider("Matches", m_min, m_max, (5, m_max), key="f_matches")
