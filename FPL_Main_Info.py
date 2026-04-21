@@ -15,8 +15,8 @@ st.markdown("""
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
         /* Зменшення вертикальних відступів */
-        [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
+        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 
         /* Кнопки Pills: 4 в ряд (68px) */
         [data-testid="stSidebar"] button[kind="secondary"] {
@@ -29,9 +29,8 @@ st.markdown("""
             height: 26px !important;
         }
 
-        /* Дуже малі кнопки All/None та Reset */
-        [data-testid="stSidebar"] button[kind="primary"],
-        [data-testid="stSidebar"] .stButton button {
+        /* Тільки кнопки All/None робимо маленькими */
+        [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"] button {
             height: 22px !important;
             min-height: 22px !important;
             font-size: 0.65rem !important;
@@ -39,11 +38,12 @@ st.markdown("""
             line-height: 1 !important;
         }
 
-        /* Стиль для заголовків фільтрів */
-        .filter-label {
-            font-weight: 600;
-            font-size: 0.8rem;
-            margin-top: 0.4rem;
+        /* Стиль для заголовків фільтрів та слайдерів */
+        .filter-label, [data-testid="stSlider"] label {
+            font-weight: 600 !important;
+            font-size: 0.8rem !important;
+            margin-top: 0.4rem !important;
+            color: inherit !important;
         }
 
         /* Центрування для тактичної схеми Playing Position */
@@ -59,7 +59,7 @@ st.markdown("""
 
 # Допоміжна функція для заголовків фільтрів з кнопками All/None
 def filter_header(label, options, key_prefix):
-    cols = st.sidebar.columns([1.5, 0.8, 0.8])
+    cols = st.sidebar.columns([1.6, 0.7, 0.7])
     cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
     
     # Кнопка All тепер напряму змінює стан віджета
