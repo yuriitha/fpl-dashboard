@@ -14,25 +14,24 @@ st.markdown("""
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
-        /* 1. Уніфікація всіх заголовків фільтрів та слайдерів */
+        /* 1. Уніфікація всіх заголовків фільтрів */
         [data-testid="stSidebar"] label, .filter-label {
             font-weight: 700 !important;
-            font-size: 0.9rem !important;
-            color: inherit !important;
-            margin-top: 0.6rem !important;
+            font-size: 0.95rem !important;
+            margin-top: 0.8rem !important;
             margin-bottom: 0.2rem !important;
             display: block !important;
         }
 
-        /* 2. Фіксована ширина ТІЛЬКИ для пігулок (Pills) */
-        [data-testid="stSidebar"] div[data-testid="stPills"] button {
-            width: 74px !important;
-            min-width: 74px !important;
-            max-width: 74px !important;
+        /* 2. Ширина пігулок (Pills) - 78px */
+        [data-testid="stSidebar"] button[kind="secondary"] {
+            width: 78px !important;
+            min-width: 78px !important;
+            max-width: 78px !important;
             justify-content: center !important;
             padding: 0px !important;
             font-size: 0.75rem !important;
-            height: 26px !important;
+            height: 28px !important;
         }
 
         /* 3. Кнопка Reset (Primary) - на весь рядок */
@@ -40,27 +39,23 @@ st.markdown("""
             width: 100% !important;
         }
 
-        /* 4. Кнопки All/None у колонках */
-        [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"] button {
+        /* 4. Кнопки All/None у колонках - повертаємо їм гнучкість */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button[kind="secondary"] {
             width: 100% !important;
+            min-width: 0px !important;
+            max-width: none !important;
             height: 22px !important;
-            min-height: 22px !important;
             font-size: 0.65rem !important;
-            padding: 0px 4px !important;
-            line-height: 1 !important;
         }
 
-        /* 5. Центрування для тактичної схеми Playing Position */
-        [data-testid="stSidebar"] div[data-testid="stPills"] {
+        /* 5. Центрування для тактичної схеми */
+        [data-testid="stSidebar"] div[role="group"] {
             justify-content: center !important;
         }
 
-        /* 6. Тонкі лінії слайдерів */
+        /* Тонкі лінії слайдерів */
         [data-testid="stSlider"] [data-testid="stTickBar"] { height: 2px !important; }
         [data-testid="stSlider"] [data-basejs="slider"] > div { height: 4px !important; }
-
-        /* 7. Відступи в сайдбарі */
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -101,7 +96,7 @@ except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
 
-# ========================== ПІДГОТОВКА СПИСКУ КОЛОНОК ==========================
+# ========================== ПІДГОТОВКА СПИСКІВ ==========================
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
     "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played", 
@@ -139,7 +134,7 @@ search_name = st.sidebar.text_input("Search Player", placeholder="Enter name..."
 
 # 1. FPL Position
 filter_header("FPL Position", sorted_positions, "pos")
-selected_positions = st.sidebar.pills("FPL Position", options=sorted_positions, key="pills_pos", selection_mode="multi", label_visibility="collapsed")
+selected_positions = st.sidebar.pills(" ", options=sorted_positions, key="pills_pos", selection_mode="multi")
 
 # 2. FPL Price
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
@@ -147,7 +142,7 @@ f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1, key="
 
 # 3. Team
 filter_header("Team", all_teams, "teams")
-selected_teams = st.sidebar.pills("Team", options=all_teams, key="pills_teams", selection_mode="multi", label_visibility="collapsed")
+selected_teams = st.sidebar.pills(" ", options=all_teams, key="pills_teams", selection_mode="multi")
 
 # 4. Playing Position
 filter_header("Playing Position", all_pl_pos, "pl_pos")
@@ -156,11 +151,10 @@ for idx, line in enumerate(pl_lines):
     available_in_line = [p for p in line if p in actual_pl_pos]
     if available_in_line:
         line_res = st.sidebar.pills(
-            label=f"pl_line_{idx}",
+            label=" ",
             options=available_in_line,
             key=f"pills_pl_line_{idx}",
-            selection_mode="multi",
-            label_visibility="collapsed"
+            selection_mode="multi"
         )
         if line_res:
             selected_pl_pos.extend(line_res)
