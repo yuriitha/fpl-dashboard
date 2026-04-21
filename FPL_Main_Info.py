@@ -18,11 +18,11 @@ st.markdown("""
         [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 
-        /* Кнопки Pills: 4 в ряд (68px) */
-        [data-testid="stSidebar"] button[kind="secondary"] {
-            width: 80px !important;
-            min-width: 80px !important;
-            max-width: 80px !important;
+        /* 1. Кнопки Pills: 4 в ряд (72px) */
+        [data-testid="stSidebar"] div[data-testid="stPills"] button {
+            width: 72px !important;
+            min-width: 72px !important;
+            max-width: 72px !important;
             justify-content: center !important;
             padding: 0px !important;
             font-size: 0.75rem !important;
