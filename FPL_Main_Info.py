@@ -14,11 +14,11 @@ st.markdown("""
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
-        /* Зменшення вертикальних відступів */
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.2rem !important; }
+        /* Максимальна компактність */
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
 
-        /* 1. Усі другорядні кнопки в сайдбарі (Пігулки) */
-        [data-testid="stSidebar"] button[kind="secondary"] {
+        /* 1. Задаємо ширину всім кнопкам у сайдбарі (для пігулок) */
+        [data-testid="stSidebar"] button {
             width: 72px !important;
             min-width: 72px !important;
             max-width: 72px !important;
@@ -28,14 +28,21 @@ st.markdown("""
             height: 26px !important;
         }
 
-        /* 2. Кнопки в колонках (All/None) - робимо їх гнучкими на всю ширину колонки */
+        /* 2. ВИКЛЮЧЕННЯ: Кнопка Reset (Primary) має бути на всю ширину */
+        [data-testid="stSidebar"] button[kind="primary"] {
+            width: 100% !important;
+            max-width: none !important;
+        }
+
+        /* 3. ВИКЛЮЧЕННЯ: Кнопки All/None у колонках мають бути на всю ширину своєї колонки */
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button {
             width: 100% !important;
-            min-width: 0px !important;
             max-width: none !important;
+            min-width: 0px !important;
             height: 22px !important;
             font-size: 0.65rem !important;
             padding: 0px 4px !important;
+            line-height: 1 !important;
         }
 
         /* Стиль для заголовків фільтрів та слайдерів */
