@@ -31,6 +31,7 @@ st.markdown("""
 
         /* Тільки кнопки All/None робимо маленькими */
         [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"] button {
+            width: 100% !important;
             height: 22px !important;
             min-height: 22px !important;
             font-size: 0.65rem !important;
@@ -59,7 +60,7 @@ st.markdown("""
 
 # Допоміжна функція для заголовків фільтрів з кнопками All/None
 def filter_header(label, options, key_prefix):
-    cols = st.sidebar.columns([1.6, 0.7, 0.7])
+    cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
     
     # Кнопка All тепер напряму змінює стан віджета
