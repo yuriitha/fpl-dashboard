@@ -19,9 +19,9 @@ st.markdown("""
 
         /* 1. Задаємо ширину всім кнопкам у сайдбарі (для пігулок) */
         [data-testid="stSidebar"] button {
-            width: 72px !important;
-            min-width: 72px !important;
-            max-width: 72px !important;
+            width: 68px !important;
+            min-width: 68px !important;
+            max-width: 68px !important;
             justify-content: center !important;
             padding: 0px !important;
             font-size: 0.75rem !important;
