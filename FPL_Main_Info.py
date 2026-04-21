@@ -18,26 +18,30 @@ st.markdown("""
         [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
 
-        /* Кнопки Pills однакової ширини */
+        /* Кнопки Pills однакової ширини та центрування */
         [data-testid="stSidebar"] button[kind="secondary"] {
-            min-width: 58px !important;
+            min-width: 65px !important;
             justify-content: center !important;
-            padding: 2px 4px !important;
+            padding: 0px 4px !important;
             font-size: 0.8rem !important;
+            height: 28px !important;
         }
 
-        /* Стиль для заголовків фільтрів з кнопками */
-        .filter-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 0.5rem;
-            margin-bottom: -0.2rem;
+        /* Зменшення висоти кнопок Reset, All, None */
+        [data-testid="stSidebar"] button[kind="primary"], 
+        [data-testid="stSidebar"] button[kind="secondary"] {
+            height: 28px !important;
+            min-height: 28px !important;
+            line-height: 1 !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
         }
+
+        /* Стиль для заголовків фільтрів */
         .filter-label {
             font-weight: 600;
             font-size: 0.85rem;
-            color: #fafafa;
+            margin-top: 0.5rem;
         }
 
         /* Центрування для тактичної схеми Playing Position */
@@ -121,7 +125,7 @@ if st.sidebar.button("Reset All Filters", use_container_width=True):
         del st.session_state[key]
     st.rerun()
 
-search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", help="Search by full name")
+search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...")
 
 # --- 1. FPL POSITION ---
 filter_header("FPL Position", sorted_positions, "pos")
@@ -154,7 +158,7 @@ for idx, line in enumerate(pl_lines):
             selected_pl_pos.extend(line_res)
 
 # --- ДОДАТКОВІ ФІЛЬТРИ В ЕКСПАНДЕРАХ ---
-with st.sidebar.expander("📊 Performance Stats", expanded=False):
+with st.sidebar.expander("Performance Stats", expanded=False):
     m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
     f_matches = st.slider("Matches", m_min, m_max, (5, m_max), key="f_matches")
 
@@ -168,7 +172,7 @@ with st.sidebar.expander("📊 Performance Stats", expanded=False):
     min_60, max_60 = float(df['60_min'].min()), float(df['60_min'].max())
     f_60min = st.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5, key="f_60min")
 
-with st.sidebar.expander("📈 Market & Popularity", expanded=False):
+with st.sidebar.expander("Market & Popularity", expanded=False):
     s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
     f_selected = st.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1, key="f_selected")
 
