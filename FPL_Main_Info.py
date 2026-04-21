@@ -15,11 +15,10 @@ st.markdown("""
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
         /* Зменшення вертикальних відступів */
-        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.2rem !important; }
 
-        /* 1. Кнопки Pills: 4 в ряд (72px) */
-        [data-testid="stSidebar"] div[data-testid="stPills"] button {
+        /* 1. Усі другорядні кнопки в сайдбарі (Пігулки) */
+        [data-testid="stSidebar"] button[kind="secondary"] {
             width: 72px !important;
             min-width: 72px !important;
             max-width: 72px !important;
@@ -29,14 +28,14 @@ st.markdown("""
             height: 26px !important;
         }
 
-        /* Тільки кнопки All/None робимо маленькими */
-        [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"] button {
+        /* 2. Кнопки в колонках (All/None) - робимо їх гнучкими на всю ширину колонки */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button {
             width: 100% !important;
+            min-width: 0px !important;
+            max-width: none !important;
             height: 22px !important;
-            min-height: 22px !important;
             font-size: 0.65rem !important;
             padding: 0px 4px !important;
-            line-height: 1 !important;
         }
 
         /* Стиль для заголовків фільтрів та слайдерів */
