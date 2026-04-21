@@ -129,7 +129,7 @@ if "pills_pos" not in st.session_state: st.session_state.pills_pos = sorted_posi
 if "pills_pl_pos" not in st.session_state: st.session_state.pills_pl_pos = all_pl_pos
 
 # --- САЙДБАР ---
-if st.sidebar.button("Reset All Filters", use_container_width=True):
+if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.rerun()
