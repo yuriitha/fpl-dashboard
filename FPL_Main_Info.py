@@ -20,9 +20,9 @@ st.markdown("""
 
         /* Кнопки Pills: 4 в ряд (68px) */
         [data-testid="stSidebar"] button[kind="secondary"] {
-            width: 68px !important;
-            min-width: 68px !important;
-            max-width: 68px !important;
+            width: 80px !important;
+            min-width: 80px !important;
+            max-width: 80px !important;
             justify-content: center !important;
             padding: 0px !important;
             font-size: 0.75rem !important;
