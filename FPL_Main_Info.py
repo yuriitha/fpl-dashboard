@@ -18,30 +18,32 @@ st.markdown("""
         [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
 
-        /* Кнопки Pills однакової ширини та центрування */
+        /* Кнопки Pills: 4 в ряд (68px) */
         [data-testid="stSidebar"] button[kind="secondary"] {
-            min-width: 65px !important;
+            width: 68px !important;
+            min-width: 68px !important;
+            max-width: 68px !important;
             justify-content: center !important;
-            padding: 0px 4px !important;
-            font-size: 0.8rem !important;
-            height: 28px !important;
+            padding: 0px !important;
+            font-size: 0.75rem !important;
+            height: 26px !important;
         }
 
-        /* Зменшення висоти кнопок Reset, All, None */
-        [data-testid="stSidebar"] button[kind="primary"], 
-        [data-testid="stSidebar"] button[kind="secondary"] {
-            height: 28px !important;
-            min-height: 28px !important;
+        /* Дуже малі кнопки All/None та Reset */
+        [data-testid="stSidebar"] button[kind="primary"],
+        [data-testid="stSidebar"] .stButton button {
+            height: 22px !important;
+            min-height: 22px !important;
+            font-size: 0.65rem !important;
+            padding: 0px 4px !important;
             line-height: 1 !important;
-            padding-top: 0px !important;
-            padding-bottom: 0px !important;
         }
 
         /* Стиль для заголовків фільтрів */
         .filter-label {
             font-weight: 600;
-            font-size: 0.85rem;
-            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            margin-top: 0.4rem;
         }
 
         /* Центрування для тактичної схеми Playing Position */
@@ -57,13 +59,22 @@ st.markdown("""
 
 # Допоміжна функція для заголовків фільтрів з кнопками All/None
 def filter_header(label, options, key_prefix):
-    cols = st.sidebar.columns([2, 0.8, 0.8])
+    cols = st.sidebar.columns([1.5, 0.8, 0.8])
     cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
-    if cols[1].button("All", key=f"all_{key_prefix}", use_container_width=True):
-        st.session_state[f"sel_{key_prefix}"] = options
+    
+    # Кнопка All тепер напряму змінює стан віджета
+    if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
+        st.session_state[f"pills_{key_prefix}"] = options
+        if key_prefix == "pl_pos":
+            for i, line in enumerate(pl_lines):
+                st.session_state[f"pills_pl_line_{i}"] = [p for p in options if p in line]
         st.rerun()
-    if cols[2].button("None", key=f"none_{key_prefix}", use_container_width=True):
-        st.session_state[f"sel_{key_prefix}"] = []
+    
+    if cols[2].button("None", key=f"btn_none_{key_prefix}", use_container_width=True):
+        st.session_state[f"pills_{key_prefix}"] = []
+        if key_prefix == "pl_pos":
+            for i, line in enumerate(pl_lines):
+                st.session_state[f"pills_pl_line_{i}"] = []
         st.rerun()
 
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
@@ -93,8 +104,6 @@ display_columns = [
 ]
 
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
-st.sidebar.header("FPL Main Info") 
-
 # --- ПІДГОТОВКА СПИСКІВ ---
 all_teams = sorted(df['team_short_name'].unique().tolist())
 pos_order = ['GK', 'DEF', 'MID', 'FW']
@@ -115,9 +124,9 @@ if others: pl_lines.append(others)
 all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
 # --- ІНІЦІАЛІЗАЦІЯ СТАНУ ---
-if "sel_teams" not in st.session_state: st.session_state.sel_teams = all_teams
-if "sel_pos" not in st.session_state: st.session_state.sel_pos = sorted_positions
-if "sel_pl_pos" not in st.session_state: st.session_state.sel_pl_pos = all_pl_pos
+if "pills_teams" not in st.session_state: st.session_state.pills_teams = all_teams
+if "pills_pos" not in st.session_state: st.session_state.pills_pos = sorted_positions
+if "pills_pl_pos" not in st.session_state: st.session_state.pills_pl_pos = all_pl_pos
 
 # --- САЙДБАР ---
 if st.sidebar.button("Reset All Filters", use_container_width=True):
@@ -129,7 +138,7 @@ search_name = st.sidebar.text_input("Search Player", placeholder="Enter name..."
 
 # --- 1. FPL POSITION ---
 filter_header("FPL Position", sorted_positions, "pos")
-selected_positions = st.sidebar.pills("FPL Position", options=sorted_positions, default=st.session_state.sel_pos, selection_mode="multi", label_visibility="collapsed")
+selected_positions = st.sidebar.pills("FPL Position", options=sorted_positions, key="pills_pos", selection_mode="multi", label_visibility="collapsed")
 
 # --- 2. FPL PRICE ---
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
@@ -137,7 +146,7 @@ f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1, key="
 
 # --- 3. TEAM ---
 filter_header("Team", all_teams, "teams")
-selected_teams = st.sidebar.pills("Team", options=all_teams, default=st.session_state.sel_teams, selection_mode="multi", label_visibility="collapsed")
+selected_teams = st.sidebar.pills("Team", options=all_teams, key="pills_teams", selection_mode="multi", label_visibility="collapsed")
 
 # --- 4. PLAYING POSITION ---
 filter_header("Playing Position", all_pl_pos, "pl_pos")
@@ -145,14 +154,18 @@ selected_pl_pos = []
 for idx, line in enumerate(pl_lines):
     available_in_line = [p for p in line if p in actual_pl_pos]
     if available_in_line:
-        line_default = [p for p in st.session_state.sel_pl_pos if p in available_in_line]
+        line_key = f"pills_pl_line_{idx}"
+        
+        # Ініціалізація, якщо ключа ще немає
+        if line_key not in st.session_state:
+            st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos if p in available_in_line]
+
         line_res = st.sidebar.pills(
             label=f"pl_line_{idx}",
             options=available_in_line,
-            default=line_default,
+            key=line_key,
             selection_mode="multi",
-            label_visibility="collapsed",
-            key=f"pills_pl_line_{idx}"
+            label_visibility="collapsed"
         )
         if line_res:
             selected_pl_pos.extend(line_res)
