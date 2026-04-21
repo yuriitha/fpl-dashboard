@@ -12,48 +12,51 @@ st.set_page_config(
 st.markdown("""
     <style>
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
-        [data-testid="stDataFrame"] td { text-align: center !important; }
-        
-        /* Зменшення вертикальних відступів */
-        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
+        [dat        /* 1. Уніфікація всіх заголовків фільтрів */
+        [data-testid="stSidebar"] label, .filter-label {
+            font-weight: 700 !important;
+            font-size: 0.9rem !important;
+            color: inherit !important;
+            margin-top: 0.6rem !important;
+            margin-bottom: 0.2rem !important;
+            display: block !important;
+        }
 
-        /* Фіксована ширина ТІЛЬКИ для пігулок (Pills) */
-        [data-testid="stSidebar"] button[kind="secondary"]:not([style*="width: 100%"]):not([style*="width:100%"]) {
-            width: 68px !important;
-            min-width: 68px !important;
-            max-width: 68px !important;
+        /* 2. Фіксована ширина ТІЛЬКИ для пігулок (Pills) */
+        [data-testid="stSidebar"] div[data-testid="stPills"] button {
+            width: 74px !important;
+            min-width: 74px !important;
+            max-width: 74px !important;
             justify-content: center !important;
             padding: 0px !important;
             font-size: 0.75rem !important;
             height: 26px !important;
         }
 
-        /* Кнопки з розтягуванням (Reset, All, None) */
-        [data-testid="stSidebar"] button[style*="width: 100%"],
-        [data-testid="stSidebar"] button[style*="width:100%"] {
+        /* 3. Кнопка Reset (Primary) - на весь рядок */
+        [data-testid="stSidebar"] button[kind="primary"] {
             width: 100% !important;
         }
 
-        /* Маленька висота тільки для кнопок у рядках з фільтрами */
+        /* 4. Кнопки All/None у колонках */
         [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"] button {
+            width: 100% !important;
             height: 22px !important;
             min-height: 22px !important;
             font-size: 0.65rem !important;
             padding: 0px 4px !important;
-            line-height: 1 !important;
-        }
-
-        /* Стиль для заголовків фільтрів та слайдерів */
-        .filter-label, [data-testid="stSlider"] label {
-            font-weight: 600 !important;
-            font-size: 0.8rem !important;
-            margin-top: 0.4rem !important;
         }
 
         /* Центрування для тактичної схеми Playing Position */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
+        [data-testid="stSidebar"] div[data-testid="stPills"] {
             justify-content: center !important;
+        }
+
+        /* Тонкі лінії слайдерів */
+        [data-testid="stSlider"] [data-testid="stTickBar"] { height: 2px !important; }
+        [data-testid="stSlider"] [data-basejs="slider"] > div { height: 4px !important; }
+    </style>
+ntent: center !important;
         }
 
         /* Тонкі лінії слайдерів */
@@ -134,7 +137,7 @@ if "pills_pos" not in st.session_state: st.session_state.pills_pos = sorted_posi
 if "pills_pl_pos" not in st.session_state: st.session_state.pills_pl_pos = all_pl_pos
 
 # --- САЙДБАР ---
-if st.sidebar.button("Reset All Filters", use_container_width=True):
+if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.rerun()
