@@ -41,9 +41,10 @@ st.markdown("""
             min-width: 0px !important;
             height: 18px !important;
             min-height: 18px !important;
-            font-size: 0.65rem !important;
+            font-size: 0.6rem !important;
             padding: 0px !important;
             line-height: 1 !important;
+            border: none !important;
         }
 
         /* 4. Зменшуємо проміжок між колонками All/None */
@@ -72,7 +73,7 @@ st.markdown("""
 
 # Допоміжна функція для заголовків фільтрів з кнопками All/None
 def filter_header(label, options, key_prefix):
-    cols = st.sidebar.columns([2.0, 0.5, 0.5])
+    cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
     
     # Кнопка All тепер напряму змінює стан віджета
