@@ -18,8 +18,8 @@ st.markdown("""
         [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 
-        /* Кнопки Pills: 4 в ряд (68px) */
-        [data-testid="stSidebar"] button[kind="secondary"] {
+        /* Фіксована ширина ТІЛЬКИ для пігулок (Pills) */
+        [data-testid="stSidebar"] button[kind="secondary"]:not([style*="width: 100%"]):not([style*="width:100%"]) {
             width: 68px !important;
             min-width: 68px !important;
             max-width: 68px !important;
@@ -29,7 +29,13 @@ st.markdown("""
             height: 26px !important;
         }
 
-        /* Тільки кнопки All/None робимо маленькими */
+        /* Кнопки з розтягуванням (Reset, All, None) */
+        [data-testid="stSidebar"] button[style*="width: 100%"],
+        [data-testid="stSidebar"] button[style*="width:100%"] {
+            width: 100% !important;
+        }
+
+        /* Маленька висота тільки для кнопок у рядках з фільтрами */
         [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"] button {
             height: 22px !important;
             min-height: 22px !important;
@@ -43,7 +49,6 @@ st.markdown("""
             font-weight: 600 !important;
             font-size: 0.8rem !important;
             margin-top: 0.4rem !important;
-            color: inherit !important;
         }
 
         /* Центрування для тактичної схеми Playing Position */
@@ -59,7 +64,7 @@ st.markdown("""
 
 # Допоміжна функція для заголовків фільтрів з кнопками All/None
 def filter_header(label, options, key_prefix):
-    cols = st.sidebar.columns([1.6, 0.7, 0.7])
+    cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
     
     # Кнопка All тепер напряму змінює стан віджета
