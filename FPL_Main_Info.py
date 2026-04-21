@@ -8,23 +8,59 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для максимальної компактності та відцентрування
+# CSS для максимальної компактності та однакової ширини пігулок
 st.markdown("""
     <style>
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
-        /* Зменшення вертикальних відступів у сайдбарі */
-        [data-testid="stVerticalBlock"] {
-            gap: 0.4rem !important;
+        /* Зменшення вертикальних відступів */
+        [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
+
+        /* Кнопки Pills однакової ширини */
+        [data-testid="stSidebar"] button[kind="secondary"] {
+            min-width: 58px !important;
+            justify-content: center !important;
+            padding: 2px 4px !important;
+            font-size: 0.8rem !important;
         }
 
-        /* Зменшення відступів між Pills у групах без заголовків */
-        [data-testid="stHorizontalBlock"] {
-            gap: 0.1rem !important;
+        /* Стиль для заголовків фільтрів з кнопками */
+        .filter-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            margin-bottom: -0.2rem;
         }
+        .filter-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #fafafa;
+        }
+
+        /* Центрування для тактичної схеми Playing Position */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
+            justify-content: center !important;
+        }
+
+        /* Тонкі лінії слайдерів */
+        [data-testid="stSlider"] [data-testid="stTickBar"] { height: 2px !important; }
+        [data-testid="stSlider"] [data-basejs="slider"] > div { height: 4px !important; }
     </style>
 """, unsafe_allow_html=True)
+
+# Допоміжна функція для заголовків фільтрів з кнопками All/None
+def filter_header(label, options, key_prefix):
+    cols = st.sidebar.columns([2, 0.8, 0.8])
+    cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
+    if cols[1].button("All", key=f"all_{key_prefix}", size="small", use_container_width=True):
+        st.session_state[f"sel_{key_prefix}"] = options
+        st.rerun()
+    if cols[2].button("None", key=f"none_{key_prefix}", size="small", use_container_width=True):
+        st.session_state[f"sel_{key_prefix}"] = []
+        st.rerun()
 
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
@@ -55,83 +91,89 @@ display_columns = [
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
 st.sidebar.header("FPL Main Info") 
 
-# --- 1. TEAM ---
-all_teams = sorted(df['team_short_name'].unique())
-selected_teams = []
-for i in range(0, len(all_teams), 4):
-    batch = all_teams[i:i+4]
-    res = st.sidebar.pills(
-        label="Team" if i == 0 else f"team_group_{i}", 
-        options=batch, 
-        default=batch, 
-        selection_mode="multi",
-        label_visibility="visible" if i == 0 else "collapsed"
-    )
-    if res:
-        selected_teams.extend(res)
-
-# --- 2. FPL POSITION ---
+# --- ПІДГОТОВКА СПИСКІВ ---
+all_teams = sorted(df['team_short_name'].unique().tolist())
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
 sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
 
-selected_positions = st.sidebar.pills(
-    "FPL Position", 
-    options=sorted_positions, 
-    default=sorted_positions, 
-    selection_mode="multi"
-)
-
-# --- 3. PLAYING POSITION ---
 pl_lines = [
-    ['GK'],
-    ['RB', 'CB', 'LB'],
-    ['RM', 'DM', 'CM', 'LM'],
-    ['RW', 'AM', 'LW'],
-    ['CF']
+    ['GK'], 
+    ['RB', 'CB', 'LB'], 
+    ['RM', 'DM', 'CM', 'LM'], 
+    ['RW', 'AM', 'LW'], 
+    ['SS', 'CF']
 ]
 defined_pl_pos = [item for sublist in pl_lines for item in sublist]
 actual_pl_pos = df['Play Pos'].dropna().unique().tolist()
 others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
-if others:
-    pl_lines.append(others)
+if others: pl_lines.append(others)
+all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
+# --- ІНІЦІАЛІЗАЦІЯ СТАНУ ---
+if "sel_teams" not in st.session_state: st.session_state.sel_teams = all_teams
+if "sel_pos" not in st.session_state: st.session_state.sel_pos = sorted_positions
+if "sel_pl_pos" not in st.session_state: st.session_state.sel_pl_pos = all_pl_pos
+
+# --- САЙДБАР ---
+if st.sidebar.button("Reset All Filters", use_container_width=True):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
+
+search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", help="Search by full name")
+
+# --- 1. FPL POSITION ---
+filter_header("FPL Position", sorted_positions, "pos")
+selected_positions = st.sidebar.pills("FPL Position", options=sorted_positions, default=st.session_state.sel_pos, selection_mode="multi", label_visibility="collapsed")
+
+# --- 2. FPL PRICE ---
+c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
+f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1, key="f_cost")
+
+# --- 3. TEAM ---
+filter_header("Team", all_teams, "teams")
+selected_teams = st.sidebar.pills("Team", options=all_teams, default=st.session_state.sel_teams, selection_mode="multi", label_visibility="collapsed")
+
+# --- 4. PLAYING POSITION ---
+filter_header("Playing Position", all_pl_pos, "pl_pos")
 selected_pl_pos = []
 for idx, line in enumerate(pl_lines):
     available_in_line = [p for p in line if p in actual_pl_pos]
     if available_in_line:
+        line_default = [p for p in st.session_state.sel_pl_pos if p in available_in_line]
         line_res = st.sidebar.pills(
-            label="Playing Position" if idx == 0 else f"pl_line_{idx}",
+            label=f"pl_line_{idx}",
             options=available_in_line,
-            default=available_in_line,
+            default=line_default,
             selection_mode="multi",
-            label_visibility="visible" if idx == 0 else "collapsed"
+            label_visibility="collapsed",
+            key=f"pills_pl_line_{idx}"
         )
         if line_res:
             selected_pl_pos.extend(line_res)
 
-# --- СЛАЙДЕРИ ---
-c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
-f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1)
+# --- ДОДАТКОВІ ФІЛЬТРИ В ЕКСПАНДЕРАХ ---
+with st.sidebar.expander("📊 Performance Stats", expanded=False):
+    m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
+    f_matches = st.slider("Matches", m_min, m_max, (5, m_max), key="f_matches")
 
-m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
-f_matches = st.sidebar.slider("Matches", m_min, m_max, (5, m_max))
+    rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
+    r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not rating_series.empty else (0.0, 10.0)
+    f_rating = st.slider("Rating", r_min, r_max, (r_min, r_max), 0.05, format="%.2f", key="f_rating")
 
-rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
-r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not rating_series.empty else (0.0, 10.0)
-f_rating = st.sidebar.slider("Rating", r_min, r_max, (r_min, r_max), 0.05, format="%.2f")
+    am_min, am_max = float(df['avg_mins'].min()), float(df['avg_mins'].max())
+    f_avg_mins = st.slider("Average Mins", am_min, am_max, (am_min, am_max), 1.0, key="f_avg_mins")
 
-s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
-f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
+    min_60, max_60 = float(df['60_min'].min()), float(df['60_min'].max())
+    f_60min = st.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5, key="f_60min")
 
-o_min, o_max = float(df['top_100k'].min()), float(df['top_100k'].max())
-f_top100k = st.sidebar.slider("Top 100k %", o_min, o_max, (o_min, o_max), 0.1)
+with st.sidebar.expander("📈 Market & Popularity", expanded=False):
+    s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
+    f_selected = st.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1, key="f_selected")
 
-am_min, am_max = float(df['avg_mins'].min()), float(df['avg_mins'].max())
-f_avg_mins = st.sidebar.slider("Average Mins", am_min, am_max, (am_min, am_max), 1.0)
-
-min_60, max_60 = float(df['60_min'].min()), float(df['60_min'].max())
-f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5)
+    o_min, o_max = float(df['top_100k'].min()), float(df['top_100k'].max())
+    f_top100k = st.slider("Top 100k %", o_min, o_max, (o_min, o_max), 0.1, key="f_top100k")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
@@ -144,7 +186,8 @@ mask = (
     (df['now_cost'] >= f_cost[0]) & (df['now_cost'] <= f_cost[1]) &
     (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
     (df['top_100k'] >= f_top100k[0]) & (df['top_100k'] <= f_top100k[1]) &
-    (df['avg_mins'] >= f_avg_mins[0]) & (df['avg_mins'] <= f_avg_mins[1])
+    (df['avg_mins'] >= f_avg_mins[0]) & (df['avg_mins'] <= f_avg_mins[1]) &
+    (df['full_name'].str.contains(search_name, case=False, na=False))
 )
 filtered_df = df[mask].copy()
 
