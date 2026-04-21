@@ -39,9 +39,10 @@ st.markdown("""
             width: 100% !important;
             max-width: none !important;
             min-width: 0px !important;
-            height: 22px !important;
+            height: 18px !important;
+            min-height: 18px !important;
             font-size: 0.65rem !important;
-            padding: 0px 4px !important;
+            padding: 0px !important;
             line-height: 1 !important;
         }
 
