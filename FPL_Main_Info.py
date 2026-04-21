@@ -55,10 +55,10 @@ st.markdown("""
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([2, 0.8, 0.8])
     cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
-    if cols[1].button("All", key=f"all_{key_prefix}", size="small", use_container_width=True):
+    if cols[1].button("All", key=f"all_{key_prefix}", use_container_width=True):
         st.session_state[f"sel_{key_prefix}"] = options
         st.rerun()
-    if cols[2].button("None", key=f"none_{key_prefix}", size="small", use_container_width=True):
+    if cols[2].button("None", key=f"none_{key_prefix}", use_container_width=True):
         st.session_state[f"sel_{key_prefix}"] = []
         st.rerun()
 
