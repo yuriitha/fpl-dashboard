@@ -19,9 +19,9 @@ st.markdown("""
 
         /* 1. Задаємо ширину всім кнопкам у сайдбарі (для пігулок) */
         [data-testid="stSidebar"] button {
-            width: 68px !important;
-            min-width: 68px !important;
-            max-width: 68px !important;
+            width: 60px !important;
+            min-width: 60px !important;
+            max-width: 60px !important;
             justify-content: center !important;
             padding: 0px !important;
             font-size: 0.75rem !important;
@@ -60,8 +60,8 @@ st.markdown("""
             color: inherit !important;
         }
 
-        /* Центрування для тактичної схеми Playing Position */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
+        /* 5. Центрування для пігулок (Tactical Scheme) */
+        [data-testid="stSidebar"] div[role="group"] {
             justify-content: center !important;
         }
 
