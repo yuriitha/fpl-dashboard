@@ -60,13 +60,17 @@ st.markdown("""
             color: inherit !important;
         }
 
-        /* 5. Посилене центрування для пігулок (Tactical Scheme) */
-        [data-testid="stSidebar"] div[data-testid="stPills"],
-        [data-testid="stSidebar"] div[data-testid="stPills"] > div,
+        /* 5. Ультимативне центрування для пігулок */
+        [data-testid="stSidebar"] [data-testid="stPills"],
+        [data-testid="stSidebar"] [data-testid="stPills"] > div,
+        [data-testid="stSidebar"] [data-testid="stPills"] div[role="group"],
         [data-testid="stSidebar"] div[role="group"] {
             display: flex !important;
             justify-content: center !important;
             width: 100% !important;
+            text-align: center !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
         }
 
         /* Тонкі лінії слайдерів */
