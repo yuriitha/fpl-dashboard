@@ -38,24 +38,23 @@ def load_data():
     if 'av_rating_alt' in df.columns:
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce')
         df = df.sort_values(by="av_rating_alt", ascending=False)
+    import numpy as np
     
-    # Calculate Transfer Activity (Percentage of Max)
+    # Calculate Transfer Activity (Logarithmic Scale)
+    # Використовуємо логарифм для згладжування дуже великих викидів та розтягування малих значень.
     if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
         df['transfer_activity'] = df['transfers_in_24'] + df['transfers_out_24']
-        max_act = df['transfer_activity'].max()
-        if max_act > 0:
-            df['transfer_activity_pct'] = (df['transfer_activity'] / max_act) * 100.0
+        # log1p це натуральний логарифм log(1 + x)
+        log_act = np.log1p(df['transfer_activity'])
+        max_log = log_act.max()
+        if max_log > 0:
+            df['transfer_activity_pct'] = (log_act / max_log) * 100.0
         else:
             df['transfer_activity_pct'] = 0.0
     else:
         df['transfer_activity_pct'] = 0.0
         
     return df
-    if 'av_rating_alt' in df.columns:
-        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce')
-        df = df.sort_values(by="av_rating_alt", ascending=False)
-    return df
-
 try:
     df = load_data()
 except Exception as e:
