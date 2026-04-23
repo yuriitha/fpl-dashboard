@@ -22,17 +22,15 @@ st.markdown("""
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
         /* Центрування всіх блоків пігулок */
-        [data-testid="stSidebar"] div[aria-label="FPL Position"],
-        [data-testid="stSidebar"] div[aria-label="Team"],
-        [data-testid="stSidebar"] div[aria-label^="pl_line_"] {
+        [data-testid="stSidebar"] [data-testid="stPills"],
+        [data-testid="stSidebar"] [data-testid="stPills"] div {
             display: flex !important; 
             justify-content: center !important;
             flex-wrap: wrap !important;
-            width: 100% !important;
         }
 
-        /* Playing Position: розмір пігулок 48px (через aria-label) */
-        [data-testid="stSidebar"] div[aria-label^="pl_line_"] button {
+        /* Playing Position: розмір пігулок 48px (ізольовано через st.container) */
+        .stElementContainer:has(#pl-pills-start) ~ .stElementContainer [data-testid="stPills"] button {
             width: 48px !important; 
             min-width: 48px !important; 
             max-width: 48px !important;
@@ -361,26 +359,31 @@ selected_pl_pos = []
 inactive_pl_map = {}   # group_index -> list of inactive option texts
 pill_group_idx = 2     # 0=FPL Position, 1=Team, 2+ = pl_lines
 
-for idx, line in enumerate(pl_lines):
-    available_in_line = [p for p in line if p in actual_pl_pos]
-    if not available_in_line:
-        continue
-    line_key = f"pills_pl_line_{idx}"
-    if line_key not in st.session_state:
-        st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos if p in available_in_line]
+# Використовуємо контейнер, щоб CSS-правило застосувалось ТІЛЬКИ до цих пігулок
+with st.sidebar.container():
+    st.markdown('<div id="pl-pills-start"></div>', unsafe_allow_html=True)
+    
+    for idx, line in enumerate(pl_lines):
+        available_in_line = [p for p in line if p in actual_pl_pos]
+        if not available_in_line:
+            continue
+        line_key = f"pills_pl_line_{idx}"
+        if line_key not in st.session_state:
+            st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos if p in available_in_line]
+    
+        line_res = st.pills(
+            label=f"pl_line_{idx}", options=available_in_line, key=line_key,
+            selection_mode="multi", label_visibility="collapsed"
+        )
+        # Збираємо неактивні для JS
+        inactive_in_line = [p for p in available_in_line if p not in avail_pl]
+        if inactive_in_line:
+            inactive_pl_map[pill_group_idx] = inactive_in_line
+        pill_group_idx += 1
+    
+        if line_res:
+            selected_pl_pos.extend(line_res)
 
-    line_res = st.sidebar.pills(
-        label=f"pl_line_{idx}", options=available_in_line, key=line_key,
-        selection_mode="multi", label_visibility="collapsed"
-    )
-    # Збираємо неактивні для JS
-    inactive_in_line = [p for p in available_in_line if p not in avail_pl]
-    if inactive_in_line:
-        inactive_pl_map[pill_group_idx] = inactive_in_line
-    pill_group_idx += 1
-
-    if line_res:
-        selected_pl_pos.extend(line_res)
 
 # --- PERFORMANCE STATS ---
 with st.sidebar.expander("Performance Stats", expanded=False):
