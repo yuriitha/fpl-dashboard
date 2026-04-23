@@ -10,7 +10,6 @@ st.markdown("""
         [data-testid="stDataFrame"] td { text-align: center !important; }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         [data-testid="stSidebar"] button {
-            width: 60px !important; min-width: 60px !important; max-width: 60px !important;
             justify-content: center !important; padding: 0px !important;
             font-size: 0.75rem !important; height: 26px !important;
         }
@@ -22,28 +21,12 @@ st.markdown("""
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
 
-        /* 1. Playing Position: розмір пігулок 48px (9-й контейнер у сайдбарі) */
-        [data-testid="stSidebarUserContent"] > div[data-testid="stVerticalBlock"] > div.stElementContainer:nth-child(9) button {
-            width: 48px !important; 
-            min-width: 48px !important; 
-            max-width: 48px !important;
-        }
-
-        /* 2. Гарантоване розтягування батьківських контейнерів пігулок (4=FPL Pos, 7=Team, 9=Play Pos) */
-        [data-testid="stSidebarUserContent"] > div[data-testid="stVerticalBlock"] > div.stElementContainer:nth-child(4),
-        [data-testid="stSidebarUserContent"] > div[data-testid="stVerticalBlock"] > div.stElementContainer:nth-child(7),
-        [data-testid="stSidebarUserContent"] > div[data-testid="stVerticalBlock"] > div.stElementContainer:nth-child(9) {
-            display: flex !important;
-            justify-content: center !important;
-            width: 100% !important;
-        }
-
-        /* 3. Гарантоване центрування внутрішніх груп пігулок */
+        /* Гарантоване центрування пігулок: розтягуємо всі можливі внутрішні контейнери Streamlit */
         [data-testid="stSidebar"] [data-testid="stPills"],
         [data-testid="stSidebar"] [data-testid="stPills"] > div,
-        [data-testid="stSidebar"] [data-testid="stPills"] [role="group"],
+        [data-testid="stSidebar"] [data-testid="stPills"] [data-testid="stButtonGroup"],
         [data-testid="stSidebar"] [data-testid="stPills"] [role="radiogroup"],
-        [data-testid="stSidebar"] [data-testid="stPills"] [data-testid="stButtonGroup"] {
+        [data-testid="stSidebar"] [data-testid="stPills"] [role="group"] {
             display: flex !important;
             justify-content: center !important;
             flex-wrap: wrap !important;
@@ -51,6 +34,7 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+
 
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
@@ -296,30 +280,55 @@ def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
     (function() {{
         var inactiveMap = {json.dumps(inactive_map)};
         var plStartIdx  = {pl_start_idx};
+        
         function applyStyles() {{
             try {{
                 var doc = window.parent.document;
-                var groups = doc.querySelectorAll(
-                    '[data-testid="stSidebar"] [data-testid="stPills"]'
-                );
                 
-                // Затемнюємо неактивні пігулки
-                Object.keys(inactiveMap).forEach(function(idx) {{
-                    var group = groups[parseInt(idx)];
-                    if (!group) return;
-                    var inactive = inactiveMap[idx];
-                    group.querySelectorAll('button').forEach(function(btn) {{
+                // 1. Інжектимо глобальні стилі для розміру кнопок у HEAD
+                var styleId = 'fpl-pills-styles';
+                var styleEl = doc.getElementById(styleId);
+                if (!styleEl) {{
+                    styleEl = doc.createElement('style');
+                    styleEl.id = styleId;
+                    styleEl.innerHTML = `
+                        [data-pill-size="60"] {{ width: 60px !important; min-width: 60px !important; max-width: 60px !important; padding: 0 !important; }}
+                        [data-pill-size="48"] {{ width: 48px !important; min-width: 48px !important; max-width: 48px !important; padding: 0 !important; }}
+                    `;
+                    doc.head.appendChild(styleEl);
+                }}
+
+                var groups = doc.querySelectorAll('[data-testid="stSidebar"] [data-testid="stPills"]');
+                
+                groups.forEach(function(g, i) {{
+                    var targetSize = (i >= plStartIdx) ? '48' : '60';
+                    var btns = g.querySelectorAll('button');
+                    
+                    btns.forEach(function(btn) {{
+                        // Призначаємо розмір через data-атрибут
+                        if (btn.getAttribute('data-pill-size') !== targetSize) {{
+                            btn.setAttribute('data-pill-size', targetSize);
+                        }}
+                        
+                        // Відновлюємо логіку opacity
                         var txt = btn.innerText.trim();
-                        btn.style.opacity = inactive.includes(txt) ? '0.3' : '';
+                        var groupInactive = inactiveMap[i] || [];
+                        var expectedOpacity = groupInactive.includes(txt) ? '0.3' : '';
+                        if (btn.style.opacity !== expectedOpacity) {{
+                            btn.style.opacity = expectedOpacity;
+                        }}
                     }});
                 }});
             }} catch(e) {{}}
         }}
+        
         [50, 200, 500, 1000].forEach(function(t) {{ setTimeout(applyStyles, t); }});
         try {{
             var observer = new MutationObserver(applyStyles);
-            observer.observe(window.parent.document.body,
-                {{subtree: true, childList: true, attributes: false}});
+            // Спостерігаємо за всім сайдбаром для миттєвого перепризначення атрибутів після рендерінгу React
+            observer.observe(window.parent.document.body, {{
+                subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'disabled']
+            }});
         }} catch(e) {{}}
     }})();
     </script>
