@@ -145,6 +145,21 @@ def _build_mask_from_state(state, exclude_key=None):
         mask &= df['full_name'].str.contains(cv_search, case=False, na=False)
     return mask
 
+def _build_pills_only_mask(state):
+    """Маска тільки з pills та пошуку — для авторозрахунку діапазонів слайдерів.
+    Слайдери НЕ залежать один від одного у своїх доступних межах."""
+    mask = pd.Series([True] * len(df), index=df.index)
+    cv_pos    = state.get('pills_pos',   sorted_positions) or []
+    cv_teams  = state.get('pills_teams', all_teams) or []
+    cv_pl     = state.get('pl_pos', [])
+    cv_search = state.get('search_name', '')
+    mask &= df['element_type'].isin(cv_pos)
+    mask &= df['team_short_name'].isin(cv_teams)
+    if cv_pl:
+        mask &= df['Play Pos'].isin(cv_pl)
+    mask &= df['full_name'].str.contains(cv_search, case=False, na=False)
+    return mask
+
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p style='font-size:0.875rem;margin-bottom:0'>{label}</p>", unsafe_allow_html=True)
@@ -229,9 +244,11 @@ SLIDER_SPECS = [
 ]
 
 if _state_changed:
+    # Розраховуємо доступний діапазон ЛИШЕ на основі pills/пошуку,
+    # щоб слайдери не обмежували один одного (уникаємо cascading)
+    _pills_mask = _build_pills_only_mask(FROZEN)
     for s_key, s_col, s_cast, s_pos in SLIDER_SPECS:
-        mask = _build_mask_from_state(FROZEN, exclude_key=s_key)
-        series = df[mask][s_col].dropna()
+        series = df[_pills_mask][s_col].dropna()
         if s_pos:
             series = series[series > 0]
         if series.empty:
