@@ -39,10 +39,14 @@ def load_data():
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce')
         df = df.sort_values(by="av_rating_alt", ascending=False)
     
-    # Calculate Transfer Activity Percentile
+    # Calculate Transfer Activity (Percentage of Max)
     if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
         df['transfer_activity'] = df['transfers_in_24'] + df['transfers_out_24']
-        df['transfer_activity_pct'] = df['transfer_activity'].rank(pct=True) * 100.0
+        max_act = df['transfer_activity'].max()
+        if max_act > 0:
+            df['transfer_activity_pct'] = (df['transfer_activity'] / max_act) * 100.0
+        else:
+            df['transfer_activity_pct'] = 0.0
     else:
         df['transfer_activity_pct'] = 0.0
         
