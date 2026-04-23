@@ -100,50 +100,33 @@ if 'pills_pl_pos' not in st.session_state: st.session_state.pills_pl_pos = all_p
 
 # ========================== ХЕЛПЕРИ ==========================
 
-def _pills_snapshot():
-    """Знімок стану pills-фільтрів для виявлення змін."""
-    snap = {
-        'pos':    tuple(sorted(st.session_state.get('pills_pos',   sorted_positions) or [])),
-        'teams':  tuple(sorted(st.session_state.get('pills_teams', all_teams) or [])),
-        'search': st.session_state.get('search_name', ''),
-    }
-    for i, line in enumerate(pl_lines):
-        avail = [p for p in line if p in actual_pl_pos]
-        snap[f'pl_{i}'] = tuple(sorted(st.session_state.get(f'pills_pl_line_{i}', avail)))
-    return snap
-
-
 def _safe_range(key, default):
-    """Безпечне читання діапазону зі session_state. Якщо значення не tuple/list — повертає default."""
+    """Безпечне читання діапазону зі session_state."""
     val = st.session_state.get(key, default)
     if isinstance(val, (tuple, list)) and len(val) == 2:
         return val
     return default
 
-
-def get_available(exclude_key=None):
-    """Повертає підмножину df за всіма фільтрами, крім exclude_key."""
-    cv_pos      = st.session_state.get('pills_pos',   sorted_positions) or []
-    cv_teams    = st.session_state.get('pills_teams', all_teams) or []
-    cv_matches  = _safe_range('f_matches',  DEFAULTS['f_matches'])
-    cv_60min    = _safe_range('f_60min',    DEFAULTS['f_60min'])
-    cv_cost     = _safe_range('f_cost',     DEFAULTS['f_cost'])
-    cv_avg_mins = _safe_range('f_avg_mins', DEFAULTS['f_avg_mins'])
-    cv_selected = _safe_range('f_selected', DEFAULTS['f_selected'])
-    cv_top100k  = _safe_range('f_top100k',  DEFAULTS['f_top100k'])
-    cv_rating   = _safe_range('f_rating',   DEFAULTS['f_rating'])
-    cv_search   = st.session_state.get('search_name', '')
-
-    cv_pl_pos = []
-    for i, line in enumerate(pl_lines):
-        avail = [p for p in line if p in actual_pl_pos]
-        cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_{i}', avail))
-
+def _build_mask_from_state(state, exclude_key=None):
+    """Будує pandas маску на основі зафіксованого стану фільтрів."""
     mask = pd.Series([True] * len(df), index=df.index)
+
+    cv_pos      = state.get('pills_pos',   sorted_positions) or []
+    cv_teams    = state.get('pills_teams', all_teams) or []
+    cv_pl_pos   = state.get('pl_pos', [])
+    cv_matches  = state.get('f_matches',  DEFAULTS['f_matches'])
+    cv_60min    = state.get('f_60min',    DEFAULTS['f_60min'])
+    cv_cost     = state.get('f_cost',     DEFAULTS['f_cost'])
+    cv_avg_mins = state.get('f_avg_mins', DEFAULTS['f_avg_mins'])
+    cv_selected = state.get('f_selected', DEFAULTS['f_selected'])
+    cv_top100k  = state.get('f_top100k',  DEFAULTS['f_top100k'])
+    cv_rating   = state.get('f_rating',   DEFAULTS['f_rating'])
+    cv_search   = state.get('search_name', '')
+
     if exclude_key != 'pills_pos':   mask &= df['element_type'].isin(cv_pos)
     if exclude_key != 'pills_teams': mask &= df['team_short_name'].isin(cv_teams)
-    if exclude_key != 'pills_pl':
-        if cv_pl_pos: mask &= df['Play Pos'].isin(cv_pl_pos)
+    if exclude_key != 'pills_pl' and cv_pl_pos:
+        mask &= df['Play Pos'].isin(cv_pl_pos)
     if exclude_key != 'f_matches':
         mask &= (df['matches_played'] >= cv_matches[0]) & (df['matches_played'] <= cv_matches[1])
     if exclude_key != 'f_60min':
@@ -160,56 +143,7 @@ def get_available(exclude_key=None):
         mask &= (df['av_rating_alt'] >= cv_rating[0]) & (df['av_rating_alt'] <= cv_rating[1])
     if exclude_key != 'search':
         mask &= df['full_name'].str.contains(cv_search, case=False, na=False)
-    return df[mask]
-
-
-def auto_update_slider(key, col, exclude_key, cast=float, only_positive=False):
-    """
-    Оновлює session_state[key] при зміні ІНШИХ фільтрів.
-    Логіка: завжди відображає реальний діапазон, але не виходить за межі DEFAULTS.
-    """
-    hash_key = f'_hash_{key}'
-    current_snap = _pills_snapshot()
-    # Включаємо в snapshot інші слайдери (крім поточного)
-    for k in DEFAULTS:
-        if k != key:
-            current_snap[k] = st.session_state.get(k, DEFAULTS[k])
-    current_hash = str(current_snap)
-
-    prev_hash = st.session_state.get(hash_key)
-
-    # Якщо інші фільтри не змінились і значення вже є — не чіпаємо
-    if prev_hash == current_hash and key in st.session_state:
-        return
-
-    avail_df = get_available(exclude_key)
-    series = avail_df[col].dropna()
-    if only_positive:
-        series = series[series > 0]
-
-    if series.empty:
-        st.session_state[hash_key] = current_hash
-        # Ініціалізуємо значення, якщо раніше не було встановлено
-        if key not in st.session_state:
-            st.session_state[key] = DEFAULTS[key]
-        return
-
-    avail_min = cast(series.min())
-    avail_max = cast(series.max())
-    def_lower  = cast(DEFAULTS[key][0])
-    def_upper  = cast(DEFAULTS[key][1])
-
-    # Нижня: clamp до дефолтної нижньої межі (не падає нижче), але слідує за даними вгору/вниз
-    new_lower = max(def_lower, avail_min)
-    # Верхня: clamp до дефолтної верхньої межі, слідує за даними в обох напрямках
-    new_upper = min(def_upper, avail_max)
-
-    if new_lower > new_upper:
-        new_lower, new_upper = def_lower, def_upper
-
-    st.session_state[key] = (new_lower, new_upper)
-    st.session_state[hash_key] = current_hash
-
+    return mask
 
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
@@ -227,12 +161,7 @@ def filter_header(label, options, key_prefix):
                 st.session_state[f"pills_pl_line_{i}"] = []
         st.rerun()
 
-
 def inject_inactive_pills(inactive_map: dict):
-    """
-    Вставляє JS (через components.html) для затемнення неактивних пігулок.
-    inactive_map: {group_index: [list of inactive option texts]}
-    """
     js = f"""
     <script>
     (function() {{
@@ -265,15 +194,7 @@ def inject_inactive_pills(inactive_map: dict):
     """
     st.components.v1.html(js, height=0, scrolling=False)
 
-
-# ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
-auto_update_slider('f_cost',     'now_cost',            'f_cost',    float)
-auto_update_slider('f_matches',  'matches_played',      'f_matches', int)
-auto_update_slider('f_rating',   'av_rating_alt',       'f_rating',  float, only_positive=True)
-auto_update_slider('f_avg_mins', 'avg_mins',            'f_avg_mins',float)
-auto_update_slider('f_60min',    '60_min',              'f_60min',   float)
-auto_update_slider('f_selected', 'selected_by_percent', 'f_selected',float)
-auto_update_slider('f_top100k',  'top_100k',            'f_top100k', float)
+auto_update_slider = None  # removed - replaced by FROZEN architecture
 
 # ========================== САЙДБАР ==========================
 if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
@@ -284,7 +205,7 @@ if st.sidebar.button("Reset All Filters", use_container_width=True, type="primar
 search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", key="search_name")
 
 # --- 1. FPL POSITION ---
-avail_pos = set(get_available('pills_pos')['element_type'].unique())
+avail_pos = _avail_pos
 filter_header("FPL Position", sorted_positions, "pos")
 selected_positions = st.sidebar.pills(
     "FPL Position", options=sorted_positions, key="pills_pos",
@@ -293,11 +214,13 @@ selected_positions = st.sidebar.pills(
 
 # --- 2. FPL PRICE ---
 f_cost = st.sidebar.slider(
-    "FPL Price", GB['f_cost'][0], GB['f_cost'][1], step=0.1, format="%.1f", key="f_cost"
+    "FPL Price", GB['f_cost'][0], GB['f_cost'][1],
+    value=_safe_range('f_cost', DEFAULTS['f_cost']),
+    step=0.1, format="%.1f", key="f_cost"
 )
 
 # --- 3. TEAM ---
-avail_teams = set(get_available('pills_teams')['team_short_name'].unique())
+avail_teams = _avail_teams
 filter_header("Team", all_teams, "teams")
 selected_teams = st.sidebar.pills(
     "Team", options=all_teams, key="pills_teams",
@@ -305,7 +228,7 @@ selected_teams = st.sidebar.pills(
 )
 
 # --- 4. PLAYING POSITION ---
-avail_pl = set(get_available('pills_pl')['Play Pos'].dropna().unique())
+avail_pl = _avail_pl
 filter_header("Playing Position", all_pl_pos, "pl_pos")
 selected_pl_pos = []
 inactive_pl_map = {}   # group_index -> list of inactive option texts
