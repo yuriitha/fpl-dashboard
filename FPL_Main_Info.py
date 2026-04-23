@@ -179,36 +179,36 @@ def get_current_mask(exclude=None):
         m &= (df['top_100k'] >= st.session_state.f_top100k[0]) & (df['top_100k'] <= st.session_state.f_top100k[1])
     return m
 
-# Перевіряємо, чи змінився хоча б один фільтр
-any_changed = False
-for k in filter_keys:
-    if st.session_state[k] != st.session_state[f"prev_{k}"]:
-        any_changed = True
-        break
+# Перевіряємо, які саме фільтри змінив користувач
+changed_keys = [k for k in filter_keys if st.session_state[k] != st.session_state[f"prev_{k}"]]
 
-if any_changed:
-    # Оновлюємо ВСІ фільтри на основі нової реальності
-    # 1. Pills (Тільки ті значення, що реально є в даних)
-    m_others = get_current_mask(exclude="pills_teams")
-    st.session_state.pills_teams = sorted(df[m_others]['team_short_name'].unique().tolist())
+if changed_keys:
+    # Оновлюємо ВСІ фільтри на основі нової реальності, КРІМ тих, що змінено
+    # 1. Pills
+    if "pills_teams" not in changed_keys:
+        m_others = get_current_mask(exclude="pills_teams")
+        st.session_state.pills_teams = sorted(df[m_others]['team_short_name'].unique().tolist())
     
-    m_others = get_current_mask(exclude="pills_pos")
-    st.session_state.pills_pos = [p for p in sorted_positions if p in df[m_others]['element_type'].unique()]
+    if "pills_pos" not in changed_keys:
+        m_others = get_current_mask(exclude="pills_pos")
+        st.session_state.pills_pos = [p for p in sorted_positions if p in df[m_others]['element_type'].unique()]
 
-    # 2. Sliders (Підтягуємо межі)
+    # 2. Sliders
     for s_key, col in [("f_cost", "now_cost"), ("f_rating", "av_rating_alt"), ("f_matches", "matches_played"), 
                        ("f_avg_mins", "avg_mins"), ("f_60min", "60_min"), ("f_selected", "selected_by_percent"), 
                        ("f_top100k", "top_100k")]:
+        if s_key in changed_keys:
+            continue
+            
         m_others = get_current_mask(exclude=s_key)
         series = df[m_others][col].dropna()
         if col == "av_rating_alt": series = series[series > 0]
         if not series.empty:
             new_val = (float(series.min()), float(series.max()))
-            # Якщо це слайдер з цілими числами (matches), конвертуємо
             if col == "matches_played": new_val = (int(series.min()), int(series.max()))
             st.session_state[s_key] = new_val
 
-    # Оновлюємо "prev" значення
+    # Оновлюємо "prev" значення для всіх
     for k in filter_keys: st.session_state[f"prev_{k}"] = st.session_state[k]
     st.rerun()
 
