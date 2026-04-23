@@ -10,7 +10,6 @@ st.markdown("""
         [data-testid="stDataFrame"] td { text-align: center !important; }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         [data-testid="stSidebar"] button {
-            width: 60px !important; min-width: 60px !important; max-width: 60px !important;
             justify-content: center !important; padding: 0px !important;
             font-size: 0.75rem !important; height: 26px !important;
         }
@@ -21,20 +20,26 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
-        /* 1. Гарантоване центрування: будь-який контейнер, що безпосередньо містить кнопки */
-        [data-testid="stSidebar"] div:has(> button) {
+
+        /* Динамічні класи, які додає JavaScript */
+        .pill-60px button {
+            width: 60px !important; min-width: 60px !important; max-width: 60px !important;
+        }
+        .pill-48px button {
+            width: 48px !important; min-width: 48px !important; max-width: 48px !important;
+        }
+        
+        /* Гарантоване центрування всіх рівнів вкладеності */
+        .pill-container-centered,
+        .pill-container-centered [data-testid="stPills"],
+        .pill-container-centered [data-testid="stPills"] > div,
+        .pill-container-centered [role="group"],
+        .pill-container-centered [role="radiogroup"],
+        .pill-container-centered [data-testid="stButtonGroup"] {
             display: flex !important;
             justify-content: center !important;
             flex-wrap: wrap !important;
             width: 100% !important;
-        }
-
-        /* 2. Playing Position: розмір пігулок 48px (знаходимо ізольований блок через якір) */
-        div[data-testid="stVerticalBlock"]:has(#pl-pills-start) button {
-            width: 48px !important; 
-            min-width: 48px !important; 
-            max-width: 48px !important;
-            padding: 0px !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -288,7 +293,22 @@ def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
                 var doc = window.parent.document;
                 var groups = doc.querySelectorAll(
                     '[data-testid="stSidebar"] [data-testid="stPills"]'
-                // Позначаємо неактивні пігулки
+                // Позначаємо неактивні пігулки та призначаємо класи розміру/центрування
+                groups.forEach(function(g, i) {{
+                    // Центрування: додаємо клас батьківському контейнеру
+                    var container = g.closest('.stElementContainer');
+                    if (container) {{ container.classList.add('pill-container-centered'); }}
+                    
+                    // Розмір: FPL Position та Team (0, 1) = 60px, Playing Position (2+) = 48px
+                    if (i >= plStartIdx) {{
+                        g.classList.add('pill-48px');
+                        g.classList.remove('pill-60px');
+                    }} else {{
+                        g.classList.add('pill-60px');
+                        g.classList.remove('pill-48px');
+                    }}
+                }});
+
                 Object.keys(inactiveMap).forEach(function(idx) {{
                     var group = groups[parseInt(idx)];
                     if (!group) return;
@@ -359,30 +379,26 @@ selected_pl_pos = []
 inactive_pl_map = {}   # group_index -> list of inactive option texts
 pill_group_idx = 2     # 0=FPL Position, 1=Team, 2+ = pl_lines
 
-# Використовуємо контейнер, щоб CSS-правило застосувалось ТІЛЬКИ до цих пігулок
-with st.sidebar.container():
-    st.markdown('<div id="pl-pills-start"></div>', unsafe_allow_html=True)
-    
-    for idx, line in enumerate(pl_lines):
-        available_in_line = [p for p in line if p in actual_pl_pos]
-        if not available_in_line:
-            continue
-        line_key = f"pills_pl_line_{idx}"
-        if line_key not in st.session_state:
-            st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos if p in available_in_line]
-    
-        line_res = st.pills(
-            label=f"pl_line_{idx}", options=available_in_line, key=line_key,
-            selection_mode="multi", label_visibility="collapsed"
-        )
-        # Збираємо неактивні для JS
-        inactive_in_line = [p for p in available_in_line if p not in avail_pl]
-        if inactive_in_line:
-            inactive_pl_map[pill_group_idx] = inactive_in_line
-        pill_group_idx += 1
-    
-        if line_res:
-            selected_pl_pos.extend(line_res)
+for idx, line in enumerate(pl_lines):
+    available_in_line = [p for p in line if p in actual_pl_pos]
+    if not available_in_line:
+        continue
+    line_key = f"pills_pl_line_{idx}"
+    if line_key not in st.session_state:
+        st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos if p in available_in_line]
+
+    line_res = st.sidebar.pills(
+        label=f"pl_line_{idx}", options=available_in_line, key=line_key,
+        selection_mode="multi", label_visibility="collapsed"
+    )
+    # Збираємо неактивні для JS
+    inactive_in_line = [p for p in available_in_line if p not in avail_pl]
+    if inactive_in_line:
+        inactive_pl_map[pill_group_idx] = inactive_in_line
+    pill_group_idx += 1
+
+    if line_res:
+        selected_pl_pos.extend(line_res)
 
 
 # --- PERFORMANCE STATS ---
