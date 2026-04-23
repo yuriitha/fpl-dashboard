@@ -10,6 +10,7 @@ st.markdown("""
         [data-testid="stDataFrame"] td { text-align: center !important; }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         [data-testid="stSidebar"] button {
+            width: 60px !important; min-width: 60px !important; max-width: 60px !important;
             justify-content: center !important; padding: 0px !important;
             font-size: 0.75rem !important; height: 26px !important;
         }
@@ -21,21 +22,28 @@ st.markdown("""
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
 
-        /* Динамічні класи, які додає JavaScript */
-        .pill-60px button {
-            width: 60px !important; min-width: 60px !important; max-width: 60px !important;
+        /* 1. Playing Position: розмір пігулок 48px (9-й контейнер у сайдбарі) */
+        [data-testid="stSidebarUserContent"] > div[data-testid="stVerticalBlock"] > div.stElementContainer:nth-child(9) button {
+            width: 48px !important; 
+            min-width: 48px !important; 
+            max-width: 48px !important;
         }
-        .pill-48px button {
-            width: 48px !important; min-width: 48px !important; max-width: 48px !important;
+
+        /* 2. Гарантоване розтягування батьківських контейнерів пігулок (4=FPL Pos, 7=Team, 9=Play Pos) */
+        [data-testid="stSidebarUserContent"] > div[data-testid="stVerticalBlock"] > div.stElementContainer:nth-child(4),
+        [data-testid="stSidebarUserContent"] > div[data-testid="stVerticalBlock"] > div.stElementContainer:nth-child(7),
+        [data-testid="stSidebarUserContent"] > div[data-testid="stVerticalBlock"] > div.stElementContainer:nth-child(9) {
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
         }
-        
-        /* Гарантоване центрування всіх рівнів вкладеності */
-        .pill-container-centered,
-        .pill-container-centered [data-testid="stPills"],
-        .pill-container-centered [data-testid="stPills"] > div,
-        .pill-container-centered [role="group"],
-        .pill-container-centered [role="radiogroup"],
-        .pill-container-centered [data-testid="stButtonGroup"] {
+
+        /* 3. Гарантоване центрування внутрішніх груп пігулок */
+        [data-testid="stSidebar"] [data-testid="stPills"],
+        [data-testid="stSidebar"] [data-testid="stPills"] > div,
+        [data-testid="stSidebar"] [data-testid="stPills"] [role="group"],
+        [data-testid="stSidebar"] [data-testid="stPills"] [role="radiogroup"],
+        [data-testid="stSidebar"] [data-testid="stPills"] [data-testid="stButtonGroup"] {
             display: flex !important;
             justify-content: center !important;
             flex-wrap: wrap !important;
@@ -293,22 +301,9 @@ def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
                 var doc = window.parent.document;
                 var groups = doc.querySelectorAll(
                     '[data-testid="stSidebar"] [data-testid="stPills"]'
-                // Позначаємо неактивні пігулки та призначаємо класи розміру/центрування
-                groups.forEach(function(g, i) {{
-                    // Центрування: додаємо клас батьківському контейнеру
-                    var container = g.closest('.stElementContainer');
-                    if (container) {{ container.classList.add('pill-container-centered'); }}
-                    
-                    // Розмір: FPL Position та Team (0, 1) = 60px, Playing Position (2+) = 48px
-                    if (i >= plStartIdx) {{
-                        g.classList.add('pill-48px');
-                        g.classList.remove('pill-60px');
-                    }} else {{
-                        g.classList.add('pill-60px');
-                        g.classList.remove('pill-48px');
-                    }}
-                }});
-
+                );
+                
+                // Затемнюємо неактивні пігулки
                 Object.keys(inactiveMap).forEach(function(idx) {{
                     var group = groups[parseInt(idx)];
                     if (!group) return;
