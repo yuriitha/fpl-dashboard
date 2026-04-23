@@ -463,25 +463,31 @@ if not plot_df.empty:
         size="size_for_plot",
         hover_name="full_name",
         hover_data={
-            "web_name": True,
+            "element_type": True,
             "team_short_name": True,
-            "top_100k": ":.1f",
+            "now_cost": ":.1f",
+            "av_rating_alt": ":.2f",
+            "xGI_norm": ":.2f",
             "avg_mins": ":.0f",
-            "matches_played": True,
+            "top_100k": ":.1f",
+            "web_name": False,
+            "matches_played": False,
             "size_for_plot": False,
             "combined_rank": False,
             "rating_sqrt": False,
-            "xGI_sqrt": False,
-            "av_rating_alt": ":.2f",
-            "xGI_norm": ":.2f"
+            "xGI_sqrt": False
         },
         text="label_text",
         labels={
             "rating_sqrt": "Average Rating",
             "xGI_sqrt": "Expected Goal Involvement",
-            "av_rating_alt": "Average Rating",
-            "xGI_norm": "Expected Goal Involvement",
-            "element_type": "" 
+            "element_type": "Position",
+            "team_short_name": "Team",
+            "now_cost": "Price",
+            "av_rating_alt": "Rating",
+            "xGI_norm": "xGI",
+            "avg_mins": "Avg Mins",
+            "top_100k": "Top 100K %"
         },
         template="plotly_dark",
         size_max=20
