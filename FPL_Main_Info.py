@@ -21,20 +21,21 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
-        /* Центрування всіх блоків пігулок */
+        /* Центрування всіх блоків пігулок (через батьківський контейнер) */
+        [data-testid="stSidebar"] .stElementContainer:has([data-testid="stPills"]) {
+            display: flex !important; 
+            justify-content: center !important;
+            width: 100% !important;
+        }
         [data-testid="stSidebar"] [data-testid="stPills"],
-        [data-testid="stSidebar"] [data-testid="stPills"] > div,
-        [data-testid="stSidebar"] div[role="group"],
-        [data-testid="stSidebar"] div[role="radiogroup"] {
+        [data-testid="stSidebar"] [data-testid="stPills"] > div {
             display: flex !important; justify-content: center !important;
             flex-wrap: wrap !important; width: 100% !important;
         }
 
-        /* Playing Position: менший розмір пігулок (48px = -20% від 60px) — призначається JS */
-        [data-testid="stSidebar"] [data-testid="stPills"].pl-pills > div {
-            justify-content: center !important;
-        }
-        [data-testid="stSidebar"] [data-testid="stPills"].pl-pills button {
+        /* Playing Position: розмір пігулок 48px (застосовується до елементів після якоря) */
+        #pl-pills-start ~ div[data-testid="stVerticalBlock"] [data-testid="stPills"] button,
+        #pl-pills-start ~ .stElementContainer [data-testid="stPills"] button {
             width: 48px !important; min-width: 48px !important; max-width: 48px !important;
         }
     </style>
@@ -289,39 +290,7 @@ def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
                 var doc = window.parent.document;
                 var groups = doc.querySelectorAll(
                     '[data-testid="stSidebar"] [data-testid="stPills"]'
-                );
-                // Примусово стилізуємо кожен блок пігулок
-                groups.forEach(function(g, i) {{
-                    g.style.setProperty('width', '100%', 'important');
-                    
-                    // Центруємо всі flex-контейнери всередині stPills
-                    var divs = g.querySelectorAll('div');
-                    divs.forEach(function(d) {{
-                        var style = window.getComputedStyle(d);
-                        if (style.display === 'flex' || style.display === 'inline-flex') {{
-                            d.style.setProperty('justify-content', 'center', 'important');
-                            d.style.setProperty('width', '100%', 'important');
-                            d.style.setProperty('flex-wrap', 'wrap', 'important');
-                        }}
-                    }});
-
-                    // Групи Playing Position (індекс 2+)
-                    if (i >= plStartIdx) {{
-                        g.querySelectorAll('button').forEach(function(btn) {{
-                            btn.style.setProperty('width', '48px', 'important');
-                            btn.style.setProperty('min-width', '48px', 'important');
-                            btn.style.setProperty('max-width', '48px', 'important');
-                            btn.style.setProperty('padding', '0px', 'important');
-                            
-                            // Зменшуємо також внутрішні елементи кнопки (span, p)
-                            btn.querySelectorAll('*').forEach(function(child) {{
-                                child.style.setProperty('padding', '0px', 'important');
-                                child.style.setProperty('margin', '0px', 'important');
-                            }});
-                        }});
-                    }}
-                }});
-                // Затемнюємо неактивні пігулки
+                // Позначаємо неактивні пігулки
                 Object.keys(inactiveMap).forEach(function(idx) {{
                     var group = groups[parseInt(idx)];
                     if (!group) return;
@@ -391,6 +360,9 @@ filter_header("Playing Position", all_pl_pos, "pl_pos")
 selected_pl_pos = []
 inactive_pl_map = {}   # group_index -> list of inactive option texts
 pill_group_idx = 2     # 0=FPL Position, 1=Team, 2+ = pl_lines
+
+# Додаємо якір для CSS, щоб застосувати унікальні стилі (менший розмір) тільки для цих пігулок
+st.sidebar.markdown('<div id="pl-pills-start"></div>', unsafe_allow_html=True)
 
 for idx, line in enumerate(pl_lines):
     available_in_line = [p for p in line if p in actual_pl_pos]
