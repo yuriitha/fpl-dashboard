@@ -497,20 +497,20 @@ if not plot_df.empty:
         )
     )
 
-    # Динамічні сітки для перетворених шкал
+    # Динамічні сітки для перетворених шкал (кожні 0.1)
     r_min, r_max = plot_df['av_rating_alt'].min(), plot_df['av_rating_alt'].max()
-    r_ticks = np.array([3, 4, 5, 6, 7, 8, 9, 10])
-    if not pd.isna(r_min) and not pd.isna(r_max):
-        r_ticks = r_ticks[(r_ticks >= np.floor(r_min)) & (r_ticks <= np.ceil(r_max))]
-        if len(r_ticks) < 4:
-            r_ticks = np.linspace(np.floor(r_min), np.ceil(r_max), 5).round(1)
+    if pd.isna(r_min) or pd.isna(r_max):
+        r_min, r_max = 4.0, 10.0
+    r_start = np.floor(r_min * 10) / 10
+    r_end = np.ceil(r_max * 10) / 10
+    r_ticks = np.arange(r_start, r_end + 0.05, 0.1).round(1)
             
     x_min, x_max = plot_df['xGI_norm'].min(), plot_df['xGI_norm'].max()
-    x_ticks = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5])
-    if not pd.isna(x_min) and not pd.isna(x_max):
-        x_ticks = x_ticks[(x_ticks >= 0) & (x_ticks <= np.ceil(x_max * 10) / 10)]
-        if len(x_ticks) < 4:
-            x_ticks = np.linspace(0, np.ceil(x_max * 10) / 10, 5).round(2)
+    if pd.isna(x_min) or pd.isna(x_max):
+        x_min, x_max = 0.0, 1.5
+    x_start = np.floor(x_min * 10) / 10
+    x_end = np.ceil(x_max * 10) / 10
+    x_ticks = np.arange(x_start, x_end + 0.05, 0.1).round(1)
 
     fig.update_layout(
         height=800,
