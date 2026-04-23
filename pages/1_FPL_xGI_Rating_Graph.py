@@ -438,7 +438,8 @@ if not plot_df.empty:
     plot_df['p_avgmins'] = plot_df['avg_mins'].rank(pct=True)
     
     plot_df['combined_rank'] = (plot_df['p_top100k'] + plot_df['p_avgmins']) / 2
-    plot_df['size_for_plot'] = plot_df['combined_rank'] * 20 + 5 
+    # Підносимо до квадрату, щоб створити експоненційну різницю між мінімумом і максимумом
+    plot_df['size_for_plot'] = (plot_df['combined_rank'] ** 2) * 100 + 10
 
     # Використовуємо квадратний корінь замість логарифма для більш помірного розтягування (вдвічі слабшого)
     plot_df['rating_sqrt'] = plot_df['av_rating_alt'] ** 0.5
@@ -483,7 +484,7 @@ if not plot_df.empty:
             "element_type": "" 
         },
         template="plotly_dark",
-        size_max=20
+        size_max=40
     )
 
     fig.update_traces(
