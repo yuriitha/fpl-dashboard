@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для відцентрування заголовків та даних
+# CSS для відцентрування заголовків та даних і стилізації сайдбару
 st.markdown("""
     <style>
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th {
@@ -18,13 +18,32 @@ st.markdown("""
         [data-testid="stDataFrame"] td {
             text-align: center !important;
         }
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
+        [data-testid="stSidebar"] button {
+            width: 60px !important; min-width: 60px !important; max-width: 60px !important;
+            justify-content: center !important; padding: 0px !important;
+            font-size: 0.75rem !important; height: 26px !important;
+        }
+        [data-testid="stSidebar"] button[kind="primary"] { width: 100% !important; max-width: none !important; }
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] button {
+            width: 100% !important; max-width: none !important; min-width: 0px !important;
+            height: 18px !important; min-height: 18px !important; font-size: 0.6rem !important;
+            padding: 0px !important; line-height: 1 !important; border: none !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
+
+        /* Запобігаємо мерехтінню: CSS-правило на базі стабільного батька, якому JS призначає клас */
+        .playing-pos-wrapper button {
+            width: 48px !important; min-width: 48px !important; max-width: 48px !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
+import json
+
 @st.cache_data(ttl=300)
 def load_data():
-    # URL вашого API
     url = "http://194.99.22.193:8000/fpl_players"
     df = pd.read_parquet(url)
     
@@ -39,59 +58,336 @@ except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
 
-# ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
-st.sidebar.header("Main Filters") 
+# ========================== ПІДГОТОВКА ==========================
+all_teams = sorted(df['team_short_name'].unique().tolist())
+pos_order = ['GK', 'DEF', 'MID', 'FW']
+actual_pos = df['element_type'].unique().tolist()
+sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
 
-# Позиції
-positions = sorted(df['element_type'].unique()) if 'element_type' in df.columns else []
-selected_positions = st.sidebar.multiselect("Pos", options=positions, default=[p for p in positions if p != "GK"])
+pl_lines = [['GK'], ['RB', 'CB', 'LB'], ['RM', 'DM', 'CM', 'LM'], ['RW', 'AM', 'LW'], ['SS', 'CF']]
+defined_pl_pos = [p for line in pl_lines for p in line]
+actual_pl_pos = df['Play Pos'].dropna().unique().tolist()
+others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
+if others: pl_lines.append(others)
+all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
-# Команди
-teams = sorted(df['team_short_name'].unique()) if 'team_short_name' in df.columns else []
-selected_teams = st.sidebar.multiselect("Team", options=teams, default=teams)
+def _get_max(col, default=1.0): return float(df[col].max()) if col in df.columns else default
+def _get_min(col, default=0.0): return float(df[col].min()) if col in df.columns else default
 
-# Ціна
-c_min = float(df['now_cost'].min()) if 'now_cost' in df.columns else 4.0
-c_max = float(df['now_cost'].max()) if 'now_cost' in df.columns else 15.0
-f_cost = st.sidebar.slider("Price", c_min, c_max, (c_min, c_max), 0.1)
+# Глобальні межі шкали (незмінні)
+GB = {
+    'f_cost':     (_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
+    'f_matches':  (int(_get_min('matches_played', 0)), int(_get_max('matches_played', 38))),
+    'f_rating':   (_get_min('av_rating_alt'), _get_max('av_rating_alt', 10.0)),
+    'f_avg_mins': (_get_min('avg_mins'), _get_max('avg_mins', 90.0)),
+    'f_60min':    (_get_min('60_min'), _get_max('60_min', 100.0)),
+    'f_xgot':     (0.0, _get_max('xGoT_90')),
+    'f_xa':       (0.0, _get_max('xA_90')),
+    'f_xgi':      (0.0, _get_max('xGI_norm')),
+    'f_sh':       (0.0, _get_max('Sh_90')),
+    'f_shot':     (0.0, _get_max('ShoT_90')),
+    'f_kp':       (0.0, _get_max('KP_90')),
+    'f_pass':     (0.0, _get_max('Pass_pct', 100.0)),
+}
+# Дефолтні значення повзунків
+DEFAULTS = {
+    'f_cost':     GB['f_cost'],
+    'f_matches':  (5, GB['f_matches'][1]),
+    'f_rating':   GB['f_rating'],
+    'f_avg_mins': GB['f_avg_mins'],
+    'f_60min':    (37.0, GB['f_60min'][1]),
+    'f_xgot':     GB['f_xgot'],
+    'f_xa':       GB['f_xa'],
+    'f_xgi':      GB['f_xgi'],
+    'f_sh':       GB['f_sh'],
+    'f_shot':     GB['f_shot'],
+    'f_kp':       GB['f_kp'],
+    'f_pass':     GB['f_pass'],
+}
 
-# Матчі
-m_min = int(df['matches_played'].min()) if 'matches_played' in df.columns else 0
-m_max = int(df['matches_played'].max()) if 'matches_played' in df.columns else 38
-f_matches = st.sidebar.slider("Matches Played", m_min, m_max, (min(5, m_max), m_max))
+# ========================== SESSION STATE ==========================
+if 'pills_teams_as'  not in st.session_state: st.session_state.pills_teams_as  = all_teams
+if 'pills_pos_as'    not in st.session_state: st.session_state.pills_pos_as    = [p for p in sorted_positions if p != 'GK']
+if 'pills_pl_pos_as' not in st.session_state: st.session_state.pills_pl_pos_as = all_pl_pos
 
-# Середні хвилини та 60 хв
-am_min = float(df['avg_mins'].min()) if 'avg_mins' in df.columns else 0.0
-am_max = float(df['avg_mins'].max()) if 'avg_mins' in df.columns else 90.0
-f_avg_mins = st.sidebar.slider("Average Mins", am_min, am_max, (am_min, am_max), 1.0)
+# ========================== ХЕЛПЕРИ ==========================
+def _pills_snapshot():
+    snap = {
+        'pos':    tuple(sorted(st.session_state.get('pills_pos_as',   [p for p in sorted_positions if p != 'GK']) or [])),
+        'teams':  tuple(sorted(st.session_state.get('pills_teams_as', all_teams) or [])),
+        'search': st.session_state.get('search_name_as', ''),
+    }
+    for i, line in enumerate(pl_lines):
+        avail = [p for p in line if p in actual_pl_pos]
+        snap[f'pl_{i}'] = tuple(sorted(st.session_state.get(f'pills_pl_line_as_{i}', avail)))
+    return snap
 
-min_60 = float(df['60_min'].min()) if '60_min' in df.columns else 0.0
-max_60 = float(df['60_min'].max()) if '60_min' in df.columns else 100.0
-f_60min = st.sidebar.slider("60 Min %", min_60, max_60, (min(37.0, max_60), max_60), 0.5)
+def _safe_range(key, default):
+    val = st.session_state.get(key, default)
+    if isinstance(val, (tuple, list)) and len(val) == 2:
+        return val
+    return default
 
-# Додаткові показники (Advanced)
-with st.sidebar.expander("Advanced Stats Filters", expanded=True):
-    def get_max(col): return float(df[col].max()) if col in df.columns else 1.0
-    
-    f_xg = st.slider("xG/90", 0.0, get_max('xG_90'), (0.0, get_max('xG_90')), 0.05)
-    f_xa = st.slider("xA/90", 0.0, get_max('xA_90'), (0.0, get_max('xA_90')), 0.05)
-    f_xgi = st.slider("xGI_n/90", 0.0, get_max('xGI_norm'), (0.0, get_max('xGI_norm')), 0.1)
-    f_sh = st.slider("Sh/90", 0.0, get_max('Sh_90'), (0.0, get_max('Sh_90')), 0.5)
-    f_kp = st.slider("KP/90", 0.0, get_max('KP_90'), (0.0, get_max('KP_90')), 0.1)
+def get_base_df(exclude_key=None):
+    cv_pos    = st.session_state.get('pills_pos_as',   [p for p in sorted_positions if p != 'GK']) or []
+    cv_teams  = st.session_state.get('pills_teams_as', all_teams) or []
+    cv_search = st.session_state.get('search_name_as', '')
+
+    cv_pl_pos = []
+    for i, line in enumerate(pl_lines):
+        avail = [p for p in line if p in actual_pl_pos]
+        cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_as_{i}', avail))
+
+    mask = (
+        df['element_type'].isin(cv_pos) &
+        df['team_short_name'].isin(cv_teams) &
+        df['full_name'].str.contains(cv_search, case=False, na=False)
+    )
+    if cv_pl_pos:
+        mask &= df['Play Pos'].fillna('').isin(cv_pl_pos)
+
+    _slider_cols = {
+        'f_matches_as':  ('matches_played', DEFAULTS['f_matches']),
+        'f_60min_as':    ('60_min',         DEFAULTS['f_60min']),
+        'f_cost_as':     ('now_cost',       DEFAULTS['f_cost']),
+        'f_avg_mins_as': ('avg_mins',       DEFAULTS['f_avg_mins']),
+        'f_rating_as':   ('av_rating_alt',  DEFAULTS['f_rating']),
+        'f_xgot_as':     ('xGoT_90',        DEFAULTS['f_xgot']),
+        'f_xa_as':       ('xA_90',          DEFAULTS['f_xa']),
+        'f_xgi_as':      ('xGI_norm',       DEFAULTS['f_xgi']),
+        'f_sh_as':       ('Sh_90',          DEFAULTS['f_sh']),
+        'f_shot_as':     ('ShoT_90',        DEFAULTS['f_shot']),
+        'f_kp_as':       ('KP_90',          DEFAULTS['f_kp']),
+        'f_pass_as':     ('Pass_pct',       DEFAULTS['f_pass']),
+    }
+    for k, (col_name, d) in _slider_cols.items():
+        if k != exclude_key and col_name in df.columns:
+            val = _safe_range(k, d)
+            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
+
+    return df[mask]
+
+def get_available(exclude_key=None):
+    return get_base_df(exclude_key)
+
+def auto_update_slider(key, base_key, col, cast=float, only_positive=False):
+    if col not in df.columns:
+        return
+    hash_key = f'_hash_{key}'
+    current_hash = str(_pills_snapshot())
+    prev_hash = st.session_state.get(hash_key)
+
+    if prev_hash == current_hash and key in st.session_state:
+        return
+
+    series = get_base_df(key)[col].dropna()
+    if only_positive:
+        series = series[series > 0]
+
+    if series.empty:
+        st.session_state[hash_key] = current_hash
+        if key not in st.session_state:
+            st.session_state[key] = DEFAULTS[base_key]
+        return
+
+    avail_min = cast(series.min())
+    avail_max = cast(series.max())
+    def_lower = cast(DEFAULTS[base_key][0])
+    gb_upper  = cast(GB[base_key][1])
+
+    new_lower = max(def_lower, avail_min)
+    new_upper = min(gb_upper, avail_max)
+
+    if new_lower > new_upper:
+        new_lower = def_lower
+        new_upper = gb_upper
+
+    st.session_state[key] = (new_lower, new_upper)
+    st.session_state[hash_key] = current_hash
+
+def filter_header(label, options, key_prefix):
+    cols = st.sidebar.columns([1.4, 0.8, 0.8])
+    cols[0].markdown(f"<p style='font-size:0.875rem;margin-bottom:0'>{label}</p>", unsafe_allow_html=True)
+    if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
+        st.session_state[f"pills_{key_prefix}"] = options
+        if key_prefix == "pl_pos_as":
+            for i, line in enumerate(pl_lines):
+                st.session_state[f"pills_pl_line_as_{i}"] = [p for p in options if p in line]
+        st.rerun()
+    if cols[2].button("None", key=f"btn_none_{key_prefix}", use_container_width=True):
+        st.session_state[f"pills_{key_prefix}"] = []
+        if key_prefix == "pl_pos_as":
+            for i, line in enumerate(pl_lines):
+                st.session_state[f"pills_pl_line_as_{i}"] = []
+        st.rerun()
+
+def inject_sidebar_layout(inactive_all: list):
+    js = f"""
+    <script>
+    (function() {{
+        var inactiveList = {json.dumps(inactive_all)};
+        function forceLayout() {{
+            try {{
+                var doc = window.parent.document;
+                var sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                if (!sidebar) return;
+                var btns = sidebar.querySelectorAll('button');
+                var plHeader = null;
+                var ps = sidebar.querySelectorAll('p');
+                ps.forEach(function(p) {{
+                    if (p.innerText.trim() === 'Playing Position') {{ plHeader = p; }}
+                }});
+                var headerBottom = plHeader ? plHeader.getBoundingClientRect().bottom : 99999;
+                btns.forEach(function(b) {{
+                    var txt = b.innerText.trim();
+                    if (!txt) return;
+                    if (txt === "Reset All Filters" || txt === "All" || txt === "None") return;
+                    var p = b.parentElement;
+                    for (var i = 0; i < 3; i++) {{
+                        if (p && p.tagName === 'DIV') {{
+                            p.style.setProperty('display', 'flex', 'important');
+                            p.style.setProperty('justify-content', 'center', 'important');
+                            p.style.setProperty('flex-wrap', 'wrap', 'important');
+                            p.style.setProperty('width', '100%', 'important');
+                            p = p.parentElement;
+                        }}
+                    }}
+                    if (b.getBoundingClientRect().top > headerBottom) {{
+                        b.style.setProperty('width', '48px', 'important');
+                        b.style.setProperty('min-width', '48px', 'important');
+                        b.style.setProperty('max-width', '48px', 'important');
+                        var stPills = b.closest('[data-testid="stPills"]');
+                        if (stPills) {{
+                            var wrapper = stPills.closest('.stElementContainer') || stPills.closest('[data-testid="stElementContainer"]');
+                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {{
+                                wrapper.classList.add('playing-pos-wrapper');
+                            }}
+                        }}
+                    }} else {{
+                        b.style.setProperty('width', '60px', 'important');
+                        b.style.setProperty('min-width', '60px', 'important');
+                        b.style.setProperty('max-width', '60px', 'important');
+                    }}
+                    var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
+                    if (b.style.opacity !== expectedOpacity) {{
+                        b.style.opacity = expectedOpacity;
+                    }}
+                }});
+            }} catch(e) {{}}
+        }}
+        setInterval(forceLayout, 300);
+    }})();
+    </script>
+    """
+    st.components.v1.html(js, height=0, scrolling=False)
+
+# ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
+auto_update_slider('f_cost_as',     'f_cost',     'now_cost',            float)
+auto_update_slider('f_matches_as',  'f_matches',  'matches_played',      int)
+auto_update_slider('f_rating_as',   'f_rating',   'av_rating_alt',       float, only_positive=True)
+auto_update_slider('f_avg_mins_as', 'f_avg_mins', 'avg_mins',            float)
+auto_update_slider('f_60min_as',    'f_60min',    '60_min',              float)
+auto_update_slider('f_xgot_as',     'f_xgot',     'xGoT_90',             float)
+auto_update_slider('f_xa_as',       'f_xa',       'xA_90',               float)
+auto_update_slider('f_xgi_as',      'f_xgi',      'xGI_norm',            float)
+auto_update_slider('f_sh_as',       'f_sh',       'Sh_90',               float)
+auto_update_slider('f_shot_as',     'f_shot',     'ShoT_90',             float)
+auto_update_slider('f_kp_as',       'f_kp',       'KP_90',               float)
+auto_update_slider('f_pass_as',     'f_pass',     'Pass_pct',            float)
+
+# ========================== САЙДБАР ==========================
+if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
+    keys_to_delete = [k for k in st.session_state.keys() if '_as' in k]
+    for key in keys_to_delete:
+        del st.session_state[key]
+    st.rerun()
+
+search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", key="search_name_as")
+
+# --- 1. FPL POSITION ---
+avail_pos = set(get_available('pills_pos_as')['element_type'].unique())
+filter_header("FPL Position", sorted_positions, "pos_as")
+selected_positions = st.sidebar.pills(
+    "FPL Position", options=sorted_positions, key="pills_pos_as",
+    selection_mode="multi", label_visibility="collapsed"
+)
+
+# --- 2. FPL PRICE ---
+f_cost = st.sidebar.slider(
+    "FPL Price", GB['f_cost'][0], GB['f_cost'][1], step=0.1, format="%.1f", key="f_cost_as"
+)
+
+# --- 3. TEAM ---
+avail_teams = set(get_available('pills_teams_as')['team_short_name'].unique())
+filter_header("Team", all_teams, "teams_as")
+selected_teams = st.sidebar.pills(
+    "Team", options=all_teams, key="pills_teams_as",
+    selection_mode="multi", label_visibility="collapsed"
+)
+
+# --- 4. PLAYING POSITION ---
+avail_pl = set(get_available('pills_pl_as')['Play Pos'].dropna().unique()) if 'Play Pos' in df.columns else set()
+filter_header("Playing Position", all_pl_pos, "pl_pos_as")
+selected_pl_pos = []
+
+for idx, line in enumerate(pl_lines):
+    available_in_line = [p for p in line if p in actual_pl_pos]
+    if not available_in_line:
+        continue
+    line_key = f"pills_pl_line_as_{idx}"
+    if line_key not in st.session_state:
+        st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos_as if p in available_in_line]
+
+    line_res = st.sidebar.pills(
+        label=f"pl_line_{idx}", options=available_in_line, key=line_key,
+        selection_mode="multi", label_visibility="collapsed"
+    )
+    if line_res:
+        selected_pl_pos.extend(line_res)
+
+# --- ЗБІР УСІХ НЕАКТИВНИХ ОПЦІЙ ДЛЯ JS ---
+all_inactive = []
+all_inactive.extend([p for p in sorted_positions if p not in avail_pos])
+all_inactive.extend([t for t in all_teams if t not in avail_teams])
+all_inactive.extend([p for p in all_pl_pos if p not in avail_pl])
+
+inject_sidebar_layout(all_inactive)
+
+# --- PERFORMANCE STATS ---
+with st.sidebar.expander("Performance Stats", expanded=False):
+    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  value=_safe_range('f_matches_as',  DEFAULTS['f_matches']),  step=1,    key="f_matches_as")
+    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   value=_safe_range('f_rating_as',   DEFAULTS['f_rating']),   step=0.05, format="%.2f", key="f_rating_as")
+    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], value=_safe_range('f_avg_mins_as', DEFAULTS['f_avg_mins']), step=1.0,  key="f_avg_mins_as")
+    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    value=_safe_range('f_60min_as',    DEFAULTS['f_60min']),    step=0.5,  key="f_60min_as")
+
+# --- ATTACKING STATS ---
+with st.sidebar.expander("Attacking Stats", expanded=True):
+    f_xgot = st.slider("xGoT/90", GB['f_xgot'][0], GB['f_xgot'][1], value=_safe_range('f_xgot_as', DEFAULTS['f_xgot']), step=0.05, key="f_xgot_as")
+    f_xa   = st.slider("xA/90",   GB['f_xa'][0],   GB['f_xa'][1],   value=_safe_range('f_xa_as',   DEFAULTS['f_xa']),   step=0.05, key="f_xa_as")
+    f_xgi  = st.slider("xGI/90",  GB['f_xgi'][0],  GB['f_xgi'][1],  value=_safe_range('f_xgi_as',  DEFAULTS['f_xgi']),  step=0.1,  key="f_xgi_as")
+    f_sh   = st.slider("Sh/90",   GB['f_sh'][0],   GB['f_sh'][1],   value=_safe_range('f_sh_as',   DEFAULTS['f_sh']),   step=0.5,  key="f_sh_as")
+    f_shot = st.slider("ShoT/90", GB['f_shot'][0], GB['f_shot'][1], value=_safe_range('f_shot_as', DEFAULTS['f_shot']), step=0.1,  key="f_shot_as")
+    f_kp   = st.slider("KP/90",   GB['f_kp'][0],   GB['f_kp'][1],   value=_safe_range('f_kp_as',   DEFAULTS['f_kp']),   step=0.1,  key="f_kp_as")
+    f_pass = st.slider("Pass%",   GB['f_pass'][0], GB['f_pass'][1], value=_safe_range('f_pass_as', DEFAULTS['f_pass']), step=1.0,  key="f_pass_as")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
-    df['element_type'].isin(selected_positions) &
-    df['team_short_name'].isin(selected_teams) &
-    (df['now_cost'] >= f_cost[0]) & (df['now_cost'] <= f_cost[1]) &
-    (df['matches_played'] >= f_matches[0]) & (df['matches_played'] <= f_matches[1]) &
-    (df['avg_mins'] >= f_avg_mins[0]) & (df['avg_mins'] <= f_avg_mins[1]) &
-    (df['60_min'] >= f_60min[0]) & (df['60_min'] <= f_60min[1]) &
-    (df['xG_90'] >= f_xg[0]) & (df['xG_90'] <= f_xg[1]) &
-    (df['xA_90'] >= f_xa[0]) & (df['xA_90'] <= f_xa[1]) &
-    (df['xGI_norm'] >= f_xgi[0]) & (df['xGI_norm'] <= f_xgi[1]) &
-    (df['Sh_90'] >= f_sh[0]) & (df['Sh_90'] <= f_sh[1]) &
-    (df['KP_90'] >= f_kp[0]) & (df['KP_90'] <= f_kp[1])
+    df['element_type'].isin(selected_positions if selected_positions else []) &
+    df['team_short_name'].isin(selected_teams  if selected_teams  else []) &
+    (df['Play Pos'].isin(selected_pl_pos) if selected_pl_pos else True) &
+    (df['av_rating_alt']       >= f_rating[0])   & (df['av_rating_alt']       <= f_rating[1]) &
+    (df['matches_played']      >= f_matches[0])  & (df['matches_played']      <= f_matches[1]) &
+    (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
+    (df['now_cost']            >= f_cost[0])     & (df['now_cost']            <= f_cost[1]) &
+    (df['xGoT_90']             >= f_xgot[0])     & (df['xGoT_90']             <= f_xgot[1]) &
+    (df['xA_90']               >= f_xa[0])       & (df['xA_90']               <= f_xa[1]) &
+    (df['xGI_norm']            >= f_xgi[0])      & (df['xGI_norm']            <= f_xgi[1]) &
+    (df['Sh_90']               >= f_sh[0])       & (df['Sh_90']               <= f_sh[1]) &
+    (df['ShoT_90']             >= f_shot[0])     & (df['ShoT_90']             <= f_shot[1]) &
+    (df['KP_90']               >= f_kp[0])       & (df['KP_90']               <= f_kp[1]) &
+    (df['Pass_pct']            >= f_pass[0])     & (df['Pass_pct']            <= f_pass[1]) &
+    (df['avg_mins']            >= f_avg_mins[0]) & (df['avg_mins']            <= f_avg_mins[1]) &
+    (df['full_name'].str.contains(search_name, case=False, na=False))
 )
 filtered_df = df[mask].copy()
 
@@ -135,9 +431,9 @@ st.dataframe(
         "matches_played": st.column_config.NumberColumn("MP", width=35),
         "matches_started": st.column_config.NumberColumn("GS", width=35),
         "avg_mins": st.column_config.NumberColumn("AvgMins", width=40),
-        "60_min": st.column_config.NumberColumn("60% Mins", width=50, format="%.1f"),
+        "60_min": st.column_config.NumberColumn("60Mins%", width=50, format="%.1f"),
         "av_rating_alt": st.column_config.NumberColumn("RatA", format="%.2f", width=45),
-	"G_90": st.column_config.NumberColumn("G/90", width=40),
+	    "G_90": st.column_config.NumberColumn("G/90", width=40),
         "xG_90": st.column_config.NumberColumn("xG/90", width=40),
         "xGoT_90": st.column_config.NumberColumn("xGoT/90", width=40),
         "A_90": st.column_config.NumberColumn("A/90", width=40),
