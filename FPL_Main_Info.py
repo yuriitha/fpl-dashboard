@@ -293,16 +293,17 @@ def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
                 // Примусово стилізуємо кожен блок пігулок
                 groups.forEach(function(g, i) {{
                     g.style.setProperty('width', '100%', 'important');
-                    g.style.setProperty('display', 'flex', 'important');
-                    g.style.setProperty('justify-content', 'center', 'important');
-
-                    var inner = g.querySelector('div[role="group"]') || g.querySelector('div[role="radiogroup"]') || g.querySelector('div');
-                    if (inner) {{
-                        inner.style.setProperty('display', 'flex', 'important');
-                        inner.style.setProperty('justify-content', 'center', 'important');
-                        inner.style.setProperty('flex-wrap', 'wrap', 'important');
-                        inner.style.setProperty('width', '100%', 'important');
-                    }}
+                    
+                    // Центруємо всі flex-контейнери всередині stPills
+                    var divs = g.querySelectorAll('div');
+                    divs.forEach(function(d) {{
+                        var style = window.getComputedStyle(d);
+                        if (style.display === 'flex' || style.display === 'inline-flex') {{
+                            d.style.setProperty('justify-content', 'center', 'important');
+                            d.style.setProperty('width', '100%', 'important');
+                            d.style.setProperty('flex-wrap', 'wrap', 'important');
+                        }}
+                    }});
 
                     // Групи Playing Position (індекс 2+)
                     if (i >= plStartIdx) {{
@@ -310,6 +311,13 @@ def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
                             btn.style.setProperty('width', '48px', 'important');
                             btn.style.setProperty('min-width', '48px', 'important');
                             btn.style.setProperty('max-width', '48px', 'important');
+                            btn.style.setProperty('padding', '0px', 'important');
+                            
+                            // Зменшуємо також внутрішні елементи кнопки (span, p)
+                            btn.querySelectorAll('*').forEach(function(child) {{
+                                child.style.setProperty('padding', '0px', 'important');
+                                child.style.setProperty('margin', '0px', 'important');
+                            }});
                         }});
                     }}
                 }});
