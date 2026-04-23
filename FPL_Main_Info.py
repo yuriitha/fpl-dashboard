@@ -101,7 +101,8 @@ if 'pills_pl_pos' not in st.session_state: st.session_state.pills_pl_pos = all_p
 # ========================== ХЕЛПЕРИ ==========================
 
 def _pills_snapshot():
-    """Знімок стану pills-фільтрів для виявлення змін."""
+    """Знімок стану pills-фільтрів та search для виявлення змін.
+    Слайдери в snapshot не включаємо - вони завжди перераховуються при будь-якій зміні pills."""
     snap = {
         'pos':    tuple(sorted(st.session_state.get('pills_pos',   sorted_positions) or [])),
         'teams':  tuple(sorted(st.session_state.get('pills_teams', all_teams) or [])),
@@ -143,7 +144,8 @@ def get_available(exclude_key=None):
     if exclude_key != 'pills_pos':   mask &= df['element_type'].isin(cv_pos)
     if exclude_key != 'pills_teams': mask &= df['team_short_name'].isin(cv_teams)
     if exclude_key != 'pills_pl':
-        if cv_pl_pos: mask &= df['Play Pos'].isin(cv_pl_pos)
+        if cv_pl_pos:
+            mask &= df['Play Pos'].fillna('').isin(cv_pl_pos)
     if exclude_key != 'f_matches':
         mask &= (df['matches_played'] >= cv_matches[0]) & (df['matches_played'] <= cv_matches[1])
     if exclude_key != 'f_60min':
@@ -169,11 +171,9 @@ def auto_update_slider(key, col, exclude_key, cast=float, only_positive=False):
     Логіка: завжди відображає реальний діапазон, але не виходить за межі DEFAULTS.
     """
     hash_key = f'_hash_{key}'
+    # Hash включає лише pills + search, не слайдери.
+    # Це гарантує, що будь-яка зміна pills/search завжди змушує перерахунок слайдерів.
     current_snap = _pills_snapshot()
-    # Включаємо в snapshot інші слайдери (крім поточного)
-    for k in DEFAULTS:
-        if k != key:
-            current_snap[k] = st.session_state.get(k, DEFAULTS[k])
     current_hash = str(current_snap)
 
     prev_hash = st.session_state.get(hash_key)
@@ -197,15 +197,16 @@ def auto_update_slider(key, col, exclude_key, cast=float, only_positive=False):
     avail_min = cast(series.min())
     avail_max = cast(series.max())
     def_lower  = cast(DEFAULTS[key][0])
-    def_upper  = cast(DEFAULTS[key][1])
+    gb_upper   = cast(GB[key][1])
 
-    # Нижня: clamp до дефолтної нижньої межі (не падає нижче), але слідує за даними вгору/вниз
+    # Нижня: не падає нижче дефолту, але вільно рухається вгору/вниз за даними
     new_lower = max(def_lower, avail_min)
-    # Верхня: clamp до дефолтної верхньої межі, слідує за даними в обох напрямках
-    new_upper = min(def_upper, avail_max)
+    # Верхня: вільно розширюється та звужується, кламп лише до глобального максимуму даних
+    new_upper = min(gb_upper, avail_max)
 
     if new_lower > new_upper:
-        new_lower, new_upper = def_lower, def_upper
+        new_lower = def_lower
+        new_upper = gb_upper
 
     st.session_state[key] = (new_lower, new_upper)
     st.session_state[hash_key] = current_hash
