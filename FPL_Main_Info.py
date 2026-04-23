@@ -21,13 +21,19 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
-        [data-testid="stSidebar"] [data-testid="stPills"] > div,
-        [data-testid="stSidebar"] div[role="group"] {
+        /* Центрування всіх блоків пігулок */
+        [data-testid="stSidebar"] [data-testid="stPills"] > div {
             display: flex !important; justify-content: center !important;
-            flex-wrap: wrap !important; width: 100% !important;
+            flex-wrap: wrap !important; width: 100% !important; gap: 4px !important;
         }
-        [data-testid="stSlider"] [data-testid="stTickBar"] { height: 2px !important; }
-        [data-testid="stSlider"] [data-basejs="slider"] > div { height: 4px !important; }
+
+        /* Playing Position: менший розмір пігулок (48px = -20% від 60px) — призначається JS */
+        [data-testid="stSidebar"] [data-testid="stPills"].pl-pills > div {
+            justify-content: center !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stPills"].pl-pills button {
+            width: 48px !important; min-width: 48px !important; max-width: 48px !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -80,6 +86,7 @@ GB = {
     'f_avg_mins': (float(df['avg_mins'].min()),            float(df['avg_mins'].max())),
     'f_60min':    (float(df['60_min'].min()),              float(df['60_min'].max())),
     'f_selected': (float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())),
+    'f_top10k':   (float(df['top_10k'].min()),             float(df['top_10k'].max())),
     'f_top100k':  (float(df['top_100k'].min()),            float(df['top_100k'].max())),
 }
 # Дефолтні значення повзунків (нижня межа захищена)
@@ -90,6 +97,7 @@ DEFAULTS = {
     'f_avg_mins': GB['f_avg_mins'],
     'f_60min':    (37.0, GB['f_60min'][1]),
     'f_selected': GB['f_selected'],
+    'f_top10k':   GB['f_top10k'],
     'f_top100k':  GB['f_top100k'],
 }
 
@@ -195,6 +203,7 @@ def get_base_df(exclude_key=None):
         'f_cost':     ('now_cost',            DEFAULTS['f_cost']),
         'f_avg_mins': ('avg_mins',            DEFAULTS['f_avg_mins']),
         'f_selected': ('selected_by_percent', DEFAULTS['f_selected']),
+        'f_top10k':   ('top_10k',             DEFAULTS['f_top10k']),
         'f_top100k':  ('top_100k',            DEFAULTS['f_top100k']),
         'f_rating':   ('av_rating_alt',       DEFAULTS['f_rating']),
     }
@@ -259,21 +268,31 @@ def filter_header(label, options, key_prefix):
         st.rerun()
 
 
-def inject_inactive_pills(inactive_map: dict):
+def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
     """
-    Вставляє JS (через components.html) для затемнення неактивних пігулок.
+    Вставляє JS для:
+    1. Затемнення неактивних пігулок (opacity 0.3).
+    2. Призначення класу 'pl-pills' групам Playing Position (щоб CSS зменшив ширину).
     inactive_map: {group_index: [list of inactive option texts]}
+    pl_start_idx: перший індекс групи Playing Position
     """
     js = f"""
     <script>
     (function() {{
         var inactiveMap = {json.dumps(inactive_map)};
+        var plStartIdx  = {pl_start_idx};
         function applyStyles() {{
             try {{
                 var doc = window.parent.document;
                 var groups = doc.querySelectorAll(
                     '[data-testid="stSidebar"] [data-testid="stPills"]'
                 );
+                // Позначаємо Playing Position групи класом pl-pills
+                groups.forEach(function(g, i) {{
+                    if (i >= plStartIdx) {{ g.classList.add('pl-pills'); }}
+                    else                {{ g.classList.remove('pl-pills'); }}
+                }});
+                // Затемнюємо неактивні пігулки
                 Object.keys(inactiveMap).forEach(function(idx) {{
                     var group = groups[parseInt(idx)];
                     if (!group) return;
@@ -297,6 +316,7 @@ def inject_inactive_pills(inactive_map: dict):
     st.components.v1.html(js, height=0, scrolling=False)
 
 
+
 # ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
 auto_update_slider('f_cost',     'now_cost',            float)
 auto_update_slider('f_matches',  'matches_played',      int)
@@ -304,6 +324,7 @@ auto_update_slider('f_rating',   'av_rating_alt',       float, only_positive=Tru
 auto_update_slider('f_avg_mins', 'avg_mins',            float)
 auto_update_slider('f_60min',    '60_min',              float)
 auto_update_slider('f_selected', 'selected_by_percent', float)
+auto_update_slider('f_top10k',   'top_10k',             float)
 auto_update_slider('f_top100k',  'top_100k',            float)
 
 # ========================== САЙДБАР ==========================
@@ -373,6 +394,7 @@ with st.sidebar.expander("Performance Stats", expanded=False):
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
     f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected', DEFAULTS['f_selected']), step=0.1, key="f_selected")
+    f_top10k   = st.slider("Top 10k %",  GB['f_top10k'][0],   GB['f_top10k'][1],   value=_safe_range('f_top10k',   DEFAULTS['f_top10k']),   step=0.1, key="f_top10k")
     f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k")
 
 # ========================== JS ДЛЯ НЕАКТИВНИХ ПІГУЛОК ==========================
@@ -383,8 +405,9 @@ if inactive_pos:   inactive_map[0] = inactive_pos
 if inactive_teams: inactive_map[1] = inactive_teams
 inactive_map.update(inactive_pl_map)
 
-if inactive_map:
-    inject_inactive_pills(inactive_map)
+# Завжди викликаємо, навіть якщо inactive_map пустий —
+# JS потрібен для призначення класу pl-pills групам Playing Position
+inject_inactive_pills(inactive_map, pl_start_idx=2)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
@@ -396,6 +419,7 @@ mask = (
     (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
     (df['now_cost']            >= f_cost[0])     & (df['now_cost']            <= f_cost[1]) &
     (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
+    (df['top_10k']             >= f_top10k[0])   & (df['top_10k']             <= f_top10k[1]) &
     (df['top_100k']            >= f_top100k[0])  & (df['top_100k']            <= f_top100k[1]) &
     (df['avg_mins']            >= f_avg_mins[0]) & (df['avg_mins']            <= f_avg_mins[1]) &
     (df['full_name'].str.contains(search_name, case=False, na=False))
