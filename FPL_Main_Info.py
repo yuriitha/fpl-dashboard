@@ -244,11 +244,30 @@ SLIDER_SPECS = [
 ]
 
 if _state_changed:
-    # Розраховуємо доступний діапазон ЛИШЕ на основі pills/пошуку,
-    # щоб слайдери не обмежували один одного (уникаємо cascading)
-    _pills_mask = _build_pills_only_mask(FROZEN)
+    # Визначаємо ЩО змінилось: pills/пошук чи тільки слайдер
+    _prev_pills_pos   = st.session_state.get('_prev_pills_pos',   sorted(FROZEN['pills_pos']))
+    _prev_pills_teams = st.session_state.get('_prev_pills_teams', sorted(FROZEN['pills_teams']))
+    _prev_pl_pos      = st.session_state.get('_prev_pl_pos',      sorted(FROZEN['pl_pos']))
+    _prev_search      = st.session_state.get('_prev_search',      FROZEN['search_name'])
+
+    _pills_changed = (
+        sorted(FROZEN['pills_pos'])   != _prev_pills_pos   or
+        sorted(FROZEN['pills_teams']) != _prev_pills_teams or
+        sorted(FROZEN['pl_pos'])      != _prev_pl_pos      or
+        FROZEN['search_name']         != _prev_search
+    )
+
     for s_key, s_col, s_cast, s_pos in SLIDER_SPECS:
-        series = df[_pills_mask][s_col].dropna()
+        if _pills_changed:
+            # Pills/пошук змінився → чистий скид до реального діапазону команд/позицій
+            # Без залежності між слайдерами → max завжди повертається коректно
+            mask = _build_pills_only_mask(FROZEN)
+        else:
+            # Тільки слайдери змінились → показуємо діапазон відносно ВСІХ інших фільтрів
+            # Це дає реакцію на те, що відображається в таблиці
+            mask = _build_mask_from_state(FROZEN, exclude_key=s_key)
+
+        series = df[mask][s_col].dropna()
         if s_pos:
             series = series[series > 0]
         if series.empty:
@@ -262,7 +281,12 @@ if _state_changed:
             if new_lower > new_upper:
                 new_lower, new_upper = s_cast(DEFAULTS[s_key][0]), s_cast(DEFAULTS[s_key][1])
             st.session_state[s_key] = (new_lower, new_upper)
-    st.session_state['_frozen_hash'] = FROZEN_HASH
+
+    st.session_state['_prev_pills_pos']   = sorted(FROZEN['pills_pos'])
+    st.session_state['_prev_pills_teams'] = sorted(FROZEN['pills_teams'])
+    st.session_state['_prev_pl_pos']      = sorted(FROZEN['pl_pos'])
+    st.session_state['_prev_search']      = FROZEN['search_name']
+    st.session_state['_frozen_hash']      = FROZEN_HASH
 
 _avail_pos   = set(df[_build_mask_from_state(FROZEN, 'pills_pos')]['element_type'].unique())
 _avail_teams = set(df[_build_mask_from_state(FROZEN, 'pills_teams')]['team_short_name'].unique())
