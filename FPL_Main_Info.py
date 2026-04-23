@@ -292,26 +292,24 @@ def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
                 );
                 // Примусово стилізуємо кожен блок пігулок
                 groups.forEach(function(g, i) {{
-                    // Розтягуємо сам контейнер stPills
-                    g.style.width = '100%';
-                    g.style.display = 'flex';
-                    g.style.justifyContent = 'center';
+                    g.style.setProperty('width', '100%', 'important');
+                    g.style.setProperty('display', 'flex', 'important');
+                    g.style.setProperty('justify-content', 'center', 'important');
 
-                    // Знаходимо внутрішній контейнер і також його центруємо
                     var inner = g.querySelector('div[role="group"]') || g.querySelector('div[role="radiogroup"]') || g.querySelector('div');
                     if (inner) {{
-                        inner.style.display = 'flex';
-                        inner.style.justifyContent = 'center';
-                        inner.style.flexWrap = 'wrap';
-                        inner.style.width = '100%';
+                        inner.style.setProperty('display', 'flex', 'important');
+                        inner.style.setProperty('justify-content', 'center', 'important');
+                        inner.style.setProperty('flex-wrap', 'wrap', 'important');
+                        inner.style.setProperty('width', '100%', 'important');
                     }}
 
-                    // Якщо це група Playing Position (індекс 2+), безпосередньо змінюємо розмір кнопок
+                    // Групи Playing Position (індекс 2+)
                     if (i >= plStartIdx) {{
                         g.querySelectorAll('button').forEach(function(btn) {{
-                            btn.style.width = '48px';
-                            btn.style.minWidth = '48px';
-                            btn.style.maxWidth = '48px';
+                            btn.style.setProperty('width', '48px', 'important');
+                            btn.style.setProperty('min-width', '48px', 'important');
+                            btn.style.setProperty('max-width', '48px', 'important');
                         }});
                     }}
                 }});
