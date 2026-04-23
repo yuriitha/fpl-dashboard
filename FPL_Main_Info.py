@@ -414,17 +414,6 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
     f_top10k   = st.slider("Top 10k %",  GB['f_top10k'][0],   GB['f_top10k'][1],   value=_safe_range('f_top10k',   DEFAULTS['f_top10k']),   step=0.1, key="f_top10k")
     f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k")
 
-# ========================== JS ДЛЯ НЕАКТИВНИХ ПІГУЛОК ==========================
-inactive_map = {}
-inactive_pos   = [p for p in sorted_positions if p not in avail_pos]
-inactive_teams = [t for t in all_teams        if t not in avail_teams]
-if inactive_pos:   inactive_map[0] = inactive_pos
-if inactive_teams: inactive_map[1] = inactive_teams
-inactive_map.update(inactive_pl_map)
-
-# Завжди викликаємо, навіть якщо inactive_map пустий —
-# JS потрібен для призначення класу pl-pills групам Playing Position
-inject_inactive_pills(inactive_map, pl_start_idx=2)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
