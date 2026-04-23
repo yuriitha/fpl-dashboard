@@ -10,6 +10,7 @@ st.markdown("""
         [data-testid="stDataFrame"] td { text-align: center !important; }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         [data-testid="stSidebar"] button {
+            width: 60px !important; min-width: 60px !important; max-width: 60px !important;
             justify-content: center !important; padding: 0px !important;
             font-size: 0.75rem !important; height: 26px !important;
         }
@@ -20,18 +21,6 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
-
-        /* Гарантоване центрування пігулок: розтягуємо всі можливі внутрішні контейнери Streamlit */
-        [data-testid="stSidebar"] [data-testid="stPills"],
-        [data-testid="stSidebar"] [data-testid="stPills"] > div,
-        [data-testid="stSidebar"] [data-testid="stPills"] [data-testid="stButtonGroup"],
-        [data-testid="stSidebar"] [data-testid="stPills"] [role="radiogroup"],
-        [data-testid="stSidebar"] [data-testid="stPills"] [role="group"] {
-            display: flex !important;
-            justify-content: center !important;
-            flex-wrap: wrap !important;
-            width: 100% !important;
-        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -267,69 +256,77 @@ def filter_header(label, options, key_prefix):
         st.rerun()
 
 
-def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
+def inject_sidebar_layout(inactive_all: list):
     """
-    Вставляє JS для:
-    1. Затемнення неактивних пігулок (opacity 0.3).
-    2. Призначення класу 'pl-pills' групам Playing Position (щоб CSS зменшив ширину).
-    inactive_map: {group_index: [list of inactive option texts]}
-    pl_start_idx: перший індекс групи Playing Position
+    100% надійний JS, який використовує геометрію екрану та обхід DOM замість CSS-класів.
+    1. Центрує всі кнопки, розтягуючи їхніх батьків.
+    2. Зменшує розмір ТІЛЬКИ тих кнопок, що знаходяться візуально нижче тексту "Playing Position".
+    3. Затемнює неактивні пігулки.
     """
     js = f"""
     <script>
     (function() {{
-        var inactiveMap = {json.dumps(inactive_map)};
-        var plStartIdx  = {pl_start_idx};
+        var inactiveList = {json.dumps(inactive_all)};
         
-        function applyStyles() {{
+        function forceLayout() {{
             try {{
                 var doc = window.parent.document;
+                var sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                if (!sidebar) return;
                 
-                // 1. Інжектимо глобальні стилі для розміру кнопок у HEAD
-                var styleId = 'fpl-pills-styles';
-                var styleEl = doc.getElementById(styleId);
-                if (!styleEl) {{
-                    styleEl = doc.createElement('style');
-                    styleEl.id = styleId;
-                    styleEl.innerHTML = `
-                        [data-pill-size="60"] {{ width: 60px !important; min-width: 60px !important; max-width: 60px !important; padding: 0 !important; }}
-                        [data-pill-size="48"] {{ width: 48px !important; min-width: 48px !important; max-width: 48px !important; padding: 0 !important; }}
-                    `;
-                    doc.head.appendChild(styleEl);
-                }}
-
-                var groups = doc.querySelectorAll('[data-testid="stSidebar"] [data-testid="stPills"]');
+                var btns = sidebar.querySelectorAll('button');
                 
-                groups.forEach(function(g, i) {{
-                    var targetSize = (i >= plStartIdx) ? '48' : '60';
-                    var btns = g.querySelectorAll('button');
+                // 1. Знаходимо заголовок Playing Position для орієнтації
+                var plHeader = null;
+                var ps = sidebar.querySelectorAll('p');
+                ps.forEach(function(p) {{
+                    if (p.innerText.trim() === 'Playing Position') {{ plHeader = p; }}
+                }});
+                var headerBottom = plHeader ? plHeader.getBoundingClientRect().bottom : 99999;
+                
+                btns.forEach(function(b) {{
+                    var txt = b.innerText.trim();
+                    if (!txt) return;
                     
-                    btns.forEach(function(btn) {{
-                        // Призначаємо розмір через data-атрибут
-                        if (btn.getAttribute('data-pill-size') !== targetSize) {{
-                            btn.setAttribute('data-pill-size', targetSize);
+                    // Ігноруємо базові кнопки
+                    if (txt === "Reset All Filters" || txt === "All" || txt === "None") return;
+                    
+                    // --- Відцентровуємо контейнери ---
+                    // Піднімаємось на 3 рівні вгору і робим всі обгортки flex + center
+                    var p = b.parentElement;
+                    for (var i = 0; i < 3; i++) {{
+                        if (p && p.tagName === 'DIV') {{
+                            p.style.setProperty('display', 'flex', 'important');
+                            p.style.setProperty('justify-content', 'center', 'important');
+                            p.style.setProperty('flex-wrap', 'wrap', 'important');
+                            p.style.setProperty('width', '100%', 'important');
+                            p = p.parentElement;
                         }}
-                        
-                        // Відновлюємо логіку opacity
-                        var txt = btn.innerText.trim();
-                        var groupInactive = inactiveMap[i] || [];
-                        var expectedOpacity = groupInactive.includes(txt) ? '0.3' : '';
-                        if (btn.style.opacity !== expectedOpacity) {{
-                            btn.style.opacity = expectedOpacity;
-                        }}
-                    }});
+                    }}
+                    
+                    // --- Зменшуємо розмір Playing Position ---
+                    if (b.getBoundingClientRect().top > headerBottom) {{
+                        b.style.setProperty('width', '48px', 'important');
+                        b.style.setProperty('min-width', '48px', 'important');
+                        b.style.setProperty('max-width', '48px', 'important');
+                    }} else {{
+                        // Гарантуємо 60px для інших
+                        b.style.setProperty('width', '60px', 'important');
+                        b.style.setProperty('min-width', '60px', 'important');
+                        b.style.setProperty('max-width', '60px', 'important');
+                    }}
+                    
+                    // --- Затемнення ---
+                    var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
+                    if (b.style.opacity !== expectedOpacity) {{
+                        b.style.opacity = expectedOpacity;
+                    }}
                 }});
             }} catch(e) {{}}
         }}
         
-        [50, 200, 500, 1000].forEach(function(t) {{ setTimeout(applyStyles, t); }});
-        try {{
-            var observer = new MutationObserver(applyStyles);
-            // Спостерігаємо за всім сайдбаром для миттєвого перепризначення атрибутів після рендерінгу React
-            observer.observe(window.parent.document.body, {{
-                subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'disabled']
-            }});
-        }} catch(e) {{}}
+        // Використовуємо setInterval для постійного насаджування стилів, перебиваючи React
+        setInterval(forceLayout, 300);
     }})();
     </script>
     """
@@ -380,8 +377,6 @@ selected_teams = st.sidebar.pills(
 avail_pl = set(get_available('pills_pl')['Play Pos'].dropna().unique())
 filter_header("Playing Position", all_pl_pos, "pl_pos")
 selected_pl_pos = []
-inactive_pl_map = {}   # group_index -> list of inactive option texts
-pill_group_idx = 2     # 0=FPL Position, 1=Team, 2+ = pl_lines
 
 for idx, line in enumerate(pl_lines):
     available_in_line = [p for p in line if p in actual_pl_pos]
@@ -395,15 +390,16 @@ for idx, line in enumerate(pl_lines):
         label=f"pl_line_{idx}", options=available_in_line, key=line_key,
         selection_mode="multi", label_visibility="collapsed"
     )
-    # Збираємо неактивні для JS
-    inactive_in_line = [p for p in available_in_line if p not in avail_pl]
-    if inactive_in_line:
-        inactive_pl_map[pill_group_idx] = inactive_in_line
-    pill_group_idx += 1
-
     if line_res:
         selected_pl_pos.extend(line_res)
 
+# --- ЗБІР УСІХ НЕАКТИВНИХ ОПЦІЙ ДЛЯ JS ---
+all_inactive = []
+all_inactive.extend([p for p in sorted_positions if p not in avail_pos])
+all_inactive.extend([t for t in all_teams if t not in avail_teams])
+all_inactive.extend([p for p in all_pl_pos if p not in avail_pl])
+
+inject_sidebar_layout(all_inactive)
 
 # --- PERFORMANCE STATS ---
 with st.sidebar.expander("Performance Stats", expanded=False):
