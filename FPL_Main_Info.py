@@ -171,10 +171,21 @@ r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not r
 teams_changed = st.session_state.pills_teams != st.session_state.last_teams
 pos_changed = st.session_state.pills_pos != st.session_state.last_pos
 
-# Повна маска (тільки гравці з рейтингом > 0)
+# Отримуємо поточні значення інших фільтрів для розрахунку "чесного" діапазону
+# (використовуємо .get() з дефолтними значеннями для першого запуску)
+curr_matches = st.session_state.get('f_matches', (5, int(df['matches_played'].max())))
+curr_60min = st.session_state.get('f_60min', (37.0, float(df['60_min'].max())))
+curr_cost = st.session_state.get('f_cost', (float(df['now_cost'].min()), float(df['now_cost'].max())))
+curr_search = st.session_state.get('search_name', "")
+
+# Повна маска (враховуємо ВСЕ крім самого рейтингу)
 dyn_mask = (
     df['element_type'].isin(st.session_state.pills_pos) & 
     df['team_short_name'].isin(st.session_state.pills_teams) &
+    (df['matches_played'] >= curr_matches[0]) & (df['matches_played'] <= curr_matches[1]) &
+    (df['60_min'] >= curr_60min[0]) & (df['60_min'] <= curr_60min[1]) &
+    (df['now_cost'] >= curr_cost[0]) & (df['now_cost'] <= curr_cost[1]) &
+    (df['full_name'].str.contains(curr_search, case=False, na=False)) &
     (df['av_rating_alt'] > 0)
 )
 available_ratings = df[dyn_mask]['av_rating_alt'].dropna()
