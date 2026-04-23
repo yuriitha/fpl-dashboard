@@ -457,6 +457,8 @@ if not plot_df.empty:
         color="element_type",
         size="size_for_plot",
         hover_name="full_name",
+        log_x=True,
+        log_y=True,
         hover_data={
             "web_name": True,
             "team_short_name": True,
