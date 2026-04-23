@@ -194,7 +194,62 @@ def inject_inactive_pills(inactive_map: dict):
     """
     st.components.v1.html(js, height=0, scrolling=False)
 
-auto_update_slider = None  # removed - replaced by FROZEN architecture
+
+# ========================== ЗАМОРОЗКА СТАНУ ДО ОНОВЛЕННЯ ==========================
+_pl_pos_snapshot = []
+for _i, _line in enumerate(pl_lines):
+    _avail_in = [p for p in _line if p in actual_pl_pos]
+    _pl_pos_snapshot.extend(st.session_state.get(f'pills_pl_line_{_i}', _avail_in))
+
+FROZEN = {
+    'pills_pos':   st.session_state.get('pills_pos',   sorted_positions) or [],
+    'pills_teams': st.session_state.get('pills_teams', all_teams) or [],
+    'pl_pos':      _pl_pos_snapshot,
+    'search_name': st.session_state.get('search_name', ''),
+    'f_cost':      _safe_range('f_cost',     DEFAULTS['f_cost']),
+    'f_matches':   _safe_range('f_matches',  DEFAULTS['f_matches']),
+    'f_rating':    _safe_range('f_rating',   DEFAULTS['f_rating']),
+    'f_avg_mins':  _safe_range('f_avg_mins', DEFAULTS['f_avg_mins']),
+    'f_60min':     _safe_range('f_60min',    DEFAULTS['f_60min']),
+    'f_selected':  _safe_range('f_selected', DEFAULTS['f_selected']),
+    'f_top100k':   _safe_range('f_top100k',  DEFAULTS['f_top100k']),
+}
+
+FROZEN_HASH  = str(FROZEN)
+_state_changed = (FROZEN_HASH != st.session_state.get('_frozen_hash', ''))
+
+SLIDER_SPECS = [
+    ('f_cost',     'now_cost',            float, False),
+    ('f_matches',  'matches_played',      int,   False),
+    ('f_rating',   'av_rating_alt',       float, True),
+    ('f_avg_mins', 'avg_mins',            float, False),
+    ('f_60min',    '60_min',              float, False),
+    ('f_selected', 'selected_by_percent', float, False),
+    ('f_top100k',  'top_100k',            float, False),
+]
+
+if _state_changed:
+    for s_key, s_col, s_cast, s_pos in SLIDER_SPECS:
+        mask = _build_mask_from_state(FROZEN, exclude_key=s_key)
+        series = df[mask][s_col].dropna()
+        if s_pos:
+            series = series[series > 0]
+        if series.empty:
+            if s_key not in st.session_state:
+                st.session_state[s_key] = DEFAULTS[s_key]
+        else:
+            avail_min = s_cast(series.min())
+            avail_max = s_cast(series.max())
+            new_lower = max(s_cast(DEFAULTS[s_key][0]), avail_min)
+            new_upper = min(s_cast(DEFAULTS[s_key][1]), avail_max)
+            if new_lower > new_upper:
+                new_lower, new_upper = s_cast(DEFAULTS[s_key][0]), s_cast(DEFAULTS[s_key][1])
+            st.session_state[s_key] = (new_lower, new_upper)
+    st.session_state['_frozen_hash'] = FROZEN_HASH
+
+_avail_pos   = set(df[_build_mask_from_state(FROZEN, 'pills_pos')]['element_type'].unique())
+_avail_teams = set(df[_build_mask_from_state(FROZEN, 'pills_teams')]['team_short_name'].unique())
+_avail_pl    = set(df[_build_mask_from_state(FROZEN, 'pills_pl')]['Play Pos'].dropna().unique())
 
 # ========================== САЙДБАР ==========================
 if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
