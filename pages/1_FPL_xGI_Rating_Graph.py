@@ -446,7 +446,7 @@ if not plot_df.empty:
 
     min_mins_for_label = 60
     plot_df['label_text'] = np.where(
-        (plot_df['avg_mins'] >= min_mins_for_label) | (plot_df['combined_rank'] > 0.85),
+        (plot_df['avg_mins'] >= min_mins_for_label) | (plot_df['top_100k'] > 7.0),
         plot_df['web_name'],
         ""
     )
