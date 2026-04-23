@@ -113,17 +113,25 @@ def _pills_snapshot():
     return snap
 
 
+def _safe_range(key, default):
+    """Безпечне читання діапазону зі session_state. Якщо значення не tuple/list — повертає default."""
+    val = st.session_state.get(key, default)
+    if isinstance(val, (tuple, list)) and len(val) == 2:
+        return val
+    return default
+
+
 def get_available(exclude_key=None):
     """Повертає підмножину df за всіма фільтрами, крім exclude_key."""
     cv_pos      = st.session_state.get('pills_pos',   sorted_positions) or []
     cv_teams    = st.session_state.get('pills_teams', all_teams) or []
-    cv_matches  = st.session_state.get('f_matches',   DEFAULTS['f_matches'])
-    cv_60min    = st.session_state.get('f_60min',     DEFAULTS['f_60min'])
-    cv_cost     = st.session_state.get('f_cost',      DEFAULTS['f_cost'])
-    cv_avg_mins = st.session_state.get('f_avg_mins',  DEFAULTS['f_avg_mins'])
-    cv_selected = st.session_state.get('f_selected',  DEFAULTS['f_selected'])
-    cv_top100k  = st.session_state.get('f_top100k',   DEFAULTS['f_top100k'])
-    cv_rating   = st.session_state.get('f_rating',    DEFAULTS['f_rating'])
+    cv_matches  = _safe_range('f_matches',  DEFAULTS['f_matches'])
+    cv_60min    = _safe_range('f_60min',    DEFAULTS['f_60min'])
+    cv_cost     = _safe_range('f_cost',     DEFAULTS['f_cost'])
+    cv_avg_mins = _safe_range('f_avg_mins', DEFAULTS['f_avg_mins'])
+    cv_selected = _safe_range('f_selected', DEFAULTS['f_selected'])
+    cv_top100k  = _safe_range('f_top100k',  DEFAULTS['f_top100k'])
+    cv_rating   = _safe_range('f_rating',   DEFAULTS['f_rating'])
     cv_search   = st.session_state.get('search_name', '')
 
     cv_pl_pos = []
