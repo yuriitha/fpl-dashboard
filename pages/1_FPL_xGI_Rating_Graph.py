@@ -440,6 +440,10 @@ if not plot_df.empty:
     plot_df['combined_rank'] = (plot_df['p_top100k'] + plot_df['p_avgmins']) / 2
     plot_df['size_for_plot'] = plot_df['combined_rank'] * 20 + 5 
 
+    # Використовуємо квадратний корінь замість логарифма для більш помірного розтягування (вдвічі слабшого)
+    plot_df['rating_sqrt'] = plot_df['av_rating_alt'] ** 0.5
+    plot_df['xGI_sqrt'] = plot_df['xGI_norm'] ** 0.5
+
     min_mins_for_label = 60
     plot_df['label_text'] = np.where(
         (plot_df['avg_mins'] >= min_mins_for_label) | (plot_df['combined_rank'] > 0.85),
@@ -452,13 +456,11 @@ if not plot_df.empty:
 
     fig = px.scatter(
         plot_df,
-        x="av_rating_alt",
-        y="xGI_norm",
+        x="rating_sqrt",
+        y="xGI_sqrt",
         color="element_type",
         size="size_for_plot",
         hover_name="full_name",
-        log_x=True,
-        log_y=True,
         hover_data={
             "web_name": True,
             "team_short_name": True,
@@ -466,10 +468,16 @@ if not plot_df.empty:
             "avg_mins": ":.0f",
             "matches_played": True,
             "size_for_plot": False,
-            "combined_rank": False
+            "combined_rank": False,
+            "rating_sqrt": False,
+            "xGI_sqrt": False,
+            "av_rating_alt": ":.2f",
+            "xGI_norm": ":.2f"
         },
         text="label_text",
         labels={
+            "rating_sqrt": "Average Rating",
+            "xGI_sqrt": "Expected Goal Involvement",
             "av_rating_alt": "Average Rating",
             "xGI_norm": "Expected Goal Involvement",
             "element_type": "" 
@@ -489,11 +497,38 @@ if not plot_df.empty:
         )
     )
 
+    # Динамічні сітки для перетворених шкал
+    r_min, r_max = plot_df['av_rating_alt'].min(), plot_df['av_rating_alt'].max()
+    r_ticks = np.array([3, 4, 5, 6, 7, 8, 9, 10])
+    if not pd.isna(r_min) and not pd.isna(r_max):
+        r_ticks = r_ticks[(r_ticks >= np.floor(r_min)) & (r_ticks <= np.ceil(r_max))]
+        if len(r_ticks) < 4:
+            r_ticks = np.linspace(np.floor(r_min), np.ceil(r_max), 5).round(1)
+            
+    x_min, x_max = plot_df['xGI_norm'].min(), plot_df['xGI_norm'].max()
+    x_ticks = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5])
+    if not pd.isna(x_min) and not pd.isna(x_max):
+        x_ticks = x_ticks[(x_ticks >= 0) & (x_ticks <= np.ceil(x_max * 10) / 10)]
+        if len(x_ticks) < 4:
+            x_ticks = np.linspace(0, np.ceil(x_max * 10) / 10, 5).round(2)
+
     fig.update_layout(
         height=800,
         margin=dict(l=0, r=0, t=40, b=0),
-        xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-        yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
+        xaxis=dict(
+            title="Average Rating",
+            gridcolor='rgba(255,255,255,0.1)',
+            tickmode='array',
+            tickvals=r_ticks ** 0.5,
+            ticktext=r_ticks
+        ),
+        yaxis=dict(
+            title="Expected Goal Involvement",
+            gridcolor='rgba(255,255,255,0.1)',
+            tickmode='array',
+            tickvals=x_ticks ** 0.5,
+            ticktext=x_ticks
+        ),
         legend_title_text='', 
         legend=dict(
             yanchor="top",
