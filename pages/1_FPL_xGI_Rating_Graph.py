@@ -475,7 +475,8 @@ if not plot_df.empty:
             "size_for_plot": False,
             "combined_rank": False,
             "rating_sqrt": False,
-            "xGI_sqrt": False
+            "xGI_sqrt": False,
+            "label_text": False
         },
         text="label_text",
         labels={
