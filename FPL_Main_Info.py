@@ -148,6 +148,7 @@ if "f_60min" not in st.session_state: st.session_state.f_60min = (37.0, float(df
 if "f_selected" not in st.session_state: st.session_state.f_selected = (float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max()))
 if "f_top100k" not in st.session_state: st.session_state.f_top100k = (float(df['top_100k'].min()), float(df['top_100k'].max()))
 if "search_name" not in st.session_state: st.session_state.search_name = ""
+if "first_run" not in st.session_state: st.session_state.first_run = True
 
 # Відстеження попередніх значень для виявлення змін
 filter_keys = ["pills_teams", "pills_pos", "f_cost", "f_rating", "f_matches", "f_avg_mins", "f_60min", "f_selected", "f_top100k", "search_name"]
@@ -182,8 +183,9 @@ def get_current_mask(exclude=None):
 # Перевіряємо, які саме фільтри змінив користувач
 changed_keys = [k for k in filter_keys if st.session_state[k] != st.session_state[f"prev_{k}"]]
 
-if changed_keys:
-    # Оновлюємо ВСІ фільтри на основі нової реальності, КРІМ тих, що змінено
+if changed_keys or st.session_state.first_run:
+    # Оновлюємо ВСІ фільтри на основі нової реальності, КРІМ тих, що змінено користувачем
+    st.session_state.first_run = False
     # 1. Pills
     if "pills_teams" not in changed_keys:
         m_others = get_current_mask(exclude="pills_teams")
