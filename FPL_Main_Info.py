@@ -115,18 +115,14 @@ display_columns = [
 ]
 
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
-# --- ПІДГОТОВКА СПИСКІВ ---
+# ========================== ПІДГОТОВКА ДАНИХ ДЛЯ ФІЛЬТРІВ ==========================
 all_teams = sorted(df['team_short_name'].unique().tolist())
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
 sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
 
 pl_lines = [
-    ['GK'], 
-    ['RB', 'CB', 'LB'], 
-    ['RM', 'DM', 'CM', 'LM'], 
-    ['RW', 'AM', 'LW'], 
-    ['SS', 'CF']
+    ['GK'], ['RB', 'CB', 'LB'], ['RM', 'DM', 'CM', 'LM'], ['RW', 'AM', 'LW'], ['SS', 'CF']
 ]
 defined_pl_pos = [item for sublist in pl_lines for item in sublist]
 actual_pl_pos = df['Play Pos'].dropna().unique().tolist()
@@ -134,130 +130,122 @@ others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
 if others: pl_lines.append(others)
 all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
-# --- ІНІЦІАЛІЗАЦІЯ СТАНУ ---
+# --- ІНІЦІАЛІЗАЦІЯ СТАНУ (Базові значення без лічильників) ---
 if "pills_teams" not in st.session_state: st.session_state.pills_teams = all_teams
 if "pills_pos" not in st.session_state: st.session_state.pills_pos = sorted_positions
 if "pills_pl_pos" not in st.session_state: st.session_state.pills_pl_pos = all_pl_pos
 
-# Допоміжні ключі для відстеження змін (щоб знати, коли "підтягувати" слайдери)
-if "last_teams" not in st.session_state: st.session_state.last_teams = st.session_state.pills_teams
-if "last_pos" not in st.session_state: st.session_state.last_pos = st.session_state.pills_pos
+# Функція для отримання маски БЕЗ врахування одного конкретного фільтра
+def get_mask(exclude=None):
+    m = pd.Series(True, index=df.index)
+    
+    # 1. Search
+    search = st.session_state.get("search_name", "")
+    if exclude != "search" and search:
+        m &= df['full_name'].str.contains(search, case=False, na=False)
+    
+    # 2. Position
+    sel_pos = st.session_state.get("pills_pos", sorted_positions)
+    if exclude != "pos":
+        m &= df['element_type'].isin(sel_pos)
+        
+    # 3. Team
+    sel_teams = st.session_state.get("pills_teams", all_teams)
+    if exclude != "teams":
+        m &= df['team_short_name'].isin(sel_teams)
+        
+    # 4. Sliders
+    for key, col in [
+        ("f_cost", "now_cost"), ("f_rating", "av_rating_alt"), 
+        ("f_matches", "matches_played"), ("f_60min", "60_min"),
+        ("f_avg_mins", "avg_mins"), ("f_selected", "selected_by_percent"),
+        ("f_top100k", "top_100k")
+    ]:
+        if exclude != key:
+            val = st.session_state.get(key)
+            if val:
+                m &= (df[col] >= val[0]) & (df[col] <= val[1])
+            elif key == "f_matches": m &= (df[col] >= 5) # Default
+            elif key == "f_60min": m &= (df[col] >= 37.0) # Default
+            
+    # 5. Play Pos
+    sel_pl = st.session_state.get("pills_pl_pos", all_pl_pos)
+    sel_pl = [p.split(" (")[0] for p in sel_pl]
+    if exclude != "pl_pos":
+        m &= df['Play Pos'].isin(sel_pl)
+        
+    return m
 
-# --- САЙДБАР ---
-if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
+# ========================== САЙДБАР (ВІДОБРАЖЕННЯ) ==========================
+st.sidebar.button("Reset All Filters", use_container_width=True, type="primary", on_click=lambda: st.session_state.clear())
 
-search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...")
+search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", key="search_name")
 
-# --- 1. FPL POSITION ---
+# --- ДИНАМІЧНИЙ РОЗРАХУНОК ДЛЯ ПІГУЛОК ---
+# (Залишаємо чисті назви без лічильників)
+def get_clean_options(options, col, exclude_key):
+    return options
+
+# 1. Position Pills
+pos_options = sorted_positions
 filter_header("FPL Position", sorted_positions, "pos")
-selected_positions = st.sidebar.pills("FPL Position", options=sorted_positions, key="pills_pos", selection_mode="multi", label_visibility="collapsed")
+st.sidebar.pills("FPL Position", options=pos_options, key="pills_pos", selection_mode="multi", label_visibility="collapsed")
 
-# --- 3. FPL PRICE ---
-c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
-f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1, key="f_cost")
-
-# --- 2. TEAM ---
+# 2. Team Pills
+team_options = all_teams
 filter_header("Team", all_teams, "teams")
-selected_teams = st.sidebar.pills("Team", options=all_teams, key="pills_teams", selection_mode="multi", label_visibility="collapsed")
+st.sidebar.pills("Team", options=team_options, key="pills_teams", selection_mode="multi", label_visibility="collapsed")
 
-# --- РОЗРАХУНОК МЕЖ РЕЙТИНГУ ---
-rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
-r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not rating_series.empty else (0.0, 10.0)
+# --- ДИНАМІЧНИЙ РОЗРАХУНОК ДЛЯ СЛАЙДЕРІВ (Option A) ---
+def render_adaptive_slider(label, col, key, step=0.1, is_int=False, fmt=None):
+    m = get_mask(exclude=key)
+    data = df[m][col].dropna()
+    if data.empty:
+        low, high = float(df[col].min()), float(df[col].max())
+    else:
+        low, high = float(data.min()), float(data.max())
+    
+    full_min, full_max = float(df[col].min()), float(df[col].max())
+    if is_int:
+        low, high, full_min, full_max = int(low), int(high), int(full_min), int(full_max)
+        
+    # Якщо фільтри змінилися - підтягуємо значення
+    if key not in st.session_state:
+        st.session_state[key] = (low, high)
+    
+    return st.sidebar.slider(label, full_min, full_max, value=(low, high), step=step, key=key, format=fmt)
 
-# ПЕРЕВІРКА ЗМІН ДЛЯ АДАПТИВНОГО РЕЙТИНГУ (Варіант А)
-teams_changed = st.session_state.pills_teams != st.session_state.last_teams
-pos_changed = st.session_state.pills_pos != st.session_state.last_pos
-
-# Отримуємо поточні значення інших фільтрів для розрахунку "чесного" діапазону
-# (використовуємо .get() з дефолтними значеннями для першого запуску)
-curr_matches = st.session_state.get('f_matches', (5, int(df['matches_played'].max())))
-curr_60min = st.session_state.get('f_60min', (37.0, float(df['60_min'].max())))
-curr_cost = st.session_state.get('f_cost', (float(df['now_cost'].min()), float(df['now_cost'].max())))
-curr_search = st.session_state.get('search_name', "")
-
-# Повна маска (враховуємо ВСЕ крім самого рейтингу)
-dyn_mask = (
-    df['element_type'].isin(st.session_state.pills_pos) & 
-    df['team_short_name'].isin(st.session_state.pills_teams) &
-    (df['matches_played'] >= curr_matches[0]) & (df['matches_played'] <= curr_matches[1]) &
-    (df['60_min'] >= curr_60min[0]) & (df['60_min'] <= curr_60min[1]) &
-    (df['now_cost'] >= curr_cost[0]) & (df['now_cost'] <= curr_cost[1]) &
-    (df['full_name'].str.contains(curr_search, case=False, na=False)) &
-    (df['av_rating_alt'] > 0)
-)
-available_ratings = df[dyn_mask]['av_rating_alt'].dropna()
-
-if not available_ratings.empty:
-    # Обмежуємо значення, щоб вони не виходили за межі шкали r_min/r_max
-    curr_min_r = max(float(available_ratings.min()), r_min)
-    curr_max_r = min(float(available_ratings.max()), r_max)
-else:
-    curr_min_r, curr_max_r = r_min, r_max
-
-# Якщо відбулася зміна фільтрів - оновлюємо значення в session_state
-if (teams_changed or pos_changed) or "f_rating" not in st.session_state:
-    st.session_state.f_rating = (curr_min_r, curr_max_r)
-    st.session_state.last_teams = st.session_state.pills_teams
-    st.session_state.last_pos = st.session_state.pills_pos
+f_cost = render_adaptive_slider("FPL Price", "now_cost", "f_cost", 0.1, fmt="%.1f")
 
 # --- 4. PLAYING POSITION ---
 filter_header("Playing Position", all_pl_pos, "pl_pos")
-selected_pl_pos = []
-for idx, line in enumerate(pl_lines):
-    available_in_line = [p for p in line if p in actual_pl_pos]
-    if available_in_line:
-        line_key = f"pills_pl_line_{idx}"
-        
-        # Ініціалізація, якщо ключа ще немає
-        if line_key not in st.session_state:
-            st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos if p in available_in_line]
-
-        line_res = st.sidebar.pills(
-            label=f"pl_line_{idx}",
-            options=available_in_line,
-            key=line_key,
-            selection_mode="multi",
-            label_visibility="collapsed"
-        )
-        if line_res:
-            selected_pl_pos.extend(line_res)
+st.sidebar.pills("Playing Position", options=all_pl_pos, key="pills_pl_pos", selection_mode="multi", label_visibility="collapsed")
+selected_pl_pos = st.session_state.pills_pl_pos
 
 # --- ДОДАТКОВІ ФІЛЬТРИ В ЕКСПАНДЕРАХ ---
 with st.sidebar.expander("Performance Stats", expanded=False):
-    m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
-    f_matches = st.slider("Matches", m_min, m_max, (5, m_max), key="f_matches")
-
-    f_rating = st.slider("Rating", r_min, r_max, key="f_rating", step=0.05, format="%.2f")
-
-    am_min, am_max = float(df['avg_mins'].min()), float(df['avg_mins'].max())
-    f_avg_mins = st.slider("Average Mins", am_min, am_max, (am_min, am_max), 1.0, key="f_avg_mins")
-
-    min_60, max_60 = float(df['60_min'].min()), float(df['60_min'].max())
-    f_60min = st.slider("60 Min %", min_60, max_60, (37.0, max_60), 0.5, key="f_60min")
+    f_matches = render_adaptive_slider("Matches", "matches_played", "f_matches", 1, is_int=True)
+    f_rating = render_adaptive_slider("Rating", "av_rating_alt", "f_rating", 0.05, fmt="%.2f")
+    f_avg_mins = render_adaptive_slider("Average Mins", "avg_mins", "f_avg_mins", 1.0)
+    f_60min = render_adaptive_slider("60 Min %", "60_min", "f_60min", 0.5, fmt="%.1f")
 
 with st.sidebar.expander("Market & Popularity", expanded=False):
-    s_min, s_max = float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())
-    f_selected = st.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1, key="f_selected")
-
-    o_min, o_max = float(df['top_100k'].min()), float(df['top_100k'].max())
-    f_top100k = st.slider("Top 100k %", o_min, o_max, (o_min, o_max), 0.1, key="f_top100k")
+    f_selected = render_adaptive_slider("Selected %", "selected_by_percent", "f_selected", 0.1, fmt="%.1f")
+    f_top100k = render_adaptive_slider("Top 100k %", "top_100k", "f_top100k", 0.1, fmt="%.1f")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
-    df['element_type'].isin(selected_positions if selected_positions else []) &
-    df['team_short_name'].isin(selected_teams if selected_teams else []) &
-    df['Play Pos'].isin(selected_pl_pos if selected_pl_pos else []) &
-    (df['av_rating_alt'] >= f_rating[0]) & (df['av_rating_alt'] <= f_rating[1]) &
-    (df['matches_played'] >= f_matches[0]) & (df['matches_played'] <= f_matches[1]) &
-    (df['60_min'] >= f_60min[0]) & (df['60_min'] <= f_60min[1]) &
-    (df['now_cost'] >= f_cost[0]) & (df['now_cost'] <= f_cost[1]) &
-    (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
-    (df['top_100k'] >= f_top100k[0]) & (df['top_100k'] <= f_top100k[1]) &
-    (df['avg_mins'] >= f_avg_mins[0]) & (df['avg_mins'] <= f_avg_mins[1]) &
-    (df['full_name'].str.contains(search_name, case=False, na=False))
+    df['element_type'].isin(st.session_state.get("pills_pos", sorted_positions)) &
+    df['team_short_name'].isin(st.session_state.get("pills_teams", all_teams)) &
+    df['Play Pos'].isin(st.session_state.get("pills_pl_pos", all_pl_pos)) &
+    (df['av_rating_alt'] >= st.session_state.f_rating[0]) & (df['av_rating_alt'] <= st.session_state.f_rating[1]) &
+    (df['matches_played'] >= st.session_state.f_matches[0]) & (df['matches_played'] <= st.session_state.f_matches[1]) &
+    (df['60_min'] >= st.session_state.f_60min[0]) & (df['60_min'] <= st.session_state.f_60min[1]) &
+    (df['now_cost'] >= st.session_state.f_cost[0]) & (df['now_cost'] <= st.session_state.f_cost[1]) &
+    (df['selected_by_percent'] >= st.session_state.f_selected[0]) & (df['selected_by_percent'] <= st.session_state.f_selected[1]) &
+    (df['top_100k'] >= st.session_state.f_top100k[0]) & (df['top_100k'] <= st.session_state.f_top100k[1]) &
+    (df['avg_mins'] >= st.session_state.f_avg_mins[0]) & (df['avg_mins'] <= st.session_state.f_avg_mins[1]) &
+    (df['full_name'].str.contains(st.session_state.get("search_name", ""), case=False, na=False))
 )
 filtered_df = df[mask].copy()
 
