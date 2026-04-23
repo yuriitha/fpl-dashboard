@@ -183,22 +183,16 @@ def get_current_mask(exclude=None):
 # Перевіряємо, які саме фільтри змінив користувач
 changed_keys = [k for k in filter_keys if st.session_state[k] != st.session_state[f"prev_{k}"]]
 
-if changed_keys or st.session_state.first_run:
-    # Оновлюємо ВСІ фільтри на основі нової реальності, КРІМ тих, що змінено користувачем
-    st.session_state.first_run = False
-    # 1. Pills
-    if "pills_teams" not in changed_keys:
-        m_others = get_current_mask(exclude="pills_teams")
-        st.session_state.pills_teams = sorted(df[m_others]['team_short_name'].unique().tolist())
-    
-    if "pills_pos" not in changed_keys:
-        m_others = get_current_mask(exclude="pills_pos")
-        st.session_state.pills_pos = [p for p in sorted_positions if p in df[m_others]['element_type'].unique()]
+# Ключі, які можуть оновлюватися автоматично (Option A)
+# Виключаємо пігулки та дефолтні фільтри (Matches, 60min) за запитом користувача
+auto_keys = [("f_cost", "now_cost"), ("f_rating", "av_rating_alt"), ("f_avg_mins", "avg_mins"), 
+             ("f_selected", "selected_by_percent"), ("f_top100k", "top_100k")]
 
-    # 2. Sliders
-    for s_key, col in [("f_cost", "now_cost"), ("f_rating", "av_rating_alt"), ("f_matches", "matches_played"), 
-                       ("f_avg_mins", "avg_mins"), ("f_60min", "60_min"), ("f_selected", "selected_by_percent"), 
-                       ("f_top100k", "top_100k")]:
+if changed_keys or st.session_state.first_run:
+    st.session_state.first_run = False
+    
+    # Оновлюємо ТІЛЬКИ дозволені слайдери
+    for s_key, col in auto_keys:
         if s_key in changed_keys:
             continue
             
@@ -207,7 +201,6 @@ if changed_keys or st.session_state.first_run:
         if col == "av_rating_alt": series = series[series > 0]
         if not series.empty:
             new_val = (float(series.min()), float(series.max()))
-            if col == "matches_played": new_val = (int(series.min()), int(series.max()))
             st.session_state[s_key] = new_val
 
     # Оновлюємо "prev" значення для всіх
