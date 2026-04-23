@@ -71,7 +71,7 @@ st.markdown("""
 # Допоміжна функція для заголовків фільтрів з кнопками All/None
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
-    cols[0].markdown(label)
+    cols[0].markdown(f"<p style='font-size: 0.875rem; margin-bottom: 0px;'>{label}</p>", unsafe_allow_html=True)
     
     # Кнопка All тепер напряму змінює стан віджета
     if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
