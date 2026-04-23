@@ -290,10 +290,19 @@ def inject_inactive_pills(inactive_map: dict, pl_start_idx: int = 2):
                 var groups = doc.querySelectorAll(
                     '[data-testid="stSidebar"] [data-testid="stPills"]'
                 );
-                // Позначаємо Playing Position групи класом pl-pills
+                // Позначаємо Playing Position групи класом pl-pills та примусово центруємо
                 groups.forEach(function(g, i) {{
-                    if (i >= plStartIdx) {{ g.classList.add('pl-pills'); }}
-                    else                {{ g.classList.remove('pl-pills'); }}
+                    if (i >= plStartIdx) {{ 
+                        g.classList.add('pl-pills'); 
+                        var inner = g.querySelector('div[role="group"]') || g.querySelector('div[role="radiogroup"]') || g.querySelector('div');
+                        if (inner) {{
+                            inner.style.display = 'flex';
+                            inner.style.justifyContent = 'center';
+                            inner.style.flexWrap = 'wrap';
+                            inner.style.width = '100%';
+                        }}
+                    }}
+                    else {{ g.classList.remove('pl-pills'); }}
                 }});
                 // Затемнюємо неактивні пігулки
                 Object.keys(inactiveMap).forEach(function(idx) {{
