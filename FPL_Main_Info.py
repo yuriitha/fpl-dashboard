@@ -21,26 +21,16 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
-        /* 1. Гарантоване центрування: розтягуємо батьківські контейнери */
-        [data-testid="stSidebar"] .stElementContainer:has([data-testid="stPills"]),
-        [data-testid="stSidebar"] [data-testid="stPills"] {
-            width: 100% !important;
+        /* 1. Гарантоване центрування: будь-який контейнер, що безпосередньо містить кнопки */
+        [data-testid="stSidebar"] div:has(> button) {
             display: flex !important;
-            justify-content: center !important;
-        }
-
-        /* 2. Гарантоване центрування: розтягуємо саму групу кнопок */
-        [data-testid="stSidebar"] [data-testid="stPills"] [data-testid="stButtonGroup"],
-        [data-testid="stSidebar"] [data-testid="stPills"] [role="radiogroup"],
-        [data-testid="stSidebar"] [data-testid="stPills"] [role="group"] {
-            display: flex !important; 
             justify-content: center !important;
             flex-wrap: wrap !important;
             width: 100% !important;
         }
 
-        /* 3. Playing Position: розмір пігулок 48px (знаходимо блок через якір) */
-        div[data-testid="stVerticalBlock"]:has(#pl-pills-start) [data-testid="stPills"] button {
+        /* 2. Playing Position: розмір пігулок 48px (знаходимо ізольований блок через якір) */
+        div[data-testid="stVerticalBlock"]:has(#pl-pills-start) button {
             width: 48px !important; 
             min-width: 48px !important; 
             max-width: 48px !important;
