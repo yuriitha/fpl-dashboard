@@ -21,22 +21,22 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
-        /* Центрування всіх блоків пігулок (через батьківський контейнер) */
-        [data-testid="stSidebar"] .stElementContainer:has([data-testid="stPills"]) {
+        /* Центрування всіх блоків пігулок */
+        [data-testid="stSidebar"] div[aria-label="FPL Position"],
+        [data-testid="stSidebar"] div[aria-label="Team"],
+        [data-testid="stSidebar"] div[aria-label^="pl_line_"] {
             display: flex !important; 
             justify-content: center !important;
+            flex-wrap: wrap !important;
             width: 100% !important;
         }
-        [data-testid="stSidebar"] [data-testid="stPills"],
-        [data-testid="stSidebar"] [data-testid="stPills"] > div {
-            display: flex !important; justify-content: center !important;
-            flex-wrap: wrap !important; width: 100% !important;
-        }
 
-        /* Playing Position: розмір пігулок 48px (застосовується до елементів після якоря) */
-        #pl-pills-start ~ div[data-testid="stVerticalBlock"] [data-testid="stPills"] button,
-        #pl-pills-start ~ .stElementContainer [data-testid="stPills"] button {
-            width: 48px !important; min-width: 48px !important; max-width: 48px !important;
+        /* Playing Position: розмір пігулок 48px (через aria-label) */
+        [data-testid="stSidebar"] div[aria-label^="pl_line_"] button {
+            width: 48px !important; 
+            min-width: 48px !important; 
+            max-width: 48px !important;
+            padding: 0 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -360,9 +360,6 @@ filter_header("Playing Position", all_pl_pos, "pl_pos")
 selected_pl_pos = []
 inactive_pl_map = {}   # group_index -> list of inactive option texts
 pill_group_idx = 2     # 0=FPL Position, 1=Team, 2+ = pl_lines
-
-# Додаємо якір для CSS, щоб застосувати унікальні стилі (менший розмір) тільки для цих пігулок
-st.sidebar.markdown('<div id="pl-pills-start"></div>', unsafe_allow_html=True)
 
 for idx, line in enumerate(pl_lines):
     available_in_line = [p for p in line if p in actual_pl_pos]
