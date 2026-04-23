@@ -189,6 +189,9 @@ def auto_update_slider(key, col, exclude_key, cast=float, only_positive=False):
 
     if series.empty:
         st.session_state[hash_key] = current_hash
+        # Ініціалізуємо значення, якщо раніше не було встановлено
+        if key not in st.session_state:
+            st.session_state[key] = DEFAULTS[key]
         return
 
     avail_min = cast(series.min())
@@ -331,15 +334,15 @@ for idx, line in enumerate(pl_lines):
 
 # --- PERFORMANCE STATS ---
 with st.sidebar.expander("Performance Stats", expanded=False):
-    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  step=1,    key="f_matches")
-    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   step=0.05, format="%.2f", key="f_rating")
-    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], step=1.0,  key="f_avg_mins")
-    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    step=0.5,  key="f_60min")
+    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  value=_safe_range('f_matches',  DEFAULTS['f_matches']),  step=1,    key="f_matches")
+    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   value=_safe_range('f_rating',   DEFAULTS['f_rating']),   step=0.05, format="%.2f", key="f_rating")
+    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], value=_safe_range('f_avg_mins', DEFAULTS['f_avg_mins']), step=1.0,  key="f_avg_mins")
+    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    value=_safe_range('f_60min',    DEFAULTS['f_60min']),    step=0.5,  key="f_60min")
 
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
-    f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], step=0.1, key="f_selected")
-    f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  step=0.1, key="f_top100k")
+    f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected', DEFAULTS['f_selected']), step=0.1, key="f_selected")
+    f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k")
 
 # ========================== JS ДЛЯ НЕАКТИВНИХ ПІГУЛОК ==========================
 inactive_map = {}
