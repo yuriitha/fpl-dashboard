@@ -236,42 +236,6 @@ selected_teams = st.sidebar.pills("Team", options=all_teams, key="pills_teams", 
 rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
 r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not rating_series.empty else (0.0, 10.0)
 
-# ПЕРЕВІРКА ЗМІН ДЛЯ АДАПТИВНОГО РЕЙТИНГУ (Варіант А)
-teams_changed = st.session_state.pills_teams != st.session_state.last_teams
-pos_changed = st.session_state.pills_pos != st.session_state.last_pos
-
-# Отримуємо поточні значення інших фільтрів для розрахунку "чесного" діапазону
-# (використовуємо .get() з дефолтними значеннями для першого запуску)
-curr_matches = st.session_state.get('f_matches', (5, int(df['matches_played'].max())))
-curr_60min = st.session_state.get('f_60min', (37.0, float(df['60_min'].max())))
-curr_cost = st.session_state.get('f_cost', (float(df['now_cost'].min()), float(df['now_cost'].max())))
-curr_search = st.session_state.get('search_name', "")
-
-# Повна маска (враховуємо ВСЕ крім самого рейтингу)
-dyn_mask = (
-    df['element_type'].isin(st.session_state.pills_pos) & 
-    df['team_short_name'].isin(st.session_state.pills_teams) &
-    (df['matches_played'] >= curr_matches[0]) & (df['matches_played'] <= curr_matches[1]) &
-    (df['60_min'] >= curr_60min[0]) & (df['60_min'] <= curr_60min[1]) &
-    (df['now_cost'] >= curr_cost[0]) & (df['now_cost'] <= curr_cost[1]) &
-    (df['full_name'].str.contains(curr_search, case=False, na=False)) &
-    (df['av_rating_alt'] > 0)
-)
-available_ratings = df[dyn_mask]['av_rating_alt'].dropna()
-
-if not available_ratings.empty:
-    # Обмежуємо значення, щоб вони не виходили за межі шкали r_min/r_max
-    curr_min_r = max(float(available_ratings.min()), r_min)
-    curr_max_r = min(float(available_ratings.max()), r_max)
-else:
-    curr_min_r, curr_max_r = r_min, r_max
-
-# Якщо відбулася зміна фільтрів - оновлюємо значення в session_state
-if (teams_changed or pos_changed) or "f_rating" not in st.session_state:
-    st.session_state.f_rating = (curr_min_r, curr_max_r)
-    st.session_state.last_teams = st.session_state.pills_teams
-    st.session_state.last_pos = st.session_state.pills_pos
-
 # --- 4. PLAYING POSITION ---
 filter_header("Playing Position", all_pl_pos, "pl_pos")
 selected_pl_pos = []
