@@ -108,7 +108,7 @@ DEFAULTS = {
     'f_selected': GB['f_selected'],
     'f_top10k':   GB['f_top10k'],
     'f_top100k':  GB['f_top100k'],
-    'f_activity': GB['f_activity'],
+    'f_activity': (40.0, GB['f_activity'][1]),
 }
 
 # ========================== SESSION STATE ==========================
