@@ -52,13 +52,6 @@ st.markdown("""
             gap: 0.1rem !important;
         }
 
-        /* Стиль для заголовків фільтрів та слайдерів */
-        .filter-label, [data-testid="stSlider"] label {
-            font-weight: 600 !important;
-            font-size: 0.8rem !important;
-            margin-top: 0.4rem !important;
-            color: inherit !important;
-        }
 
         /* 5. Центрування ТІЛЬКИ для пігулок (Pills) */
         [data-testid="stSidebar"] [data-testid="stPills"] > div,
@@ -78,7 +71,7 @@ st.markdown("""
 # Допоміжна функція для заголовків фільтрів з кнопками All/None
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
-    cols[0].markdown(f"<p class='filter-label'>{label}</p>", unsafe_allow_html=True)
+    cols[0].markdown(label)
     
     # Кнопка All тепер напряму змінює стан віджета
     if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
