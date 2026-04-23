@@ -139,6 +139,10 @@ if "pills_teams" not in st.session_state: st.session_state.pills_teams = all_tea
 if "pills_pos" not in st.session_state: st.session_state.pills_pos = sorted_positions
 if "pills_pl_pos" not in st.session_state: st.session_state.pills_pl_pos = all_pl_pos
 
+# Допоміжні ключі для відстеження змін (щоб знати, коли "підтягувати" слайдери)
+if "last_teams" not in st.session_state: st.session_state.last_teams = st.session_state.pills_teams
+if "last_pos" not in st.session_state: st.session_state.last_pos = st.session_state.pills_pos
+
 # --- САЙДБАР ---
 if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
     for key in list(st.session_state.keys()):
@@ -151,13 +155,37 @@ search_name = st.sidebar.text_input("Search Player", placeholder="Enter name..."
 filter_header("FPL Position", sorted_positions, "pos")
 selected_positions = st.sidebar.pills("FPL Position", options=sorted_positions, key="pills_pos", selection_mode="multi", label_visibility="collapsed")
 
-# --- 2. FPL PRICE ---
+# --- 3. FPL PRICE ---
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
 f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1, key="f_cost")
 
-# --- 3. TEAM ---
+# --- 4. TEAM ---
 filter_header("Team", all_teams, "teams")
 selected_teams = st.sidebar.pills("Team", options=all_teams, key="pills_teams", selection_mode="multi", label_visibility="collapsed")
+
+# ПЕРЕВІРКА ЗМІН ДЛЯ АДАПТИВНОГО РЕЙТИНГУ (Варіант А)
+# Якщо змінилися команди або позиції - розраховуємо новий діапазон рейтингу
+teams_changed = st.session_state.pills_teams != st.session_state.last_teams
+pos_changed = st.session_state.pills_pos != st.session_state.last_pos
+
+# Повна маска для розрахунку "доступного" рейтингу (без самого рейтингу)
+dyn_mask = (
+    df['element_type'].isin(st.session_state.pills_pos) & 
+    df['team_short_name'].isin(st.session_state.pills_teams)
+)
+available_ratings = df[dyn_mask]['av_rating_alt'].dropna()
+
+if not available_ratings.empty:
+    curr_min_r = float(available_ratings.min())
+    curr_max_r = float(available_ratings.max())
+else:
+    curr_min_r, curr_max_r = 0.0, 10.0
+
+# Якщо відбулася зміна фільтрів - оновлюємо значення в session_state
+if (teams_changed or pos_changed) or "f_rating" not in st.session_state:
+    st.session_state.f_rating = (curr_min_r, curr_max_r)
+    st.session_state.last_teams = st.session_state.pills_teams
+    st.session_state.last_pos = st.session_state.pills_pos
 
 # --- 4. PLAYING POSITION ---
 filter_header("Playing Position", all_pl_pos, "pl_pos")
@@ -188,7 +216,7 @@ with st.sidebar.expander("Performance Stats", expanded=False):
 
     rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
     r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not rating_series.empty else (0.0, 10.0)
-    f_rating = st.slider("Rating", r_min, r_max, (r_min, r_max), 0.05, format="%.2f", key="f_rating")
+    f_rating = st.slider("Rating", r_min, r_max, key="f_rating", step=0.05, format="%.2f")
 
     am_min, am_max = float(df['avg_mins'].min()), float(df['avg_mins'].max())
     f_avg_mins = st.slider("Average Mins", am_min, am_max, (am_min, am_max), 1.0, key="f_avg_mins")
