@@ -165,11 +165,11 @@ def get_available(exclude_key=None):
     return df[mask]
 
 
-def get_pills_df():
+def get_base_df(exclude_key=None):
     """
-    Повертає df, відфільтрований лише pills + search без слайдерів.
-    Використовується для розрахунку діапазонів слайдерів, щоб уникнути циркулярних залежностей
-    (коли один слайдер впливає на діапазон іншого).
+    Базовий набір даних для розрахунку діапазонів слайдерів.
+    Застосовує: pills + search + DEFAULTS інших слайдерів (крім exclude_key).
+    Використовує DEFAULTS (не поточні значення) — це уникає циркулярних залежностей між слайдерами.
     """
     cv_pos    = st.session_state.get('pills_pos',   sorted_positions) or []
     cv_teams  = st.session_state.get('pills_teams', all_teams) or []
@@ -187,6 +187,21 @@ def get_pills_df():
     )
     if cv_pl_pos:
         mask &= df['Play Pos'].fillna('').isin(cv_pl_pos)
+
+    # Застосовуємо DEFAULTS інших слайдерів (не поточні значення!)
+    _slider_cols = {
+        'f_matches':  ('matches_played',      DEFAULTS['f_matches']),
+        'f_60min':    ('60_min',              DEFAULTS['f_60min']),
+        'f_cost':     ('now_cost',            DEFAULTS['f_cost']),
+        'f_avg_mins': ('avg_mins',            DEFAULTS['f_avg_mins']),
+        'f_selected': ('selected_by_percent', DEFAULTS['f_selected']),
+        'f_top100k':  ('top_100k',            DEFAULTS['f_top100k']),
+        'f_rating':   ('av_rating_alt',       DEFAULTS['f_rating']),
+    }
+    for k, (col_name, d) in _slider_cols.items():
+        if k != exclude_key:
+            mask &= (df[col_name] >= d[0]) & (df[col_name] <= d[1])
+
     return df[mask]
 
 def auto_update_slider(key, col, cast=float, only_positive=False):
@@ -201,7 +216,7 @@ def auto_update_slider(key, col, cast=float, only_positive=False):
     if prev_hash == current_hash and key in st.session_state:
         return
 
-    series = get_pills_df()[col].dropna()
+    series = get_base_df(key)[col].dropna()
     if only_positive:
         series = series[series > 0]
 
