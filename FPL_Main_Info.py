@@ -165,43 +165,58 @@ def get_available(exclude_key=None):
     return df[mask]
 
 
-def auto_update_slider(key, col, exclude_key, cast=float, only_positive=False):
+def get_pills_df():
     """
-    Оновлює session_state[key] при зміні ІНШИХ фільтрів.
-    Логіка: завжди відображає реальний діапазон, але не виходить за межі DEFAULTS.
+    Повертає df, відфільтрований лише pills + search без слайдерів.
+    Використовується для розрахунку діапазонів слайдерів, щоб уникнути циркулярних залежностей
+    (коли один слайдер впливає на діапазон іншого).
+    """
+    cv_pos    = st.session_state.get('pills_pos',   sorted_positions) or []
+    cv_teams  = st.session_state.get('pills_teams', all_teams) or []
+    cv_search = st.session_state.get('search_name', '')
+
+    cv_pl_pos = []
+    for i, line in enumerate(pl_lines):
+        avail = [p for p in line if p in actual_pl_pos]
+        cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_{i}', avail))
+
+    mask = (
+        df['element_type'].isin(cv_pos) &
+        df['team_short_name'].isin(cv_teams) &
+        df['full_name'].str.contains(cv_search, case=False, na=False)
+    )
+    if cv_pl_pos:
+        mask &= df['Play Pos'].fillna('').isin(cv_pl_pos)
+    return df[mask]
+
+def auto_update_slider(key, col, cast=float, only_positive=False):
+    """
+    Оновлює session_state[key] при зміні pills/search.
+    Діапазон рахується ЛИШЕ на основі pills — без міжслайдерних залежностей.
     """
     hash_key = f'_hash_{key}'
-    # Hash включає лише pills + search, не слайдери.
-    # Це гарантує, що будь-яка зміна pills/search завжди змушує перерахунок слайдерів.
-    current_snap = _pills_snapshot()
-    current_hash = str(current_snap)
-
+    current_hash = str(_pills_snapshot())
     prev_hash = st.session_state.get(hash_key)
 
-    # Якщо інші фільтри не змінились і значення вже є — не чіпаємо
     if prev_hash == current_hash and key in st.session_state:
         return
 
-    avail_df = get_available(exclude_key)
-    series = avail_df[col].dropna()
+    series = get_pills_df()[col].dropna()
     if only_positive:
         series = series[series > 0]
 
     if series.empty:
         st.session_state[hash_key] = current_hash
-        # Ініціалізуємо значення, якщо раніше не було встановлено
         if key not in st.session_state:
             st.session_state[key] = DEFAULTS[key]
         return
 
     avail_min = cast(series.min())
     avail_max = cast(series.max())
-    def_lower  = cast(DEFAULTS[key][0])
-    gb_upper   = cast(GB[key][1])
+    def_lower = cast(DEFAULTS[key][0])
+    gb_upper  = cast(GB[key][1])
 
-    # Нижня: не падає нижче дефолту, але вільно рухається вгору/вниз за даними
     new_lower = max(def_lower, avail_min)
-    # Верхня: вільно розширюється та звужується, кламп лише до глобального максимуму даних
     new_upper = min(gb_upper, avail_max)
 
     if new_lower > new_upper:
@@ -268,13 +283,13 @@ def inject_inactive_pills(inactive_map: dict):
 
 
 # ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
-auto_update_slider('f_cost',     'now_cost',            'f_cost',    float)
-auto_update_slider('f_matches',  'matches_played',      'f_matches', int)
-auto_update_slider('f_rating',   'av_rating_alt',       'f_rating',  float, only_positive=True)
-auto_update_slider('f_avg_mins', 'avg_mins',            'f_avg_mins',float)
-auto_update_slider('f_60min',    '60_min',              'f_60min',   float)
-auto_update_slider('f_selected', 'selected_by_percent', 'f_selected',float)
-auto_update_slider('f_top100k',  'top_100k',            'f_top100k', float)
+auto_update_slider('f_cost',     'now_cost',            float)
+auto_update_slider('f_matches',  'matches_played',      int)
+auto_update_slider('f_rating',   'av_rating_alt',       float, only_positive=True)
+auto_update_slider('f_avg_mins', 'avg_mins',            float)
+auto_update_slider('f_60min',    '60_min',              float)
+auto_update_slider('f_selected', 'selected_by_percent', float)
+auto_update_slider('f_top100k',  'top_100k',            float)
 
 # ========================== САЙДБАР ==========================
 if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
