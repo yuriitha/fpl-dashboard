@@ -21,6 +21,11 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
+
+        /* Запобігаємо мерехтінню: CSS-правило на базі стабільного батька, якому JS призначає клас */
+        .playing-pos-wrapper button {
+            width: 48px !important; min-width: 48px !important; max-width: 48px !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -30,6 +35,18 @@ st.markdown("""
 def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
     df = pd.read_parquet(url)
+    if 'av_rating_alt' in df.columns:
+        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce')
+        df = df.sort_values(by="av_rating_alt", ascending=False)
+    
+    # Calculate Transfer Activity Percentile
+    if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
+        df['transfer_activity'] = df['transfers_in_24'] + df['transfers_out_24']
+        df['transfer_activity_pct'] = df['transfer_activity'].rank(pct=True) * 100.0
+    else:
+        df['transfer_activity_pct'] = 0.0
+        
+    return df
     if 'av_rating_alt' in df.columns:
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce')
         df = df.sort_values(by="av_rating_alt", ascending=False)
@@ -76,6 +93,7 @@ GB = {
     'f_selected': (float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())),
     'f_top10k':   (float(df['top_10k'].min()),             float(df['top_10k'].max())),
     'f_top100k':  (float(df['top_100k'].min()),            float(df['top_100k'].max())),
+    'f_activity': (float(df['transfer_activity_pct'].min()), float(df['transfer_activity_pct'].max())),
 }
 # Дефолтні значення повзунків (нижня межа захищена)
 DEFAULTS = {
@@ -87,6 +105,7 @@ DEFAULTS = {
     'f_selected': GB['f_selected'],
     'f_top10k':   GB['f_top10k'],
     'f_top100k':  GB['f_top100k'],
+    'f_activity': GB['f_activity'],
 }
 
 # ========================== SESSION STATE ==========================
@@ -128,6 +147,7 @@ def get_available(exclude_key=None):
     cv_avg_mins = _safe_range('f_avg_mins', DEFAULTS['f_avg_mins'])
     cv_selected = _safe_range('f_selected', DEFAULTS['f_selected'])
     cv_top100k  = _safe_range('f_top100k',  DEFAULTS['f_top100k'])
+    cv_activity = _safe_range('f_activity', DEFAULTS['f_activity'])
     cv_rating   = _safe_range('f_rating',   DEFAULTS['f_rating'])
     cv_search   = st.session_state.get('search_name', '')
 
@@ -154,6 +174,8 @@ def get_available(exclude_key=None):
         mask &= (df['selected_by_percent'] >= cv_selected[0]) & (df['selected_by_percent'] <= cv_selected[1])
     if exclude_key != 'f_top100k':
         mask &= (df['top_100k'] >= cv_top100k[0]) & (df['top_100k'] <= cv_top100k[1])
+    if exclude_key != 'f_activity':
+        mask &= (df['transfer_activity_pct'] >= cv_activity[0]) & (df['transfer_activity_pct'] <= cv_activity[1])
     if exclude_key != 'f_rating':
         mask &= (df['av_rating_alt'] >= cv_rating[0]) & (df['av_rating_alt'] <= cv_rating[1])
     if exclude_key != 'search':
@@ -193,6 +215,7 @@ def get_base_df(exclude_key=None):
         'f_selected': ('selected_by_percent', DEFAULTS['f_selected']),
         'f_top10k':   ('top_10k',             DEFAULTS['f_top10k']),
         'f_top100k':  ('top_100k',            DEFAULTS['f_top100k']),
+        'f_activity': ('transfer_activity_pct', DEFAULTS['f_activity']),
         'f_rating':   ('av_rating_alt',       DEFAULTS['f_rating']),
     }
     for k, (col_name, d) in _slider_cols.items():
@@ -309,6 +332,15 @@ def inject_sidebar_layout(inactive_all: list):
                         b.style.setProperty('width', '48px', 'important');
                         b.style.setProperty('min-width', '48px', 'important');
                         b.style.setProperty('max-width', '48px', 'important');
+                        
+                        // Додаємо стабільний клас для батьківського контейнера, щоб уникнути мерехтіння
+                        var stPills = b.closest('[data-testid="stPills"]');
+                        if (stPills) {{
+                            var wrapper = stPills.closest('.stElementContainer') || stPills.closest('[data-testid="stElementContainer"]');
+                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {{
+                                wrapper.classList.add('playing-pos-wrapper');
+                            }}
+                        }}
                     }} else {{
                         // Гарантуємо 60px для інших
                         b.style.setProperty('width', '60px', 'important');
@@ -343,6 +375,7 @@ auto_update_slider('f_60min',    '60_min',              float)
 auto_update_slider('f_selected', 'selected_by_percent', float)
 auto_update_slider('f_top10k',   'top_10k',             float)
 auto_update_slider('f_top100k',  'top_100k',            float)
+auto_update_slider('f_activity', 'transfer_activity_pct', float)
 
 # ========================== САЙДБАР ==========================
 if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
@@ -413,7 +446,7 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
     f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected', DEFAULTS['f_selected']), step=0.1, key="f_selected")
     f_top10k   = st.slider("Top 10k %",  GB['f_top10k'][0],   GB['f_top10k'][1],   value=_safe_range('f_top10k',   DEFAULTS['f_top10k']),   step=0.1, key="f_top10k")
     f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k")
-
+    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 mask = (
@@ -427,6 +460,7 @@ mask = (
     (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
     (df['top_10k']             >= f_top10k[0])   & (df['top_10k']             <= f_top10k[1]) &
     (df['top_100k']            >= f_top100k[0])  & (df['top_100k']            <= f_top100k[1]) &
+    (df['transfer_activity_pct'] >= f_activity[0]) & (df['transfer_activity_pct'] <= f_activity[1]) &
     (df['avg_mins']            >= f_avg_mins[0]) & (df['avg_mins']            <= f_avg_mins[1]) &
     (df['full_name'].str.contains(search_name, case=False, na=False))
 )
