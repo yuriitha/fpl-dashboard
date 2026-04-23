@@ -489,7 +489,7 @@ st.dataframe(
         "matches_played":      st.column_config.NumberColumn("MP",      width=35),
         "matches_started":     st.column_config.NumberColumn("GS",      width=35),
         "avg_mins":            st.column_config.NumberColumn("AvgMins", width=45,  format="%d"),
-        "60_min":              st.column_config.NumberColumn("60% Mins",width=60,  format="%.1f"),
+        "60_min":              st.column_config.NumberColumn("60Mins%", width=50,  format="%.1f"),
         "goals_scored":        st.column_config.NumberColumn("G",       width=30),
         "assists":             st.column_config.NumberColumn("A",       width=30),
         "av_rating":           st.column_config.NumberColumn("Rat",     width=40,  format="%.2f"),
@@ -500,6 +500,6 @@ st.dataframe(
         "transfers_in_24":     st.column_config.NumberColumn("In 24",   width=60),
         "transfers_out_24":    st.column_config.NumberColumn("Out 24",  width=60),
         "news":                st.column_config.TextColumn("News",      width="medium"),
-        "news_added":          st.column_config.TextColumn("Updated",   width=175),
+        "news_added":          st.column_config.TextColumn("Updated",   width=125),
     }
 )
