@@ -159,27 +159,32 @@ selected_positions = st.sidebar.pills("FPL Position", options=sorted_positions, 
 c_min, c_max = float(df['now_cost'].min()), float(df['now_cost'].max())
 f_cost = st.sidebar.slider("FPL Price", c_min, c_max, (c_min, c_max), 0.1, key="f_cost")
 
-# --- 4. TEAM ---
+# --- 2. TEAM ---
 filter_header("Team", all_teams, "teams")
 selected_teams = st.sidebar.pills("Team", options=all_teams, key="pills_teams", selection_mode="multi", label_visibility="collapsed")
 
+# --- РОЗРАХУНОК МЕЖ РЕЙТИНГУ ---
+rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
+r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not rating_series.empty else (0.0, 10.0)
+
 # ПЕРЕВІРКА ЗМІН ДЛЯ АДАПТИВНОГО РЕЙТИНГУ (Варіант А)
-# Якщо змінилися команди або позиції - розраховуємо новий діапазон рейтингу
 teams_changed = st.session_state.pills_teams != st.session_state.last_teams
 pos_changed = st.session_state.pills_pos != st.session_state.last_pos
 
-# Повна маска для розрахунку "доступного" рейтингу (без самого рейтингу)
+# Повна маска (тільки гравці з рейтингом > 0)
 dyn_mask = (
     df['element_type'].isin(st.session_state.pills_pos) & 
-    df['team_short_name'].isin(st.session_state.pills_teams)
+    df['team_short_name'].isin(st.session_state.pills_teams) &
+    (df['av_rating_alt'] > 0)
 )
 available_ratings = df[dyn_mask]['av_rating_alt'].dropna()
 
 if not available_ratings.empty:
-    curr_min_r = float(available_ratings.min())
-    curr_max_r = float(available_ratings.max())
+    # Обмежуємо значення, щоб вони не виходили за межі шкали r_min/r_max
+    curr_min_r = max(float(available_ratings.min()), r_min)
+    curr_max_r = min(float(available_ratings.max()), r_max)
 else:
-    curr_min_r, curr_max_r = 0.0, 10.0
+    curr_min_r, curr_max_r = r_min, r_max
 
 # Якщо відбулася зміна фільтрів - оновлюємо значення в session_state
 if (teams_changed or pos_changed) or "f_rating" not in st.session_state:
@@ -214,8 +219,6 @@ with st.sidebar.expander("Performance Stats", expanded=False):
     m_min, m_max = int(df['matches_played'].min()), int(df['matches_played'].max())
     f_matches = st.slider("Matches", m_min, m_max, (5, m_max), key="f_matches")
 
-    rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
-    r_min, r_max = (float(rating_series.min()), float(rating_series.max())) if not rating_series.empty else (0.0, 10.0)
     f_rating = st.slider("Rating", r_min, r_max, key="f_rating", step=0.05, format="%.2f")
 
     am_min, am_max = float(df['avg_mins'].min()), float(df['avg_mins'].max())
