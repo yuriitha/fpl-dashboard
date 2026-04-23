@@ -68,6 +68,7 @@ except Exception as e:
 
 # ========================== ПІДГОТОВКА ==========================
 all_teams = sorted(df['team_short_name'].unique().tolist())
+default_teams = [t for t in all_teams if t not in ['BHA', 'BOU', 'BUR', 'CHE', 'LEE', 'MCI']]
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
 sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
@@ -109,7 +110,7 @@ DEFAULTS = {
 }
 
 # ========================== SESSION STATE ==========================
-if 'pills_teams_gr'  not in st.session_state: st.session_state.pills_teams_gr  = all_teams
+if 'pills_teams_gr'  not in st.session_state: st.session_state.pills_teams_gr  = default_teams
 if 'pills_pos_gr'    not in st.session_state: st.session_state.pills_pos_gr    = [p for p in sorted_positions if p != 'GK']
 if 'pills_pl_pos_gr' not in st.session_state: st.session_state.pills_pl_pos_gr = all_pl_pos
 
@@ -118,7 +119,7 @@ if 'pills_pl_pos_gr' not in st.session_state: st.session_state.pills_pl_pos_gr =
 def _pills_snapshot():
     snap = {
         'pos':    tuple(sorted(st.session_state.get('pills_pos_gr',   [p for p in sorted_positions if p != 'GK']) or [])),
-        'teams':  tuple(sorted(st.session_state.get('pills_teams_gr', all_teams) or [])),
+        'teams':  tuple(sorted(st.session_state.get('pills_teams_gr', default_teams) or [])),
         'search': st.session_state.get('search_name_gr', ''),
     }
     for i, line in enumerate(pl_lines):
@@ -134,7 +135,7 @@ def _safe_range(key, default):
 
 def get_available(exclude_key=None):
     cv_pos      = st.session_state.get('pills_pos_gr',   [p for p in sorted_positions if p != 'GK']) or []
-    cv_teams    = st.session_state.get('pills_teams_gr', all_teams) or []
+    cv_teams    = st.session_state.get('pills_teams_gr', default_teams) or []
     cv_matches  = _safe_range('f_matches_gr',  DEFAULTS['f_matches'])
     cv_60min    = _safe_range('f_60min_gr',    DEFAULTS['f_60min'])
     cv_cost     = _safe_range('f_cost_gr',     DEFAULTS['f_cost'])
@@ -178,7 +179,7 @@ def get_available(exclude_key=None):
 
 def get_base_df(exclude_key=None):
     cv_pos    = st.session_state.get('pills_pos_gr',   [p for p in sorted_positions if p != 'GK']) or []
-    cv_teams  = st.session_state.get('pills_teams_gr', all_teams) or []
+    cv_teams  = st.session_state.get('pills_teams_gr', default_teams) or []
     cv_search = st.session_state.get('search_name_gr', '')
 
     cv_pl_pos = []
