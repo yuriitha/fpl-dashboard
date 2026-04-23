@@ -22,9 +22,12 @@ st.markdown("""
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
         /* Центрування всіх блоків пігулок */
-        [data-testid="stSidebar"] [data-testid="stPills"] > div {
+        [data-testid="stSidebar"] [data-testid="stPills"],
+        [data-testid="stSidebar"] [data-testid="stPills"] > div,
+        [data-testid="stSidebar"] div[role="group"],
+        [data-testid="stSidebar"] div[role="radiogroup"] {
             display: flex !important; justify-content: center !important;
-            flex-wrap: wrap !important; width: 100% !important; gap: 4px !important;
+            flex-wrap: wrap !important; width: 100% !important;
         }
 
         /* Playing Position: менший розмір пігулок (48px = -20% від 60px) — призначається JS */
