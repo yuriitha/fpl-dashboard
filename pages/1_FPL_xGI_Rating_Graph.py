@@ -484,7 +484,7 @@ if not plot_df.empty:
             "element_type": "" 
         },
         template="plotly_dark",
-        size_max=40
+        size_max=20
     )
 
     fig.update_traces(
