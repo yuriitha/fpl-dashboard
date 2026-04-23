@@ -15,7 +15,7 @@ st.markdown("""
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
         /* Максимальна компактність */
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
 
         /* 1. Задаємо ширину всім кнопкам у сайдбарі (для пігулок) */
         [data-testid="stSidebar"] button {
