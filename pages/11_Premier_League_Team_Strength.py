@@ -134,6 +134,34 @@ js = f"""
 """
 st.components.v1.html(js, height=0, scrolling=False)
 
+def soft_gradient(s, cmap_name='Blues', alpha=0.25, fixed_min=None, fixed_max=None):
+    if s.empty:
+        return ['' for _ in s]
+    s_min = fixed_min if fixed_min is not None else s.min()
+    s_max = fixed_max if fixed_max is not None else s.max()
+    if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
+        return ['' for _ in s]
+    
+    if isinstance(cmap_name, str):
+        cmap = plt.get_cmap(cmap_name)
+    else:
+        cmap = cmap_name
+        
+    norm = mcolors.Normalize(vmin=s_min, vmax=s_max)
+    
+    styles = []
+    for val in s:
+        if pd.isna(val):
+            styles.append('')
+        else:
+            clamped = max(min(val, s_max), s_min)
+            r, g, b, _ = cmap(norm(clamped))
+            styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
+    return styles
+
+light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff", "#00BFFF"])
+orange_blue = mcolors.LinearSegmentedColormap.from_list("OrangeBlue", ["#ff8c00", "#ffffff", "#00BFFF"])
+
 # === MAIN CONTENT ===
 col1, col2 = st.columns([0.35, 0.65])
 
@@ -174,25 +202,6 @@ with col1:
         df_ratings.index = df_ratings.index + 1
         df_ratings.reset_index(inplace=True)
         df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
-        
-        def soft_gradient(s, cmap_name='Blues', alpha=0.25):
-            if s.empty:
-                return ['' for _ in s]
-            s_min, s_max = s.min(), s.max()
-            if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
-                return ['' for _ in s]
-            
-            cmap = plt.get_cmap(cmap_name)
-            norm = mcolors.Normalize(vmin=s_min, vmax=s_max)
-            
-            styles = []
-            for val in s:
-                if pd.isna(val):
-                    styles.append('')
-                else:
-                    r, g, b, _ = cmap(norm(val))
-                    styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
-            return styles
 
         df_ratings_styled = df_ratings.style \
             .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=['Attack']) \
@@ -227,8 +236,13 @@ with col2:
         if final_teams:
             df_future = df_future[df_future['home_team'].isin(final_teams) | df_future['away_team'].isin(final_teams)]
             
+        df_future_styled = df_future.style \
+            .apply(soft_gradient, cmap_name=light_blues, alpha=0.3, subset=['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']) \
+            .apply(soft_gradient, cmap_name=orange_blue, alpha=0.3, fixed_min=-0.45, fixed_max=0.45, subset=['home_delta', 'away_delta']) \
+            .format(precision=2)
+            
         st.dataframe(
-            df_future,
+            df_future_styled,
             hide_index=True,
             use_container_width=True,
             height=len(df_future) * 35 + 40,
@@ -236,8 +250,8 @@ with col2:
                 'match_date': st.column_config.DatetimeColumn("Date", format="DD/MM/YYYY HH:mm"),
                 'home_team': st.column_config.TextColumn("Home"),
                 'away_team': st.column_config.TextColumn("Away"),
-                'home_xg': st.column_config.NumberColumn("xG (H)", format="%.2f", width=50),
-                'away_xg': st.column_config.NumberColumn("xG (A)", format="%.2f", width=50),
+                'home_xg': st.column_config.NumberColumn("Model xG (H)", format="%.2f", width=50),
+                'away_xg': st.column_config.NumberColumn("Model xG (A)", format="%.2f", width=50),
                 'home_xg_odds': st.column_config.NumberColumn("Odds xG (H)", format="%.2f", width=50),
                 'away_xg_odds': st.column_config.NumberColumn("Odds xG (A)", format="%.2f", width=50),
                 'home_delta': st.column_config.NumberColumn("Delta (H)", format="%.2f", width=50),
