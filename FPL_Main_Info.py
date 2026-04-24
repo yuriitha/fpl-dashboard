@@ -164,7 +164,10 @@ def get_available(exclude_key=None):
     if exclude_key != 'pills_teams': mask &= df['team_short_name'].isin(cv_teams)
     if exclude_key != 'pills_pl':
         if cv_pl_pos:
-            mask &= df['Play Pos'].fillna('').isin(cv_pl_pos)
+            if len(cv_pl_pos) == len(all_pl_pos):
+                mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
+            else:
+                mask &= df['Play Pos'].isin(cv_pl_pos)
     if exclude_key != 'f_matches':
         mask &= (df['matches_played'] >= cv_matches[0]) & (df['matches_played'] <= cv_matches[1])
     if exclude_key != 'f_60min':
@@ -207,7 +210,10 @@ def get_base_df(exclude_key=None):
         df['full_name'].str.contains(cv_search, case=False, na=False)
     )
     if cv_pl_pos:
-        mask &= df['Play Pos'].fillna('').isin(cv_pl_pos)
+        if len(cv_pl_pos) == len(all_pl_pos):
+            mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
+        else:
+            mask &= df['Play Pos'].isin(cv_pl_pos)
 
     # Застосовуємо DEFAULTS інших слайдерів (не поточні значення!)
     _slider_cols = {
@@ -452,10 +458,15 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
     f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
+if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
+    play_pos_mask = df['Play Pos'].isin(selected_pl_pos) | df['Play Pos'].isna()
+else:
+    play_pos_mask = df['Play Pos'].isin(selected_pl_pos if selected_pl_pos else [])
+
 mask = (
     df['element_type'].isin(selected_positions if selected_positions else []) &
     df['team_short_name'].isin(selected_teams  if selected_teams  else []) &
-    df['Play Pos'].isin(selected_pl_pos        if selected_pl_pos else []) &
+    play_pos_mask &
     (df['av_rating_alt']       >= f_rating[0])   & (df['av_rating_alt']       <= f_rating[1]) &
     (df['matches_played']      >= f_matches[0])  & (df['matches_played']      <= f_matches[1]) &
     (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
