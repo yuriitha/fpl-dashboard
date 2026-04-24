@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 # Налаштування сторінки
 st.set_page_config(
@@ -461,10 +463,37 @@ display_columns = [
 # Перевірка наявності колонок
 existing_cols = [c for c in display_columns if c in filtered_df.columns]
 
+def soft_gradient(s, cmap_name='Blues', alpha=0.25):
+    if s.empty:
+        return ['' for _ in s]
+    s_min, s_max = s.min(), s.max()
+    if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
+        return ['' for _ in s]
+    
+    cmap = plt.get_cmap(cmap_name)
+    norm = mcolors.Normalize(vmin=s_min, vmax=s_max)
+    
+    styles = []
+    for val in s:
+        if pd.isna(val):
+            styles.append('')
+        else:
+            r, g, b, _ = cmap(norm(val))
+            styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
+    return styles
+
+# Створення стилізованого DataFrame
+styled_df = filtered_df[existing_cols].style \
+    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['top_100k'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90','A_90', 'xA_90', 'xGI_norm'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90'] if c in existing_cols]) \
+    .format(precision=2)
+
 st.subheader(f"Attacking Stats: {len(filtered_df)} players")
 
 st.dataframe(
-    filtered_df[existing_cols],
+    styled_df,
     use_container_width=True,
     hide_index=True,
     height=800,
@@ -475,25 +504,25 @@ st.dataframe(
         "team_short_name":     st.column_config.TextColumn("Team",      width=45),
         "now_cost":            st.column_config.NumberColumn("Price",   width=40,  format="%.1f"),
         "selected_by_percent": st.column_config.NumberColumn("Selected",width=55,  format="%.1f%%"),
-        "top_100k":            st.column_config.ProgressColumn("Top 100K",width=55,  format="%.1f%%", min_value=0),
+        "top_100k":            st.column_config.NumberColumn("Top 100K",width=55,  format="%.1f%%"),
         "min_played":          st.column_config.NumberColumn("Mins",    width=45),
         "matches_played":      st.column_config.NumberColumn("MP",      width=35),
         "matches_started":     st.column_config.NumberColumn("GS",      width=35),
-        "avg_mins":            st.column_config.ProgressColumn("AvgMins", width=40,  format="%d", min_value=0),
-        "60_min":              st.column_config.ProgressColumn("60Mins%", width=50,  format="%.1f", min_value=0),
-        "av_rating_alt":       st.column_config.ProgressColumn("RatA",    width=40,  format="%.2f", min_value=0),
-        "G_90":                st.column_config.ProgressColumn("G/90",    width=40,  format="%.2f", min_value=0),
-        "xG_90":               st.column_config.ProgressColumn("xG/90",   width=40,  format="%.2f", min_value=0),
-        "xGoT_90":             st.column_config.ProgressColumn("xGoT/90", width=40,  format="%.2f", min_value=0),
-        "A_90":                st.column_config.ProgressColumn("A/90",    width=40,  format="%.2f", min_value=0),
-        "xA_90":               st.column_config.ProgressColumn("xA/90",   width=40,  format="%.2f", min_value=0),
-        "xGI_norm":            st.column_config.ProgressColumn("xGI/90",  width=50,  format="%.2f", min_value=0),
-        "Sh_90":               st.column_config.ProgressColumn("Sh/90",   width=40,  format="%.2f", min_value=0),
-        "ShoT_90":             st.column_config.ProgressColumn("ShoT/90", width=40,  format="%.2f", min_value=0),
-        "KP_90":               st.column_config.ProgressColumn("KP/90",   width=40,  format="%.2f", min_value=0),
-        "Touches_90":          st.column_config.ProgressColumn("Tchs/90", width=50,  format="%.1f", min_value=0),
-        "Pass_pct":            st.column_config.ProgressColumn("Pass%",   width=45,  format="%.1f", min_value=0),
-        "BC_90":               st.column_config.ProgressColumn("BC/90",   width=40,  format="%.2f", min_value=0),
-        "PBC_90":              st.column_config.ProgressColumn("PBC/90",  width=40,  format="%.2f", min_value=0),
+        "avg_mins":            st.column_config.NumberColumn("AvgMins", width=40,  format="%d"),
+        "60_min":              st.column_config.NumberColumn("60Mins%", width=50,  format="%.1f"),
+        "av_rating_alt":       st.column_config.NumberColumn("RatA",    width=40,  format="%.2f"),
+        "G_90":                st.column_config.NumberColumn("G/90",    width=40),
+        "xG_90":               st.column_config.NumberColumn("xG/90",   width=40),
+        "xGoT_90":             st.column_config.NumberColumn("xGoT/90", width=40),
+        "A_90":                st.column_config.NumberColumn("A/90",    width=40),
+        "xA_90":               st.column_config.NumberColumn("xA/90",   width=40),
+        "xGI_norm":            st.column_config.NumberColumn("xGI/90",  width=50),
+        "Sh_90":               st.column_config.NumberColumn("Sh/90",   width=40),
+        "ShoT_90":             st.column_config.NumberColumn("ShoT/90", width=40),
+        "KP_90":               st.column_config.NumberColumn("KP/90",   width=40),
+        "Touches_90":          st.column_config.NumberColumn("Tchs/90", width=50),
+        "Pass_pct":            st.column_config.NumberColumn("Pass%",   width=45),
+        "BC_90":               st.column_config.NumberColumn("BC/90",   width=40),
+        "PBC_90":              st.column_config.NumberColumn("PBC/90",  width=40),
     }
 )
