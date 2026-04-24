@@ -81,6 +81,9 @@ GB = {
     'f_rating':   (_get_min('av_rating_alt'), _get_max('av_rating_alt', 10.0)),
     'f_avg_mins': (_get_min('avg_mins'), _get_max('avg_mins', 90.0)),
     'f_60min':    (_get_min('60_min'), _get_max('60_min', 100.0)),
+    'f_selected': (_get_min('selected_by_percent'), _get_max('selected_by_percent', 100.0)),
+    'f_top100k':  (_get_min('top_100k'), _get_max('top_100k', 100.0)),
+    'f_activity': (0.0, 100.0),
     'f_xgot':     (0.0, _get_max('xGoT_90')),
     'f_xa':       (0.0, _get_max('xA_90')),
     'f_xgi':      (0.0, _get_max('xGI_norm')),
@@ -96,6 +99,9 @@ DEFAULTS = {
     'f_rating':   GB['f_rating'],
     'f_avg_mins': GB['f_avg_mins'],
     'f_60min':    (37.0, GB['f_60min'][1]),
+    'f_selected': GB['f_selected'],
+    'f_top100k':  GB['f_top100k'],
+    'f_activity': (40.0, GB['f_activity'][1]),
     'f_xgot':     GB['f_xgot'],
     'f_xa':       GB['f_xa'],
     'f_xgi':      GB['f_xgi'],
@@ -152,6 +158,9 @@ def get_base_df(exclude_key=None):
         'f_cost_as':     ('now_cost',       DEFAULTS['f_cost']),
         'f_avg_mins_as': ('avg_mins',       DEFAULTS['f_avg_mins']),
         'f_rating_as':   ('av_rating_alt',  DEFAULTS['f_rating']),
+        'f_selected_as': ('selected_by_percent', DEFAULTS['f_selected']),
+        'f_top100k_as':  ('top_100k',       DEFAULTS['f_top100k']),
+        'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity']),
         'f_xgot_as':     ('xGoT_90',        DEFAULTS['f_xgot']),
         'f_xa_as':       ('xA_90',          DEFAULTS['f_xa']),
         'f_xgi_as':      ('xGI_norm',       DEFAULTS['f_xgi']),
@@ -287,6 +296,9 @@ auto_update_slider('f_matches_as',  'f_matches',  'matches_played',      int)
 auto_update_slider('f_rating_as',   'f_rating',   'av_rating_alt',       float, only_positive=True)
 auto_update_slider('f_avg_mins_as', 'f_avg_mins', 'avg_mins',            float)
 auto_update_slider('f_60min_as',    'f_60min',    '60_min',              float)
+auto_update_slider('f_selected_as', 'f_selected', 'selected_by_percent', float)
+auto_update_slider('f_top100k_as',  'f_top100k',  'top_100k',            float)
+auto_update_slider('f_activity_as', 'f_activity', 'transfer_activity_pct', float)
 auto_update_slider('f_xgot_as',     'f_xgot',     'xGoT_90',             float)
 auto_update_slider('f_xa_as',       'f_xa',       'xA_90',               float)
 auto_update_slider('f_xgi_as',      'f_xgi',      'xGI_norm',            float)
@@ -360,6 +372,12 @@ with st.sidebar.expander("Performance Stats", expanded=False):
     f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], value=_safe_range('f_avg_mins_as', DEFAULTS['f_avg_mins']), step=1.0,  key="f_avg_mins_as")
     f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    value=_safe_range('f_60min_as',    DEFAULTS['f_60min']),    step=0.5,  key="f_60min_as")
 
+# --- MARKET & POPULARITY ---
+with st.sidebar.expander("Market & Popularity", expanded=False):
+    f_selected = st.slider("Selected %",        GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected_as', DEFAULTS['f_selected']), step=0.1, key="f_selected_as")
+    f_top100k  = st.slider("Top 100k %",        GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k_as',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k_as")
+    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity_as', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity_as")
+
 # --- ATTACKING STATS ---
 with st.sidebar.expander("Attacking Stats", expanded=True):
     f_xgot = st.slider("xGoT/90", GB['f_xgot'][0], GB['f_xgot'][1], value=_safe_range('f_xgot_as', DEFAULTS['f_xgot']), step=0.05, key="f_xgot_as")
@@ -379,6 +397,9 @@ mask = (
     (df['matches_played']      >= f_matches[0])  & (df['matches_played']      <= f_matches[1]) &
     (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
     (df['now_cost']            >= f_cost[0])     & (df['now_cost']            <= f_cost[1]) &
+    (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
+    (df['top_100k']            >= f_top100k[0])  & (df['top_100k']            <= f_top100k[1]) &
+    (df['transfer_activity_pct'] >= f_activity[0]) & (df['transfer_activity_pct'] <= f_activity[1]) &
     (df['xGoT_90']             >= f_xgot[0])     & (df['xGoT_90']             <= f_xgot[1]) &
     (df['xA_90']               >= f_xa[0])       & (df['xA_90']               <= f_xa[1]) &
     (df['xGI_norm']            >= f_xgi[0])      & (df['xGI_norm']            <= f_xgi[1]) &
@@ -420,31 +441,31 @@ st.dataframe(
     hide_index=True,
     height=800,
     column_config={
-        "full_name": st.column_config.TextColumn("Player", pinned=True, width="medium"),
-        "element_type": st.column_config.TextColumn("Pos", width=45),
-        "Play Pos": st.column_config.TextColumn("Pl Pos", width=45),
-        "team_short_name": st.column_config.TextColumn("Team", width=45),
-        "now_cost": st.column_config.NumberColumn("Price", format="%.1f", width=45),
-        "selected_by_percent": st.column_config.NumberColumn("Selected", format="%.1f%%", width=55),
-        "top_100k": st.column_config.NumberColumn("Top 100K", format="%.1f%%", width=55),
-        "min_played": st.column_config.NumberColumn("Mins", width=45),
-        "matches_played": st.column_config.NumberColumn("MP", width=35),
-        "matches_started": st.column_config.NumberColumn("GS", width=35),
-        "avg_mins": st.column_config.NumberColumn("AvgMins", width=40),
-        "60_min": st.column_config.NumberColumn("60Mins%", width=50, format="%.1f"),
-        "av_rating_alt": st.column_config.NumberColumn("RatA", format="%.2f", width=45),
-	    "G_90": st.column_config.NumberColumn("G/90", width=40),
-        "xG_90": st.column_config.NumberColumn("xG/90", width=40),
-        "xGoT_90": st.column_config.NumberColumn("xGoT/90", width=40),
-        "A_90": st.column_config.NumberColumn("A/90", width=40),
-        "xA_90": st.column_config.NumberColumn("xA/90", width=40),
-        "xGI_norm": st.column_config.NumberColumn("xGI_n/90", width=50),
-        "Sh_90": st.column_config.NumberColumn("Sh/90", width=40),
-        "ShoT_90": st.column_config.NumberColumn("ShoT/90", width=40),
-        "KP_90": st.column_config.NumberColumn("KP/90", width=40),
-        "Touches_90": st.column_config.NumberColumn("Touches/90", width=50),
-        "Pass_pct": st.column_config.NumberColumn("Pass%", width=45),
-        "BC_90": st.column_config.NumberColumn("BC/90", width=40),
-        "PBC_90": st.column_config.NumberColumn("PBC/90", width=40),
+        "full_name":           st.column_config.TextColumn("Player",    width="medium", pinned=True),
+        "element_type":        st.column_config.TextColumn("Pos",       width=45),
+        "Play Pos":            st.column_config.TextColumn("Pl Pos",    width=45),
+        "team_short_name":     st.column_config.TextColumn("Team",      width=45),
+        "now_cost":            st.column_config.NumberColumn("Price",   width=40,  format="%.1f"),
+        "selected_by_percent": st.column_config.NumberColumn("Selected",width=55,  format="%.1f%%"),
+        "top_100k":            st.column_config.NumberColumn("Top 100K",width=55,  format="%.1f%%"),
+        "min_played":          st.column_config.NumberColumn("Mins",    width=45),
+        "matches_played":      st.column_config.NumberColumn("MP",      width=35),
+        "matches_started":     st.column_config.NumberColumn("GS",      width=35),
+        "avg_mins":            st.column_config.NumberColumn("AvgMins", width=40,  format="%d"),
+        "60_min":              st.column_config.NumberColumn("60Mins%", width=50,  format="%.1f"),
+        "av_rating_alt":       st.column_config.NumberColumn("RatA",    width=40,  format="%.2f"),
+        "G_90":                st.column_config.NumberColumn("G/90",    width=40),
+        "xG_90":               st.column_config.NumberColumn("xG/90",   width=40),
+        "xGoT_90":             st.column_config.NumberColumn("xGoT/90", width=40),
+        "A_90":                st.column_config.NumberColumn("A/90",    width=40),
+        "xA_90":               st.column_config.NumberColumn("xA/90",   width=40),
+        "xGI_norm":            st.column_config.NumberColumn("xGI/90",  width=50),
+        "Sh_90":               st.column_config.NumberColumn("Sh/90",   width=40),
+        "ShoT_90":             st.column_config.NumberColumn("ShoT/90", width=40),
+        "KP_90":               st.column_config.NumberColumn("KP/90",   width=40),
+        "Touches_90":          st.column_config.NumberColumn("Tchs/90", width=50),
+        "Pass_pct":            st.column_config.NumberColumn("Pass%",   width=45),
+        "BC_90":               st.column_config.NumberColumn("BC/90",   width=40),
+        "PBC_90":              st.column_config.NumberColumn("PBC/90",  width=40),
     }
 )
