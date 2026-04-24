@@ -248,8 +248,12 @@ with col2:
         if final_teams:
             df_future = df_future[df_future['home_team'].isin(final_teams) | df_future['away_team'].isin(final_teams)]
             
+        xg_cols = ['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']
+        xg_min = df_future[xg_cols].min().min()
+        xg_max = df_future[xg_cols].max().max()
+
         df_future_styled = df_future.style \
-            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, transparent_at='min', subset=['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']) \
+            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', subset=xg_cols) \
             .apply(soft_gradient, cmap_name=orange_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', subset=['home_delta', 'away_delta']) \
             .format(precision=2)
             
