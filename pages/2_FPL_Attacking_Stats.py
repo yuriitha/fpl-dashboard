@@ -86,22 +86,34 @@ all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 def _get_max(col, default=1.0): return float(df[col].max()) if col in df.columns else default
 def _get_min(col, default=0.0): return float(df[col].min()) if col in df.columns else default
 
+if 'matches_played' in df.columns and '60_min' in df.columns:
+    sane_df = df[(df['matches_played'] >= 5) & (df['60_min'] >= 37.0)]
+else:
+    sane_df = df
+
+def _get_max_sane(col, default=1.0):
+    return float(sane_df[col].max()) if (col in sane_df.columns and not sane_df.empty) else _get_max(col, default)
+
+rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna() if 'av_rating_alt' in df.columns else pd.Series(dtype=float)
+r_min = float(rating_series.min()) if not rating_series.empty else 0.0
+r_max = float(rating_series.max()) if not rating_series.empty else 10.0
+
 # Глобальні межі шкали (незмінні)
 GB = {
     'f_cost':     (_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
     'f_matches':  (int(_get_min('matches_played', 0)), int(_get_max('matches_played', 38))),
-    'f_rating':   (_get_min('av_rating_alt'), _get_max('av_rating_alt', 10.0)),
+    'f_rating':   (r_min, r_max),
     'f_avg_mins': (_get_min('avg_mins'), _get_max('avg_mins', 90.0)),
     'f_60min':    (_get_min('60_min'), _get_max('60_min', 100.0)),
     'f_selected': (_get_min('selected_by_percent'), _get_max('selected_by_percent', 100.0)),
     'f_top100k':  (_get_min('top_100k'), _get_max('top_100k', 100.0)),
     'f_activity': (0.0, 100.0),
-    'f_xgot':     (0.0, _get_max('xGoT_90')),
-    'f_xa':       (0.0, _get_max('xA_90')),
-    'f_xgi':      (0.0, _get_max('xGI_norm')),
-    'f_sh':       (0.0, _get_max('Sh_90')),
-    'f_shot':     (0.0, _get_max('ShoT_90')),
-    'f_kp':       (0.0, _get_max('KP_90')),
+    'f_xgot':     (0.0, _get_max_sane('xGoT_90')),
+    'f_xa':       (0.0, _get_max_sane('xA_90')),
+    'f_xgi':      (0.0, _get_max_sane('xGI_norm')),
+    'f_sh':       (0.0, _get_max_sane('Sh_90')),
+    'f_shot':     (0.0, _get_max_sane('ShoT_90')),
+    'f_kp':       (0.0, _get_max_sane('KP_90')),
     'f_pass':     (0.0, _get_max('Pass_pct', 100.0)),
 }
 # Дефолтні значення повзунків
@@ -184,7 +196,9 @@ def get_base_df(exclude_key=None):
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key and col_name in df.columns:
             val = _safe_range(k, d)
-            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
+            mask &= (df[col_name] >= val[0])
+            if val[1] < d[1] - 1e-4:
+                mask &= (df[col_name] <= val[1])
 
     return df[mask]
 
@@ -405,23 +419,33 @@ mask = (
     df['element_type'].isin(selected_positions if selected_positions else []) &
     df['team_short_name'].isin(selected_teams  if selected_teams  else []) &
     (df['Play Pos'].isin(selected_pl_pos) if selected_pl_pos else True) &
-    (df['av_rating_alt']       >= f_rating[0])   & (df['av_rating_alt']       <= f_rating[1]) &
-    (df['matches_played']      >= f_matches[0])  & (df['matches_played']      <= f_matches[1]) &
-    (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
-    (df['now_cost']            >= f_cost[0])     & (df['now_cost']            <= f_cost[1]) &
-    (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
-    (df['top_100k']            >= f_top100k[0])  & (df['top_100k']            <= f_top100k[1]) &
-    (df['transfer_activity_pct'] >= f_activity[0]) & (df['transfer_activity_pct'] <= f_activity[1]) &
-    (df['xGoT_90']             >= f_xgot[0])     & (df['xGoT_90']             <= f_xgot[1]) &
-    (df['xA_90']               >= f_xa[0])       & (df['xA_90']               <= f_xa[1]) &
-    (df['xGI_norm']            >= f_xgi[0])      & (df['xGI_norm']            <= f_xgi[1]) &
-    (df['Sh_90']               >= f_sh[0])       & (df['Sh_90']               <= f_sh[1]) &
-    (df['ShoT_90']             >= f_shot[0])     & (df['ShoT_90']             <= f_shot[1]) &
-    (df['KP_90']               >= f_kp[0])       & (df['KP_90']               <= f_kp[1]) &
-    (df['Pass_pct']            >= f_pass[0])     & (df['Pass_pct']            <= f_pass[1]) &
-    (df['avg_mins']            >= f_avg_mins[0]) & (df['avg_mins']            <= f_avg_mins[1]) &
     (df['full_name'].str.contains(search_name, case=False, na=False))
 )
+
+filter_vars = [
+    ('av_rating_alt',         f_rating,   GB['f_rating']),
+    ('matches_played',        f_matches,  GB['f_matches']),
+    ('60_min',                f_60min,    GB['f_60min']),
+    ('now_cost',              f_cost,     GB['f_cost']),
+    ('selected_by_percent',   f_selected, GB['f_selected']),
+    ('top_100k',              f_top100k,  GB['f_top100k']),
+    ('transfer_activity_pct', f_activity, GB['f_activity']),
+    ('xGoT_90',               f_xgot,     GB['f_xgot']),
+    ('xA_90',                 f_xa,       GB['f_xa']),
+    ('xGI_norm',              f_xgi,      GB['f_xgi']),
+    ('Sh_90',                 f_sh,       GB['f_sh']),
+    ('ShoT_90',               f_shot,     GB['f_shot']),
+    ('KP_90',                 f_kp,       GB['f_kp']),
+    ('Pass_pct',              f_pass,     GB['f_pass']),
+    ('avg_mins',              f_avg_mins, GB['f_avg_mins']),
+]
+
+for col_name, val, limit in filter_vars:
+    if col_name in df.columns:
+        mask &= (df[col_name] >= val[0])
+        if val[1] < limit[1] - 1e-4:
+            mask &= (df[col_name] <= val[1])
+
 filtered_df = df[mask].copy()
 
 # ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
