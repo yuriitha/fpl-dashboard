@@ -184,24 +184,46 @@ with col1:
     latest_home = df_played.sort_values('match_date').groupby('home_team').last()[['match_date', 'home_rating_att_post', 'home_rating_def_post']]
     latest_away = df_played.sort_values('match_date').groupby('away_team').last()[['match_date', 'away_rating_att_post', 'away_rating_def_post']]
     
+    df_unplayed = df[df['match_result'].isna()]
+    first_unplayed_home = df_unplayed.sort_values('match_date').groupby('home_team').first()[['match_date', 'home_rating_att', 'home_rating_def']]
+    first_unplayed_away = df_unplayed.sort_values('match_date').groupby('away_team').first()[['match_date', 'away_rating_att', 'away_rating_def']]
+    
     current_ratings = []
     for t in all_teams:
         if final_teams and t not in final_teams: continue
-        h = latest_home.loc[t] if t in latest_home.index else None
-        a = latest_away.loc[t] if t in latest_away.index else None
+        
+        uh = first_unplayed_home.loc[t] if t in first_unplayed_home.index else None
+        ua = first_unplayed_away.loc[t] if t in first_unplayed_away.index else None
         
         att, def_rating = None, None
-        if h is not None and a is not None:
-            if h['match_date'] > a['match_date']:
-                att, def_rating = h['home_rating_att_post'], h['home_rating_def_post']
+        
+        # 1. Try to get pre-match ratings from the FIRST unplayed match
+        if uh is not None and ua is not None:
+            if uh['match_date'] < ua['match_date']:
+                att, def_rating = uh['home_rating_att'], uh['home_rating_def']
             else:
-                att, def_rating = a['away_rating_att_post'], a['away_rating_def_post']
-        elif h is not None:
-            att, def_rating = h['home_rating_att_post'], h['home_rating_def_post']
-        elif a is not None:
-            att, def_rating = a['away_rating_att_post'], a['away_rating_def_post']
+                att, def_rating = ua['away_rating_att'], ua['away_rating_def']
+        elif uh is not None:
+            att, def_rating = uh['home_rating_att'], uh['home_rating_def']
+        elif ua is not None:
+            att, def_rating = ua['away_rating_att'], ua['away_rating_def']
             
-        if att is not None and def_rating is not None:
+        # 2. If no unplayed matches, fallback to post-match ratings of the LAST played match
+        if pd.isna(att) or pd.isna(def_rating):
+            h = latest_home.loc[t] if t in latest_home.index else None
+            a = latest_away.loc[t] if t in latest_away.index else None
+            
+            if h is not None and a is not None:
+                if h['match_date'] > a['match_date']:
+                    att, def_rating = h['home_rating_att_post'], h['home_rating_def_post']
+                else:
+                    att, def_rating = a['away_rating_att_post'], a['away_rating_def_post']
+            elif h is not None:
+                att, def_rating = h['home_rating_att_post'], h['home_rating_def_post']
+            elif a is not None:
+                att, def_rating = a['away_rating_att_post'], a['away_rating_def_post']
+            
+        if pd.notna(att) and pd.notna(def_rating):
             current_ratings.append({
                 'Team': t,
                 'Attack Rating': att,
