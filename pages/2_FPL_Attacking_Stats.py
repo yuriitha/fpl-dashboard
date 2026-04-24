@@ -176,7 +176,10 @@ def get_base_df(exclude_key=None):
         df['full_name'].str.contains(cv_search, case=False, na=False)
     )
     if cv_pl_pos:
-        mask &= df['Play Pos'].fillna('').isin(cv_pl_pos)
+        if len(cv_pl_pos) == len(all_pl_pos):
+            mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
+        else:
+            mask &= df['Play Pos'].isin(cv_pl_pos)
 
     _slider_cols = {
         'f_matches_as':  ('matches_played', DEFAULTS['f_matches']),
@@ -417,10 +420,15 @@ with st.sidebar.expander("Attacking Stats", expanded=True):
     f_pass = st.slider("Pass%",   GB['f_pass'][0], GB['f_pass'][1], value=_safe_range('f_pass_as', DEFAULTS['f_pass']), step=1.0,  key="f_pass_as")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
+if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
+    play_pos_mask = df['Play Pos'].isin(selected_pl_pos) | df['Play Pos'].isna()
+else:
+    play_pos_mask = df['Play Pos'].isin(selected_pl_pos if selected_pl_pos else [])
+
 mask = (
     df['element_type'].isin(selected_positions if selected_positions else []) &
     df['team_short_name'].isin(selected_teams  if selected_teams  else []) &
-    (df['Play Pos'].isin(selected_pl_pos) if selected_pl_pos else True) &
+    play_pos_mask &
     (df['full_name'].str.contains(search_name, case=False, na=False))
 )
 
