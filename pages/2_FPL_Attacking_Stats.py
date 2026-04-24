@@ -453,7 +453,7 @@ filtered_df = df[mask].copy()
 # ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
 # Оновлений порядок стовпчиків: Selected тепер між now_cost та top_100k
 display_columns = [
-    "full_name", "element_type", "Play Pos", "team_short_name", "now_cost", 
+    "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
     "selected_by_percent", "top_100k", "min_played", "matches_played", "matches_started", 
     "avg_mins", "60_min", "av_rating_alt", 
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm", 
@@ -499,6 +499,7 @@ st.dataframe(
     height=800,
     column_config={
         "full_name":           st.column_config.TextColumn("Player",    width="medium", pinned=True),
+        "Age":                 st.column_config.NumberColumn("Age",     width=40,  format="%d"),
         "element_type":        st.column_config.TextColumn("Pos",       width=45),
         "Play Pos":            st.column_config.TextColumn("Pl Pos",    width=45),
         "team_short_name":     st.column_config.TextColumn("Team",      width=45),
