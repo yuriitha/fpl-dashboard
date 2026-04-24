@@ -133,7 +133,7 @@ js = f"""
 st.components.v1.html(js, height=0, scrolling=False)
 
 # === MAIN CONTENT ===
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns([0.35, 0.65])
 
 # Current Ratings Table
 with col1:
@@ -168,17 +168,22 @@ with col1:
             })
             
     if current_ratings:
-        df_ratings = pd.DataFrame(current_ratings).sort_values('Overall Rating', ascending=False)
+        df_ratings = pd.DataFrame(current_ratings).sort_values('Overall Rating', ascending=False).reset_index(drop=True)
+        df_ratings.index = df_ratings.index + 1
+        df_ratings.reset_index(inplace=True)
+        df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
+        
         st.dataframe(
             df_ratings,
             hide_index=True,
             use_container_width=True,
-            height=400,
+            height=738,
             column_config={
+                'Pos': st.column_config.NumberColumn("Pos", width=40),
                 'Team': st.column_config.TextColumn("Team"),
-                'Attack Rating': st.column_config.NumberColumn("Attack Rating", format="%.3f"),
-                'Defense Rating': st.column_config.NumberColumn("Defense Rating", format="%.3f"),
-                'Overall Rating': st.column_config.NumberColumn("Overall Rating", format="%.3f"),
+                'Attack': st.column_config.NumberColumn("Attack", format="%.3f", width=65),
+                'Defense': st.column_config.NumberColumn("Defense", format="%.3f", width=65),
+                'Overall': st.column_config.NumberColumn("Overall", format="%.3f", width=65),
             }
         )
     else:
@@ -199,17 +204,17 @@ with col2:
             df_future,
             hide_index=True,
             use_container_width=True,
-            height=400,
+            height=len(df_future) * 35 + 40,
             column_config={
                 'match_date': st.column_config.DatetimeColumn("Date", format="DD/MM/YYYY HH:mm"),
                 'home_team': st.column_config.TextColumn("Home"),
                 'away_team': st.column_config.TextColumn("Away"),
-                'home_xg': st.column_config.NumberColumn("xG (H)", format="%.2f"),
-                'away_xg': st.column_config.NumberColumn("xG (A)", format="%.2f"),
-                'home_xg_odds': st.column_config.NumberColumn("Odds xG (H)", format="%.2f"),
-                'away_xg_odds': st.column_config.NumberColumn("Odds xG (A)", format="%.2f"),
-                'home_delta': st.column_config.NumberColumn("Delta (H)", format="%.2f"),
-                'away_delta': st.column_config.NumberColumn("Delta (A)", format="%.2f"),
+                'home_xg': st.column_config.NumberColumn("xG (H)", format="%.2f", width=50),
+                'away_xg': st.column_config.NumberColumn("xG (A)", format="%.2f", width=50),
+                'home_xg_odds': st.column_config.NumberColumn("Odds xG (H)", format="%.2f", width=50),
+                'away_xg_odds': st.column_config.NumberColumn("Odds xG (A)", format="%.2f", width=50),
+                'home_delta': st.column_config.NumberColumn("Delta (H)", format="%.2f", width=50),
+                'away_delta': st.column_config.NumberColumn("Delta (A)", format="%.2f", width=50),
             }
         )
     else:
