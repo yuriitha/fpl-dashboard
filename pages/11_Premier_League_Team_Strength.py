@@ -54,7 +54,12 @@ for _, row in df[['home_team', 'home_color']].dropna().drop_duplicates().iterrow
 for _, row in df[['away_team', 'away_color']].dropna().drop_duplicates().iterrows():
     if row['away_team'] not in team_colors: team_colors[row['away_team']] = row['away_color']
 
-all_teams = sorted(list(set(df['home_team'].dropna()).union(set(df['away_team'].dropna()))))
+latest_date = df['match_date'].max()
+active_cutoff = latest_date - pd.Timedelta(days=60)
+active_matches = df[(df['league'] == 'Premier League') & (df['match_date'] >= active_cutoff)]
+active_pl_teams = set(active_matches['home_team'].dropna()).union(set(active_matches['away_team'].dropna()))
+
+all_teams = sorted(list(active_pl_teams))
 all_seasons = sorted([s for s in df['season'].dropna().unique() if s != "2013/14"])
 
 # Session state
@@ -237,23 +242,50 @@ if not df_hist.empty:
     def create_chart(df, y_col, title):
         fig = go.Figure()
         for t in df['team'].unique():
-            tdf = df[df['team'] == t]
+            tdf = df[df['team'] == t].sort_values('date').copy()
+            
+            # Вставляємо NaN для проміжків > 30 днів, щоб розірвати лінію
+            gaps = tdf['date'].diff() > pd.Timedelta(days=30)
+            if gaps.any():
+                insertions = []
+                for idx, row in tdf[gaps].iterrows():
+                    nan_row = row.copy()
+                    nan_row[y_col] = np.nan
+                    nan_row['date'] = row['date'] - pd.Timedelta(hours=1)
+                    insertions.append(nan_row)
+                if insertions:
+                    tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('date')
+            
             color = team_colors.get(t, '#888888')
             fig.add_trace(go.Scatter(
                 x=tdf['date'], y=tdf[y_col],
                 mode='lines',
                 name=t,
                 line=dict(color=color, width=2),
-                hovertemplate=f"<b>{t}</b><br>Date: %{{x}}<br>Rating: %{{y:.3f}}<extra></extra>"
+                hovertemplate=f"<b>{t}</b><br>Date: %{{x}}<br>Rating: %{{y:.3f}}<extra></extra>",
+                showlegend=False
             ))
+            
+            # Додаємо назву команди в кінці лінії
+            last_valid = tdf.dropna(subset=[y_col]).iloc[-1]
+            fig.add_annotation(
+                x=last_valid['date'],
+                y=last_valid[y_col],
+                text=t,
+                showarrow=False,
+                font=dict(color=color, size=11, family="Arial, sans-serif"),
+                xanchor='left',
+                xshift=5
+            )
+
         fig.update_layout(
             title=title,
             xaxis_title="Date",
             yaxis_title="Rating",
             height=500,
             hovermode="x unified",
-            margin=dict(l=20, r=20, t=40, b=20),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            margin=dict(l=20, r=80, t=40, b=20),
+            showlegend=False
         )
         return fig
 
