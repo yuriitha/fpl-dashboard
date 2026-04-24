@@ -37,7 +37,18 @@ st.markdown("""
 
 @st.cache_data(ttl=300)
 def load_data():
-    df = pd.read_parquet("team_strength_model_v2.parquet")
+    # Завантаження даних аналогічно FPL_Main_Info.py
+    url = "http://194.99.22.193:8000/team_strength_model" 
+    
+    try:
+        df = pd.read_parquet(url)
+    except Exception as e:
+        # Fallback на локальний файл (з абсолютним шляхом), якщо ендпоінт ще не створений або недоступний
+        import os
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        file_path = os.path.join(base_path, "team_strength_model_v2.parquet")
+        df = pd.read_parquet(file_path)
+        
     return df
 
 try:
