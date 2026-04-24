@@ -50,6 +50,18 @@ def load_data():
     # Сортування за xGI_norm для стартового вигляду
     if 'xGI_norm' in df.columns:
         df = df.sort_values(by="xGI_norm", ascending=False)
+        
+    if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
+        df['transfer_activity'] = df['transfers_in_24'] + df['transfers_out_24']
+        log_act = np.log1p(df['transfer_activity'])
+        max_log = log_act.max()
+        if max_log > 0:
+            df['transfer_activity_pct'] = (log_act / max_log) * 100.0
+        else:
+            df['transfer_activity_pct'] = 0.0
+    else:
+        df['transfer_activity_pct'] = 0.0
+
     return df
 
 try:
