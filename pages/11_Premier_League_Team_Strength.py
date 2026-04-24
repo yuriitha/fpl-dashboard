@@ -248,9 +248,19 @@ with col2:
         if final_teams:
             df_future = df_future[df_future['home_team'].isin(final_teams) | df_future['away_team'].isin(final_teams)]
             
+        # Додаємо порожні стовпчики для перегородок
+        df_future.insert(1, 'sep1', None)
+        df_future.insert(4, 'sep2', None)
+        df_future.insert(7, 'sep3', None)
+        df_future.insert(10, 'sep4', None)
+
+        def divider_style(s):
+            return ['background-color: #444444' for _ in s]
+            
         df_future_styled = df_future.style \
             .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, transparent_at='min', subset=['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']) \
             .apply(soft_gradient, cmap_name=orange_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', subset=['home_delta', 'away_delta']) \
+            .apply(divider_style, subset=['sep1', 'sep2', 'sep3', 'sep4']) \
             .format(precision=2)
             
         st.dataframe(
@@ -260,12 +270,16 @@ with col2:
             height=len(df_future) * 35 + 40,
             column_config={
                 'match_date': st.column_config.DatetimeColumn("Date", format="DD/MM/YYYY HH:mm"),
+                'sep1': st.column_config.TextColumn("\u200b", width=1),
                 'home_team': st.column_config.TextColumn("Home"),
                 'away_team': st.column_config.TextColumn("Away"),
+                'sep2': st.column_config.TextColumn("\u200b\u200b", width=1),
                 'home_xg': st.column_config.NumberColumn("Model xG (H)", format="%.2f", width=50),
                 'away_xg': st.column_config.NumberColumn("Model xG (A)", format="%.2f", width=50),
+                'sep3': st.column_config.TextColumn("\u200b\u200b\u200b", width=1),
                 'home_xg_odds': st.column_config.NumberColumn("Odds xG (H)", format="%.2f", width=50),
                 'away_xg_odds': st.column_config.NumberColumn("Odds xG (A)", format="%.2f", width=50),
+                'sep4': st.column_config.TextColumn("\u200b\u200b\u200b\u200b", width=1),
                 'home_delta': st.column_config.NumberColumn("Delta (H)", format="%.2f", width=50),
                 'away_delta': st.column_config.NumberColumn("Delta (A)", format="%.2f", width=50),
             }
