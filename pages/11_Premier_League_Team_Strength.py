@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import json
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 st.set_page_config(
     page_title="Team Strength",
@@ -173,13 +175,38 @@ with col1:
         df_ratings.reset_index(inplace=True)
         df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
         
+        def soft_gradient(s, cmap_name='Blues', alpha=0.25):
+            if s.empty:
+                return ['' for _ in s]
+            s_min, s_max = s.min(), s.max()
+            if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
+                return ['' for _ in s]
+            
+            cmap = plt.get_cmap(cmap_name)
+            norm = mcolors.Normalize(vmin=s_min, vmax=s_max)
+            
+            styles = []
+            for val in s:
+                if pd.isna(val):
+                    styles.append('')
+                else:
+                    r, g, b, _ = cmap(norm(val))
+                    styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
+            return styles
+
+        df_ratings_styled = df_ratings.style \
+            .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=['Attack']) \
+            .apply(soft_gradient, cmap_name='YlGn_r', alpha=0.25, subset=['Defense']) \
+            .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=['Overall']) \
+            .format(precision=3)
+        
         st.dataframe(
-            df_ratings,
+            df_ratings_styled,
             hide_index=True,
             use_container_width=True,
             height=738,
             column_config={
-                'Pos': st.column_config.NumberColumn("Pos", width=40),
+                'Pos': st.column_config.NumberColumn("Pos", width=30),
                 'Team': st.column_config.TextColumn("Team"),
                 'Attack': st.column_config.NumberColumn("Attack", format="%.3f", width=65),
                 'Defense': st.column_config.NumberColumn("Defense", format="%.3f", width=65),
