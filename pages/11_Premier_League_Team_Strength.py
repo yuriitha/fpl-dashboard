@@ -134,7 +134,7 @@ js = f"""
 """
 st.components.v1.html(js, height=0, scrolling=False)
 
-def soft_gradient(s, cmap_name='Blues', alpha=0.25, fixed_min=None, fixed_max=None):
+def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=None, transparent_at='min'):
     if s.empty:
         return ['' for _ in s]
     s_min = fixed_min if fixed_min is not None else s.min()
@@ -155,8 +155,20 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, fixed_min=None, fixed_max=No
             styles.append('')
         else:
             clamped = max(min(val, s_max), s_min)
-            r, g, b, _ = cmap(norm(clamped))
-            styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
+            norm_val = norm(clamped)
+            r, g, b, _ = cmap(norm_val)
+            
+            if transparent_at == 'min':
+                intensity = norm_val
+            elif transparent_at == 'max':
+                intensity = 1.0 - norm_val
+            elif transparent_at == 'mid':
+                intensity = abs(norm_val - 0.5) * 2
+            else:
+                intensity = 1.0
+                
+            dynamic_alpha = intensity * alpha
+            styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {dynamic_alpha:.3f})')
     return styles
 
 light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff", "#00BFFF"])
@@ -204,9 +216,9 @@ with col1:
         df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
 
         df_ratings_styled = df_ratings.style \
-            .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=['Attack']) \
-            .apply(soft_gradient, cmap_name='YlGn_r', alpha=0.25, subset=['Defense']) \
-            .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=['Overall']) \
+            .apply(soft_gradient, cmap_name='YlGn', alpha=0.6, transparent_at='min', subset=['Attack']) \
+            .apply(soft_gradient, cmap_name='YlGn_r', alpha=0.6, transparent_at='max', subset=['Defense']) \
+            .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.6, transparent_at='mid', subset=['Overall']) \
             .format(precision=3)
         
         st.dataframe(
@@ -237,8 +249,8 @@ with col2:
             df_future = df_future[df_future['home_team'].isin(final_teams) | df_future['away_team'].isin(final_teams)]
             
         df_future_styled = df_future.style \
-            .apply(soft_gradient, cmap_name=light_blues, alpha=0.3, subset=['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']) \
-            .apply(soft_gradient, cmap_name=orange_blue, alpha=0.3, fixed_min=-0.45, fixed_max=0.45, subset=['home_delta', 'away_delta']) \
+            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, transparent_at='min', subset=['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']) \
+            .apply(soft_gradient, cmap_name=orange_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', subset=['home_delta', 'away_delta']) \
             .format(precision=2)
             
         st.dataframe(
