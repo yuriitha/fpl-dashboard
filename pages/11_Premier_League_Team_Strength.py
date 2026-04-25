@@ -52,12 +52,25 @@ except Exception as e:
 # Get teams and colors
 team_colors = {}
 team_code_to_name = {}
-for _, row in df[['home_team_code', 'home_team', 'home_color']].dropna().drop_duplicates().iterrows():
-    if row['home_team_code'] not in team_colors: team_colors[row['home_team_code']] = row['home_color']
+
+# Populate team_colors by team name to avoid collisions where different teams share the same code
+for _, row in df[['home_team', 'home_color']].dropna().drop_duplicates().iterrows():
+    if row['home_team'] not in team_colors: team_colors[row['home_team']] = row['home_color']
+for _, row in df[['away_team', 'away_color']].dropna().drop_duplicates().iterrows():
+    if row['away_team'] not in team_colors: team_colors[row['away_team']] = row['away_color']
+
+# For team_code_to_name, we prioritize Premier League teams to ensure codes resolve to the expected PL team
+pl_teams_all = df[df['league'] == 'Premier League']
+for _, row in pl_teams_all[['home_team_code', 'home_team']].dropna().drop_duplicates().iterrows():
     team_code_to_name[row['home_team_code']] = row['home_team']
-for _, row in df[['away_team_code', 'away_team', 'away_color']].dropna().drop_duplicates().iterrows():
-    if row['away_team_code'] not in team_colors: team_colors[row['away_team_code']] = row['away_color']
+for _, row in pl_teams_all[['away_team_code', 'away_team']].dropna().drop_duplicates().iterrows():
     team_code_to_name[row['away_team_code']] = row['away_team']
+
+# Fallback for teams not in PL (using first occurrence)
+for _, row in df[['home_team_code', 'home_team']].dropna().drop_duplicates().iterrows():
+    if row['home_team_code'] not in team_code_to_name: team_code_to_name[row['home_team_code']] = row['home_team']
+for _, row in df[['away_team_code', 'away_team']].dropna().drop_duplicates().iterrows():
+    if row['away_team_code'] not in team_code_to_name: team_code_to_name[row['away_team_code']] = row['away_team']
 
 all_seasons = sorted([s for s in df['season'].dropna().unique() if s != "2013/14"])
 
@@ -310,11 +323,11 @@ with col2:
 st.subheader("Historical Ratings")
 
 # Prepare historical data
-hist_home = df_played[['match_date', 'season', 'league', 'home_team_code', 'home_rating_att_post', 'home_rating_def_post', 'home_color']].rename(
-    columns={'match_date':'date', 'season':'season', 'league':'league', 'home_team_code':'team', 'home_rating_att_post':'att', 'home_rating_def_post':'def', 'home_color':'color'}
+hist_home = df_played[['match_date', 'season', 'league', 'home_team', 'home_team_code', 'home_rating_att_post', 'home_rating_def_post']].rename(
+    columns={'match_date':'date', 'season':'season', 'league':'league', 'home_team':'team_name', 'home_team_code':'team_code', 'home_rating_att_post':'att', 'home_rating_def_post':'def'}
 )
-hist_away = df_played[['match_date', 'season', 'league', 'away_team_code', 'away_rating_att_post', 'away_rating_def_post', 'away_color']].rename(
-    columns={'match_date':'date', 'season':'season', 'league':'league', 'away_team_code':'team', 'away_rating_att_post':'att', 'away_rating_def_post':'def', 'away_color':'color'}
+hist_away = df_played[['match_date', 'season', 'league', 'away_team', 'away_team_code', 'away_rating_att_post', 'away_rating_def_post']].rename(
+    columns={'match_date':'date', 'season':'season', 'league':'league', 'away_team':'team_name', 'away_team_code':'team_code', 'away_rating_att_post':'att', 'away_rating_def_post':'def'}
 )
 
 df_hist = pd.concat([hist_home, hist_away]).sort_values('date')
@@ -326,15 +339,15 @@ if season_range:
     df_hist = df_hist[(df_hist['season'] >= s_start) & (df_hist['season'] <= s_end)]
 
 if final_teams:
-    df_hist = df_hist[df_hist['team'].isin(final_teams)]
+    df_hist = df_hist[df_hist['team_code'].isin(final_teams)]
 
 if not df_hist.empty:
     df_hist['total'] = df_hist['att'] - df_hist['def']
 
     def create_chart(df, y_col, title):
         fig = go.Figure()
-        for t in df['team'].unique():
-            tdf = df[df['team'] == t].sort_values('date').copy()
+        for t_name in df['team_name'].unique():
+            tdf = df[df['team_name'] == t_name].sort_values('date').copy()
             tdf_clean = tdf.dropna(subset=[y_col])
             
             # Знаходимо кінці відрізків для підписів
@@ -357,22 +370,24 @@ if not df_hist.empty:
                 if insertions:
                     tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('date')
             
-            color = team_colors.get(t, '#888888')
+            color = team_colors.get(t_name, '#888888')
+            t_code = tdf['team_code'].dropna().iloc[0] if not tdf['team_code'].dropna().empty else t_name
+            
             fig.add_trace(go.Scatter(
                 x=tdf['date'], y=tdf[y_col],
                 mode='lines',
-                name=t,
+                name=t_code,
                 line=dict(color=color, width=2),
-                hovertemplate=f"<b>{t}</b><br>Date: %{{x}}<br>Rating: %{{y:.3f}}<extra></extra>",
+                hovertemplate=f"<b>{t_code}</b> ({t_name})<br>Date: %{{x}}<br>Rating: %{{y:.3f}}<extra></extra>",
                 showlegend=False
             ))
             
-            # Додаємо назву команди в кінці кожного відрізка
+            # Додаємо назву команди (код) в кінці кожного відрізка
             for _, ep in endpoints.iterrows():
                 fig.add_annotation(
                     x=ep['date'],
                     y=ep[y_col],
-                    text=t,
+                    text=t_code,
                     showarrow=False,
                     font=dict(color=color, size=11, family="Arial, sans-serif"),
                     xanchor='left',
