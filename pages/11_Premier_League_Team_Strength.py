@@ -51,21 +51,15 @@ except Exception as e:
 
 # Get teams and colors
 team_colors = {}
-for _, row in df[['home_team', 'home_color']].dropna().drop_duplicates().iterrows():
-    if row['home_team'] not in team_colors: team_colors[row['home_team']] = row['home_color']
-for _, row in df[['away_team', 'away_color']].dropna().drop_duplicates().iterrows():
-    if row['away_team'] not in team_colors: team_colors[row['away_team']] = row['away_color']
+team_code_to_name = {}
+for _, row in df[['home_team_code', 'home_team', 'home_color']].dropna().drop_duplicates().iterrows():
+    if row['home_team_code'] not in team_colors: team_colors[row['home_team_code']] = row['home_color']
+    team_code_to_name[row['home_team_code']] = row['home_team']
+for _, row in df[['away_team_code', 'away_team', 'away_color']].dropna().drop_duplicates().iterrows():
+    if row['away_team_code'] not in team_colors: team_colors[row['away_team_code']] = row['away_color']
+    team_code_to_name[row['away_team_code']] = row['away_team']
 
-latest_date = df['match_date'].max()
-active_cutoff = latest_date - pd.Timedelta(days=60)
-active_matches = df[(df['league'] == 'Premier League') & (df['match_date'] >= active_cutoff)]
-active_pl_teams = set(active_matches['home_team'].dropna()).union(set(active_matches['away_team'].dropna()))
-
-all_teams = sorted(list(active_pl_teams))
 all_seasons = sorted([s for s in df['season'].dropna().unique() if s != "2013/14"])
-
-# Session state
-if 'ts_pills_teams' not in st.session_state: st.session_state.ts_pills_teams = all_teams
 
 # Sidebar
 if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
@@ -74,15 +68,25 @@ if st.sidebar.button("Reset All Filters", use_container_width=True, type="primar
         del st.session_state[key]
     st.rerun()
 
-search_name = st.sidebar.text_input("Search Team", placeholder="Enter team name...", key="ts_search_name")
-
 # Seasons Filter
 season_range = st.sidebar.select_slider(
     "Seasons",
     options=all_seasons,
-    value=(all_seasons[0], all_seasons[-1]),
+    value=(all_seasons[-1], all_seasons[-1]),
     key="ts_seasons"
 )
+
+s_start, s_end = season_range
+pl_df = df[(df['league'] == 'Premier League') & (df['season'] >= s_start) & (df['season'] <= s_end)]
+all_teams = sorted(list(set(pl_df['home_team_code'].dropna()).union(set(pl_df['away_team_code'].dropna()))))
+
+# Session state
+if 'ts_pills_teams' not in st.session_state: 
+    st.session_state.ts_pills_teams = all_teams
+else:
+    st.session_state.ts_pills_teams = [t for t in st.session_state.ts_pills_teams if t in all_teams]
+
+search_name = st.sidebar.text_input("Search Team", placeholder="Enter team name...", key="ts_search_name")
 
 # Filter Header Helper
 def filter_header(label, options, key_prefix):
@@ -104,7 +108,7 @@ selected_teams = st.sidebar.pills(
 # Apply team search filter
 final_teams = selected_teams if selected_teams else []
 if search_name:
-    final_teams = [t for t in final_teams if search_name.lower() in t.lower()]
+    final_teams = [t for t in final_teams if search_name.lower() in t.lower() or search_name.lower() in team_code_to_name.get(t, "").lower()]
 
 # JS Injection for sidebar layout to gray out unselected
 inactive_teams = [t for t in all_teams if t not in final_teams]
@@ -181,19 +185,19 @@ col1, col2 = st.columns([0.35, 0.65])
 with col1:
     st.subheader("Current Team Ratings")
     df_played = df.dropna(subset=['match_result'])
-    latest_home = df_played.sort_values('match_date').groupby('home_team').last()[['match_date', 'home_rating_att_post', 'home_rating_def_post']]
-    latest_away = df_played.sort_values('match_date').groupby('away_team').last()[['match_date', 'away_rating_att_post', 'away_rating_def_post']]
+    latest_home = df_played.sort_values('match_date').groupby('home_team_code').last()[['match_date', 'home_rating_att_post', 'home_rating_def_post']]
+    latest_away = df_played.sort_values('match_date').groupby('away_team_code').last()[['match_date', 'away_rating_att_post', 'away_rating_def_post']]
     
     df_unplayed = df[df['match_result'].isna()]
-    first_unplayed_home = df_unplayed.sort_values('match_date').groupby('home_team').first()[['match_date', 'home_rating_att', 'home_rating_def']]
-    first_unplayed_away = df_unplayed.sort_values('match_date').groupby('away_team').first()[['match_date', 'away_rating_att', 'away_rating_def']]
+    first_unplayed_home = df_unplayed.sort_values('match_date').groupby('home_team_code').first()[['match_date', 'home_rating_att', 'home_rating_def']]
+    first_unplayed_away = df_unplayed.sort_values('match_date').groupby('away_team_code').first()[['match_date', 'away_rating_att', 'away_rating_def']]
     
     current_ratings = []
-    for t in all_teams:
-        if final_teams and t not in final_teams: continue
+    for t_code in all_teams:
+        if final_teams and t_code not in final_teams: continue
         
-        uh = first_unplayed_home.loc[t] if t in first_unplayed_home.index else None
-        ua = first_unplayed_away.loc[t] if t in first_unplayed_away.index else None
+        uh = first_unplayed_home.loc[t_code] if t_code in first_unplayed_home.index else None
+        ua = first_unplayed_away.loc[t_code] if t_code in first_unplayed_away.index else None
         
         att, def_rating = None, None
         
@@ -210,8 +214,8 @@ with col1:
             
         # 2. If no unplayed matches, fallback to post-match ratings of the LAST played match
         if pd.isna(att) or pd.isna(def_rating):
-            h = latest_home.loc[t] if t in latest_home.index else None
-            a = latest_away.loc[t] if t in latest_away.index else None
+            h = latest_home.loc[t_code] if t_code in latest_home.index else None
+            a = latest_away.loc[t_code] if t_code in latest_away.index else None
             
             if h is not None and a is not None:
                 if h['match_date'] > a['match_date']:
@@ -225,7 +229,7 @@ with col1:
             
         if pd.notna(att) and pd.notna(def_rating):
             current_ratings.append({
-                'Team': t,
+                'Team': team_code_to_name.get(t_code, t_code),
                 'Attack Rating': att,
                 'Defense Rating': def_rating,
                 'Overall Rating': att - def_rating
@@ -264,11 +268,13 @@ with col2:
     st.subheader("Upcoming Matches")
     df_future = df[df['match_result'].isna()].copy()
     if not df_future.empty:
-        cols = ['match_date', 'home_team', 'away_team', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
+        cols = ['match_date', 'home_team', 'away_team', 'home_team_code', 'away_team_code', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
         df_future = df_future[cols].sort_values('match_date')
         
         if final_teams:
-            df_future = df_future[df_future['home_team'].isin(final_teams) | df_future['away_team'].isin(final_teams)]
+            df_future = df_future[df_future['home_team_code'].isin(final_teams) | df_future['away_team_code'].isin(final_teams)]
+            
+        df_future = df_future.drop(columns=['home_team_code', 'away_team_code'])
             
         xg_cols = ['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']
         xg_min = df_future[xg_cols].min().min()
@@ -303,15 +309,16 @@ with col2:
 st.subheader("Historical Ratings")
 
 # Prepare historical data
-hist_home = df_played[['match_date', 'season', 'home_team', 'home_rating_att_post', 'home_rating_def_post', 'home_color']].rename(
-    columns={'match_date':'date', 'season':'season', 'home_team':'team', 'home_rating_att_post':'att', 'home_rating_def_post':'def', 'home_color':'color'}
+hist_home = df_played[['match_date', 'season', 'league', 'home_team_code', 'home_rating_att_post', 'home_rating_def_post', 'home_color']].rename(
+    columns={'match_date':'date', 'season':'season', 'league':'league', 'home_team_code':'team', 'home_rating_att_post':'att', 'home_rating_def_post':'def', 'home_color':'color'}
 )
-hist_away = df_played[['match_date', 'season', 'away_team', 'away_rating_att_post', 'away_rating_def_post', 'away_color']].rename(
-    columns={'match_date':'date', 'season':'season', 'away_team':'team', 'away_rating_att_post':'att', 'away_rating_def_post':'def', 'away_color':'color'}
+hist_away = df_played[['match_date', 'season', 'league', 'away_team_code', 'away_rating_att_post', 'away_rating_def_post', 'away_color']].rename(
+    columns={'match_date':'date', 'season':'season', 'league':'league', 'away_team_code':'team', 'away_rating_att_post':'att', 'away_rating_def_post':'def', 'away_color':'color'}
 )
 
 df_hist = pd.concat([hist_home, hist_away]).sort_values('date')
 df_hist = df_hist[df_hist['season'] != "2013/14"] # Exclude first season
+df_hist = df_hist[df_hist['league'] == 'Premier League'] # Only PL matches
 
 if season_range:
     s_start, s_end = season_range
@@ -362,11 +369,15 @@ if not df_hist.empty:
                 xshift=5
             )
 
+        yaxis_config = dict(title="Rating", nticks=20)
+        if title == "Defense Rating":
+            yaxis_config['autorange'] = "reversed"
+
         fig.update_layout(
             title=title,
             xaxis_title="Date",
-            yaxis_title="Rating",
-            height=500,
+            yaxis=yaxis_config,
+            height=1000,
             hovermode="x unified",
             margin=dict(l=20, r=80, t=40, b=20),
             showlegend=False
