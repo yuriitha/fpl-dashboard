@@ -184,6 +184,11 @@ col1, col2 = st.columns([0.35, 0.65])
 # Current Ratings Table
 with col1:
     st.subheader("Current Team Ratings")
+    
+    current_season = all_seasons[-1]
+    curr_season_df = df[(df['league'] == 'Premier League') & (df['season'] == current_season)]
+    current_season_teams = sorted(list(set(curr_season_df['home_team_code'].dropna()).union(set(curr_season_df['away_team_code'].dropna()))))
+    
     df_played = df.dropna(subset=['match_result'])
     latest_home = df_played.sort_values('match_date').groupby('home_team_code').last()[['match_date', 'home_rating_att_post', 'home_rating_def_post']]
     latest_away = df_played.sort_values('match_date').groupby('away_team_code').last()[['match_date', 'away_rating_att_post', 'away_rating_def_post']]
@@ -193,8 +198,7 @@ with col1:
     first_unplayed_away = df_unplayed.sort_values('match_date').groupby('away_team_code').first()[['match_date', 'away_rating_att', 'away_rating_def']]
     
     current_ratings = []
-    for t_code in all_teams:
-        if final_teams and t_code not in final_teams: continue
+    for t_code in current_season_teams:
         
         uh = first_unplayed_home.loc[t_code] if t_code in first_unplayed_home.index else None
         ua = first_unplayed_away.loc[t_code] if t_code in first_unplayed_away.index else None
@@ -266,14 +270,11 @@ with col1:
 # Upcoming Matches Table
 with col2:
     st.subheader("Upcoming Matches")
-    df_future = df[df['match_result'].isna()].copy()
+    df_future = df[(df['match_result'].isna()) & (df['league'] == 'Premier League')].copy()
     if not df_future.empty:
         cols = ['match_date', 'home_team', 'away_team', 'home_team_code', 'away_team_code', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
         df_future = df_future[cols].sort_values('match_date')
         
-        if final_teams:
-            df_future = df_future[df_future['home_team_code'].isin(final_teams) | df_future['away_team_code'].isin(final_teams)]
-            
         df_future = df_future.drop(columns=['home_team_code', 'away_team_code'])
             
         xg_cols = ['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']
