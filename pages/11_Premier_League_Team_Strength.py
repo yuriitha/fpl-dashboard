@@ -334,6 +334,15 @@ if not df_hist.empty:
         fig = go.Figure()
         for t in df['team'].unique():
             tdf = df[df['team'] == t].sort_values('date').copy()
+            tdf_clean = tdf.dropna(subset=[y_col])
+            
+            # Знаходимо кінці відрізків для підписів
+            if not tdf_clean.empty:
+                next_date = tdf_clean['date'].shift(-1)
+                is_end = (next_date - tdf_clean['date'] > pd.Timedelta(days=30)) | next_date.isna()
+                endpoints = tdf_clean[is_end]
+            else:
+                endpoints = pd.DataFrame()
             
             # Вставляємо NaN для проміжків > 30 днів, щоб розірвати лінію
             gaps = tdf['date'].diff() > pd.Timedelta(days=30)
@@ -357,17 +366,17 @@ if not df_hist.empty:
                 showlegend=False
             ))
             
-            # Додаємо назву команди в кінці лінії
-            last_valid = tdf.dropna(subset=[y_col]).iloc[-1]
-            fig.add_annotation(
-                x=last_valid['date'],
-                y=last_valid[y_col],
-                text=t,
-                showarrow=False,
-                font=dict(color=color, size=11, family="Arial, sans-serif"),
-                xanchor='left',
-                xshift=5
-            )
+            # Додаємо назву команди в кінці кожного відрізка
+            for _, ep in endpoints.iterrows():
+                fig.add_annotation(
+                    x=ep['date'],
+                    y=ep[y_col],
+                    text=t,
+                    showarrow=False,
+                    font=dict(color=color, size=11, family="Arial, sans-serif"),
+                    xanchor='left',
+                    xshift=5
+                )
 
         yaxis_config = dict(title="Rating", nticks=20)
         if title == "Defense Rating":
@@ -377,7 +386,7 @@ if not df_hist.empty:
             title=title,
             xaxis_title="Date",
             yaxis=yaxis_config,
-            height=1000,
+            height=800,
             hovermode="x unified",
             margin=dict(l=20, r=80, t=40, b=20),
             showlegend=False
