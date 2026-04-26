@@ -68,7 +68,7 @@ except Exception as e:
 
 # ========================== ПІДГОТОВКА ==========================
 all_teams = sorted(df['team_short_name'].unique().tolist())
-default_teams = [t for t in all_teams if t not in ['BHA', 'BOU', 'BUR', 'CHE', 'LEE', 'MCI']]
+default_teams = all_teams
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
 sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
