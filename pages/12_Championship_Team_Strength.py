@@ -12,7 +12,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для відцентрування заголовків та даних і стилізації сайдбару
 st.markdown("""
     <style>
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th {
@@ -151,7 +150,7 @@ js = f"""
 """
 st.components.v1.html(js, height=0, scrolling=False)
 
-def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=None, transparent_at='min'):
+def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=None, transparent_at='min', power=0.7):
     if s.empty:
         return ['' for _ in s]
     s_min = fixed_min if fixed_min is not None else s.min()
@@ -184,12 +183,15 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
             else:
                 intensity = 1.0
                 
+            # Apply power transformation to make differences more expressive near the transparency point
+            intensity = intensity ** power
+            
             dynamic_alpha = intensity * alpha
             styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {dynamic_alpha:.3f})')
     return styles
 
-light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff", "#00BFFF"])
-orange_blue = mcolors.LinearSegmentedColormap.from_list("OrangeBlue", ["#ff8c00", "#ffffff", "#00BFFF"])
+light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff", "#0099FF"])
+orange_blue = mcolors.LinearSegmentedColormap.from_list("OrangeBlue", ["#ff8c00", "#ffffff", "#0000FF"])
 
 # === MAIN CONTENT ===
 col1, col2 = st.columns([0.35, 0.65])
@@ -259,9 +261,9 @@ with col1:
         df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
 
         df_ratings_styled = df_ratings.style \
-            .apply(soft_gradient, cmap_name='YlGn', alpha=0.6, transparent_at='min', subset=['Attack']) \
-            .apply(soft_gradient, cmap_name='YlGn_r', alpha=0.6, transparent_at='max', subset=['Defense']) \
-            .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.6, transparent_at='mid', subset=['Overall']) \
+            .apply(soft_gradient, cmap_name='YlGn', alpha=0.6, transparent_at='min', power=0.6, subset=['Attack']) \
+            .apply(soft_gradient, cmap_name='YlGn_r', alpha=0.6, transparent_at='max', power=0.6, subset=['Defense']) \
+            .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.6, transparent_at='mid', power=0.6, subset=['Overall']) \
             .format(precision=3)
         
         st.dataframe(
@@ -295,8 +297,8 @@ with col2:
         xg_max = df_future[xg_cols].max().max()
 
         df_future_styled = df_future.style \
-            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', subset=xg_cols) \
-            .apply(soft_gradient, cmap_name=orange_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', subset=['home_delta', 'away_delta']) \
+            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', power=0.6, subset=xg_cols) \
+            .apply(soft_gradient, cmap_name=orange_blue, alpha=0.7, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta']) \
             .format(precision=2)
             
         st.dataframe(
