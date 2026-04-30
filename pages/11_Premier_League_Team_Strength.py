@@ -72,7 +72,7 @@ for _, row in df[['home_team_code', 'home_team']].dropna().drop_duplicates().ite
 for _, row in df[['away_team_code', 'away_team']].dropna().drop_duplicates().iterrows():
     if row['away_team_code'] not in team_code_to_name: team_code_to_name[row['away_team_code']] = row['away_team']
 
-all_seasons = sorted([s for s in df['season'].dropna().unique() if s != "2013/14"])
+all_seasons = sorted([s for s in df['season'].dropna().unique() if s != "2009/10"])
 
 # Sidebar
 if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
@@ -331,7 +331,7 @@ hist_away = df_played[['match_date', 'season', 'league', 'away_team', 'away_team
 )
 
 df_hist = pd.concat([hist_home, hist_away]).sort_values('date')
-df_hist = df_hist[df_hist['season'] != "2013/14"] # Exclude first season
+df_hist = df_hist[df_hist['season'] != "2009/10"] # Exclude first season
 df_hist = df_hist[df_hist['league'] == 'Premier League'] # Only PL matches
 
 if season_range:
