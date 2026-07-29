@@ -84,7 +84,7 @@ if st.sidebar.button("Reset All Filters", use_container_width=True, type="primar
 season_range = st.sidebar.select_slider(
     "Seasons",
     options=all_seasons,
-    value=(all_seasons[-1], all_seasons[-1]),
+    value=(all_seasons[-2], all_seasons[-1]) if len(all_seasons) >= 2 else (all_seasons[-1], all_seasons[-1]),
     key="ts_seasons"
 )
 
