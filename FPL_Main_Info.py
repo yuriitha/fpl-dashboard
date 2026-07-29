@@ -63,7 +63,7 @@ except Exception as e:
 
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost",
-    "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played",
+    "M Price", "Foot", "selected_by_percent", "min_played",
     "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored",
     "assists", "av_rating", "av_rating_alt", "points_per_game", "transfers_in_event",
     "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
@@ -94,21 +94,17 @@ GB = {
     'f_avg_mins': (float(df['avg_mins'].min()),            float(df['avg_mins'].max())),
     'f_60min':    (float(df['60_min'].min()),              float(df['60_min'].max())),
     'f_selected': (float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())),
-    'f_top10k':   (float(df['top_10k'].min()),             float(df['top_10k'].max())),
-    'f_top100k':  (float(df['top_100k'].min()),            float(df['top_100k'].max())),
     'f_activity': (float(df['transfer_activity_pct'].min()), float(df['transfer_activity_pct'].max())),
 }
-# Дефолтні значення повзунків (нижня межа захищена)
+# Дефолтні значення повзунків (без обмежень)
 DEFAULTS = {
     'f_cost':     GB['f_cost'],
-    'f_matches':  (5,    GB['f_matches'][1]),
+    'f_matches':  GB['f_matches'],
     'f_rating':   GB['f_rating'],
     'f_avg_mins': GB['f_avg_mins'],
-    'f_60min':    (37.0, GB['f_60min'][1]),
+    'f_60min':    GB['f_60min'],
     'f_selected': GB['f_selected'],
-    'f_top10k':   GB['f_top10k'],
-    'f_top100k':  GB['f_top100k'],
-    'f_activity': (40.0, GB['f_activity'][1]),
+    'f_activity': GB['f_activity'],
 }
 
 # ========================== SESSION STATE ==========================
@@ -149,7 +145,6 @@ def get_available(exclude_key=None):
     cv_cost     = _safe_range('f_cost',     DEFAULTS['f_cost'])
     cv_avg_mins = _safe_range('f_avg_mins', DEFAULTS['f_avg_mins'])
     cv_selected = _safe_range('f_selected', DEFAULTS['f_selected'])
-    cv_top100k  = _safe_range('f_top100k',  DEFAULTS['f_top100k'])
     cv_activity = _safe_range('f_activity', DEFAULTS['f_activity'])
     cv_rating   = _safe_range('f_rating',   DEFAULTS['f_rating'])
     cv_search   = st.session_state.get('search_name', '')
@@ -178,8 +173,6 @@ def get_available(exclude_key=None):
         mask &= (df['avg_mins'] >= cv_avg_mins[0]) & (df['avg_mins'] <= cv_avg_mins[1])
     if exclude_key != 'f_selected':
         mask &= (df['selected_by_percent'] >= cv_selected[0]) & (df['selected_by_percent'] <= cv_selected[1])
-    if exclude_key != 'f_top100k':
-        mask &= (df['top_100k'] >= cv_top100k[0]) & (df['top_100k'] <= cv_top100k[1])
     if exclude_key != 'f_activity':
         mask &= (df['transfer_activity_pct'] >= cv_activity[0]) & (df['transfer_activity_pct'] <= cv_activity[1])
     if exclude_key != 'f_rating':
@@ -222,8 +215,6 @@ def get_base_df(exclude_key=None):
         'f_cost':     ('now_cost',            DEFAULTS['f_cost']),
         'f_avg_mins': ('avg_mins',            DEFAULTS['f_avg_mins']),
         'f_selected': ('selected_by_percent', DEFAULTS['f_selected']),
-        'f_top10k':   ('top_10k',             DEFAULTS['f_top10k']),
-        'f_top100k':  ('top_100k',            DEFAULTS['f_top100k']),
         'f_activity': ('transfer_activity_pct', DEFAULTS['f_activity']),
         'f_rating':   ('av_rating_alt',       DEFAULTS['f_rating']),
     }
@@ -382,8 +373,6 @@ auto_update_slider('f_rating',   'av_rating_alt',       float, only_positive=Tru
 auto_update_slider('f_avg_mins', 'avg_mins',            float)
 auto_update_slider('f_60min',    '60_min',              float)
 auto_update_slider('f_selected', 'selected_by_percent', float)
-auto_update_slider('f_top10k',   'top_10k',             float)
-auto_update_slider('f_top100k',  'top_100k',            float)
 auto_update_slider('f_activity', 'transfer_activity_pct', float)
 
 # ========================== САЙДБАР ==========================
@@ -453,8 +442,6 @@ with st.sidebar.expander("Performance Stats", expanded=False):
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
     f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected', DEFAULTS['f_selected']), step=0.1, key="f_selected")
-    f_top10k   = st.slider("Top 10k %",  GB['f_top10k'][0],   GB['f_top10k'][1],   value=_safe_range('f_top10k',   DEFAULTS['f_top10k']),   step=0.1, key="f_top10k")
-    f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k")
     f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
@@ -472,8 +459,6 @@ mask = (
     (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
     (df['now_cost']            >= f_cost[0])     & (df['now_cost']            <= f_cost[1]) &
     (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
-    (df['top_10k']             >= f_top10k[0])   & (df['top_10k']             <= f_top10k[1]) &
-    (df['top_100k']            >= f_top100k[0])  & (df['top_100k']            <= f_top100k[1]) &
     (df['transfer_activity_pct'] >= f_activity[0]) & (df['transfer_activity_pct'] <= f_activity[1]) &
     (df['avg_mins']            >= f_avg_mins[0]) & (df['avg_mins']            <= f_avg_mins[1]) &
     (df['full_name'].str.contains(search_name, case=False, na=False))
@@ -492,10 +477,9 @@ st.dataframe(
         "Play Pos":            st.column_config.TextColumn("Pl Pos",    width=45),
         "team_short_name":     st.column_config.TextColumn("Team",      width=45),
         "now_cost":            st.column_config.NumberColumn("Price",   width=40,  format="%.1f"),
+        "M Price":             st.column_config.NumberColumn("TM Price",width=55,  format="%.1f"),
         "Foot":                st.column_config.TextColumn("Foot",      width=45),
         "selected_by_percent": st.column_config.NumberColumn("Selected",width=55,  format="%.1f"),
-        "top_10k":             st.column_config.NumberColumn("Top 10k", width=55,  format="%.1f"),
-        "top_100k":            st.column_config.NumberColumn("Top 100k",width=55,  format="%.1f"),
         "min_played":          st.column_config.NumberColumn("Mins",    width=45),
         "matches_played":      st.column_config.NumberColumn("MP",      width=35),
         "matches_started":     st.column_config.NumberColumn("GS",      width=35),
