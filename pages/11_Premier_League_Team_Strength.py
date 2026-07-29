@@ -85,7 +85,7 @@ season_range = st.sidebar.select_slider(
     "Seasons",
     options=all_seasons,
     value=(all_seasons[-2], all_seasons[-1]) if len(all_seasons) >= 2 else (all_seasons[-1], all_seasons[-1]),
-    key="ts_seasons"
+    key="ts_pl_seasons"
 )
 
 s_start, s_end = season_range
@@ -93,12 +93,11 @@ pl_df = df[(df['league'] == 'Premier League') & (df['season'] >= s_start) & (df[
 all_teams = sorted(list(set(pl_df['home_team_code'].dropna()).union(set(pl_df['away_team_code'].dropna()))))
 
 # Session state
-if 'ts_pills_teams' not in st.session_state: 
-    st.session_state.ts_pills_teams = all_teams
-else:
-    st.session_state.ts_pills_teams = [t for t in st.session_state.ts_pills_teams if t in all_teams]
+if 'ts_pl_pills_teams' not in st.session_state or st.session_state.get('ts_pl_prev_all_teams') != all_teams:
+    st.session_state.ts_pl_pills_teams = all_teams
+    st.session_state.ts_pl_prev_all_teams = all_teams
 
-search_name = st.sidebar.text_input("Search Team", placeholder="Enter team name...", key="ts_search_name")
+search_name = st.sidebar.text_input("Search Team", placeholder="Enter team name...", key="ts_pl_search_name")
 
 # Filter Header Helper
 def filter_header(label, options, key_prefix):
@@ -111,9 +110,9 @@ def filter_header(label, options, key_prefix):
         st.session_state[f"ts_{key_prefix}"] = []
         st.rerun()
 
-filter_header("Teams", all_teams, "pills_teams")
+filter_header("Teams", all_teams, "pl_pills_teams")
 selected_teams = st.sidebar.pills(
-    "Teams", options=all_teams, key="ts_pills_teams",
+    "Teams", options=all_teams, key="ts_pl_pills_teams",
     selection_mode="multi", label_visibility="collapsed"
 )
 
