@@ -36,7 +36,7 @@ def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
     df = pd.read_parquet(url)
     if 'av_rating_alt' in df.columns:
-        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce')
+        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
     if 'now_cost' in df.columns:
         df = df.sort_values(by="now_cost", ascending=False)
     import numpy as np
@@ -83,9 +83,9 @@ others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
 if others: pl_lines.append(others)
 all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
-rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
-r_min = float(rating_series.min()) if not rating_series.empty else 0.0
-r_max = float(rating_series.max()) if not rating_series.empty else 10.0
+rating_series = df['av_rating_alt'].dropna()
+r_min = 0.0
+r_max = float(rating_series.max()) if not rating_series.empty and rating_series.max() > 0 else 10.0
 
 def _slider_bounds(min_val, max_val, default_span=1.0):
     mn = float(min_val)
@@ -378,7 +378,7 @@ def inject_sidebar_layout(inactive_all: list):
 # ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
 auto_update_slider('f_cost',     'now_cost',            float)
 auto_update_slider('f_matches',  'matches_played',      int)
-auto_update_slider('f_rating',   'av_rating_alt',       float, only_positive=True)
+auto_update_slider('f_rating',   'av_rating_alt',       float)
 auto_update_slider('f_avg_mins', 'avg_mins',            float)
 auto_update_slider('f_60min',    '60_min',              float)
 auto_update_slider('f_selected', 'selected_by_percent', float)
