@@ -90,7 +90,7 @@ season_range = st.sidebar.select_slider(
 
 s_start, s_end = season_range
 pl_df = df[(df['league'] == 'Premier League') & (df['season'] >= s_start) & (df['season'] <= s_end)]
-all_teams = sorted(list(set(pl_df['home_team_code'].dropna()).union(set(pl_df['away_team_code'].dropna()))))
+all_teams = sorted([t for t in set(pl_df['home_team_code'].dropna()).union(set(pl_df['away_team_code'].dropna())) if t and str(t).strip()])
 
 # Session state
 if 'ts_pl_pills_teams' not in st.session_state or st.session_state.get('ts_pl_prev_all_teams') != all_teams:
