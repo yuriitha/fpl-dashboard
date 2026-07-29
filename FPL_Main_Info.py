@@ -86,15 +86,22 @@ rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
+def _slider_bounds(min_val, max_val, default_span=1.0):
+    mn = float(min_val)
+    mx = float(max_val)
+    if mn >= mx:
+        mx = mn + default_span
+    return (mn, mx)
+
 # Глобальні межі шкали (незмінні)
 GB = {
-    'f_cost':     (float(df['now_cost'].min()),            float(df['now_cost'].max())),
-    'f_matches':  (int(df['matches_played'].min()),        int(df['matches_played'].max())),
-    'f_rating':   (r_min,                                  r_max),
-    'f_avg_mins': (float(df['avg_mins'].min()),            float(df['avg_mins'].max())),
-    'f_60min':    (float(df['60_min'].min()),              float(df['60_min'].max())),
-    'f_selected': (float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())),
-    'f_activity': (float(df['transfer_activity_pct'].min()), float(df['transfer_activity_pct'].max())),
+    'f_cost':     _slider_bounds(df['now_cost'].min(),            df['now_cost'].max(), 1.0),
+    'f_matches':  (int(df['matches_played'].min()),        max(int(df['matches_played'].max()), int(df['matches_played'].min()) + 1)),
+    'f_rating':   _slider_bounds(r_min,                           r_max, 1.0),
+    'f_avg_mins': _slider_bounds(df['avg_mins'].min(),            df['avg_mins'].max(), 1.0),
+    'f_60min':    _slider_bounds(df['60_min'].min(),              df['60_min'].max(), 1.0),
+    'f_selected': _slider_bounds(df['selected_by_percent'].min(), df['selected_by_percent'].max(), 1.0),
+    'f_activity': _slider_bounds(df['transfer_activity_pct'].min(), df['transfer_activity_pct'].max(), 100.0),
 }
 # Дефолтні значення повзунків (без обмежень)
 DEFAULTS = {
@@ -129,10 +136,11 @@ def _pills_snapshot():
 
 
 def _safe_range(key, default):
-    """Безпечне читання діапазону зі session_state. Якщо значення не tuple/list — повертає default."""
+    """Безпечне читання діапазону зі session_state. Якщо значення не tuple/list або min >= max — повертає default."""
     val = st.session_state.get(key, default)
     if isinstance(val, (tuple, list)) and len(val) == 2:
-        return val
+        if val[0] < val[1]:
+            return val
     return default
 
 
