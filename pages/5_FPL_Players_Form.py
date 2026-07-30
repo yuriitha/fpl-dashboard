@@ -32,6 +32,10 @@ st.markdown("""
         .playing-pos-wrapper button {
             width: 48px !important; min-width: 48px !important; max-width: 48px !important;
         }
+        .league-origin-wrapper button {
+            width: auto !important; min-width: 0px !important; max-width: none !important;
+            padding: 0px 10px !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -303,7 +307,23 @@ def inject_sidebar_layout(inactive_all: list):
                     var txt = b.innerText.trim();
                     if (!txt) return;
                     
-                    if (txt === "Reset All Filters" || txt === "All" || txt === "None") return;
+                    if (txt === "Reset All Filters" || txt === "None") return;
+                    if (txt === "Premier League" || txt === "Other Leagues" || (b.closest && b.closest('.league-origin-wrapper'))) {{
+                        b.style.setProperty('width', 'auto', 'important');
+                        b.style.setProperty('min-width', '0px', 'important');
+                        b.style.setProperty('max-width', 'none', 'important');
+                        b.style.setProperty('padding', '0px 10px', 'important');
+                        return;
+                    }}
+                    if (txt === "All") {{
+                        if (b.closest && b.closest('.league-origin-wrapper')) {{
+                            b.style.setProperty('width', 'auto', 'important');
+                            b.style.setProperty('min-width', '0px', 'important');
+                            b.style.setProperty('max-width', 'none', 'important');
+                            b.style.setProperty('padding', '0px 10px', 'important');
+                        }}
+                        return;
+                    }}
                     
                     var p = b.parentElement;
                     for (var i = 0; i < 3; i++) {{
@@ -435,13 +455,15 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
 if 'league_status' not in df.columns:
     df['league_status'] = "Premier League"
 
+st.sidebar.markdown('<div class="league-origin-wrapper">', unsafe_allow_html=True)
 selected_league_origin = st.sidebar.pills(
     "League Origin",
     options=["All", "Premier League", "Other Leagues"],
-    default="All",
+    default="Premier League",
     key="pills_league_origin_form",
     label_visibility="collapsed"
 )
+st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
