@@ -32,9 +32,16 @@ st.markdown("""
         .playing-pos-wrapper button {
             width: 48px !important; min-width: 48px !important; max-width: 48px !important;
         }
+        .league-origin-wrapper [data-testid="stPills"] {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr 1fr !important;
+            gap: 4px !important;
+            width: 100% !important;
+        }
         .league-origin-wrapper button {
-            width: auto !important; min-width: 0px !important; max-width: none !important;
-            padding: 0px 10px !important;
+            width: 100% !important; min-width: 0px !important; max-width: none !important;
+            text-align: center !important; justify-content: center !important;
+            padding: 0px 2px !important; font-size: 0.7rem !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -111,7 +118,7 @@ DEFAULTS = {
     'f_cost':     GB['f_cost'],
     'f_matches':  (6,    GB['f_matches'][1]),
     'f_rating':   GB['f_rating'],
-    'f_avg_mins': GB['f_avg_mins'],
+    'f_avg_mins': (35.0, GB['f_avg_mins'][1]),
     'f_60min':    GB['f_60min'],
     'f_selected': GB['f_selected'],
     'f_activity': GB['f_activity'],
@@ -298,19 +305,21 @@ def inject_sidebar_layout(inactive_all: list):
                     if (!txt) return;
                     
                     if (txt === "Reset All Filters" || txt === "None") return;
-                    if (txt === "Premier League" || txt === "Other Leagues" || (b.closest && b.closest('.league-origin-wrapper'))) {{
-                        b.style.setProperty('width', 'auto', 'important');
+                    if ((b.closest && b.closest('.league-origin-wrapper')) || txt === "Premier League" || txt === "Other Leagues") {{
+                        b.style.setProperty('width', '100%', 'important');
                         b.style.setProperty('min-width', '0px', 'important');
                         b.style.setProperty('max-width', 'none', 'important');
-                        b.style.setProperty('padding', '0px 10px', 'important');
-                        return;
-                    }}
-                    if (txt === "All") {{
-                        if (b.closest && b.closest('.league-origin-wrapper')) {{
-                            b.style.setProperty('width', 'auto', 'important');
-                            b.style.setProperty('min-width', '0px', 'important');
-                            b.style.setProperty('max-width', 'none', 'important');
-                            b.style.setProperty('padding', '0px 10px', 'important');
+                        b.style.setProperty('justify-content', 'center', 'important');
+                        b.style.setProperty('text-align', 'center', 'important');
+                        b.style.setProperty('padding', '0px 2px', 'important');
+                        b.style.setProperty('font-size', '0.7rem', 'important');
+                        
+                        var pCont = b.closest('[data-testid="stPills"]');
+                        if (pCont) {{
+                            pCont.style.setProperty('display', 'grid', 'important');
+                            pCont.style.setProperty('grid-template-columns', '1fr 1fr 1fr', 'important');
+                            pCont.style.setProperty('gap', '4px', 'important');
+                            pCont.style.setProperty('width', '100%', 'important');
                         }}
                         return;
                     }}
