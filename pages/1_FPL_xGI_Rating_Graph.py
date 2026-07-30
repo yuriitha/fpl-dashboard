@@ -81,8 +81,8 @@ others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
 if others: pl_lines.append(others)
 all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
-rating_series = df['av_rating_alt'].dropna()
-r_min = 0.0
+rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
+r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty and rating_series.max() > 0 else 10.0
 
 def _slider_bounds(min_val, max_val, default_span=1.0):
@@ -155,7 +155,7 @@ def get_available(exclude_key=None):
         avail = [p for p in line if p in actual_pl_pos]
         cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_gr_{i}', avail))
 
-    mask = pd.Series([True] * len(df), index=df.index)
+    mask = pd.Series([True] * len(df), index=df.index) & (df['av_rating_alt'] > 0)
     if exclude_key != 'pills_pos_gr':   mask &= df['element_type'].isin(cv_pos)
     if exclude_key != 'pills_teams_gr': mask &= df['team_short_name'].isin(cv_teams)
     if exclude_key != 'pills_pl_gr':
@@ -193,6 +193,7 @@ def get_base_df(exclude_key=None):
         cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_gr_{i}', avail))
 
     mask = (
+        (df['av_rating_alt'] > 0) &
         df['element_type'].isin(cv_pos) &
         df['team_short_name'].isin(cv_teams) &
         df['full_name'].str.contains(cv_search, case=False, na=False)
@@ -442,6 +443,7 @@ else:
     league_mask = pd.Series([True] * len(df), index=df.index)
 
 mask = (
+    (df['av_rating_alt'] > 0) &
     df['element_type'].isin(selected_positions if selected_positions else []) &
     df['team_short_name'].isin(selected_teams  if selected_teams  else []) &
     play_pos_mask &
