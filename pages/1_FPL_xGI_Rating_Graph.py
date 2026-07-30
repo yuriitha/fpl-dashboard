@@ -416,16 +416,36 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
     f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected_gr', DEFAULTS['f_selected']), step=0.1, key="f_selected_gr")
     f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity_gr', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity_gr")
 
+# --- LEAGUE ORIGIN FILTER ---
+if 'league_status' not in df.columns:
+    df['league_status'] = "Premier League"
+
+st.sidebar.markdown("<p style='font-size:0.875rem;margin-bottom:0.2rem'>League Origin</p>", unsafe_allow_html=True)
+selected_league_origin = st.sidebar.pills(
+    "League Origin",
+    options=["All", "Premier League", "Other Leagues"],
+    default="All",
+    key="pills_league_origin_gr"
+)
+
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
     play_pos_mask = df['Play Pos'].isin(selected_pl_pos) | df['Play Pos'].isna()
 else:
     play_pos_mask = df['Play Pos'].isin(selected_pl_pos if selected_pl_pos else [])
 
+if selected_league_origin == "Premier League":
+    league_mask = (df['league_status'] == "Premier League")
+elif selected_league_origin == "Other Leagues":
+    league_mask = (df['league_status'] == "Other Leagues")
+else:
+    league_mask = pd.Series([True] * len(df), index=df.index)
+
 mask = (
     df['element_type'].isin(selected_positions if selected_positions else []) &
     df['team_short_name'].isin(selected_teams  if selected_teams  else []) &
     play_pos_mask &
+    league_mask &
     (df['av_rating_alt']       >= f_rating[0])   & (df['av_rating_alt']       <= f_rating[1]) &
     (df['matches_played']      >= f_matches[0])  & (df['matches_played']      <= f_matches[1]) &
     (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
@@ -465,11 +485,14 @@ if not plot_df.empty:
         x="rating_sqrt",
         y="xGI_sqrt",
         color="element_type",
+        symbol="league_status",
+        symbol_map={"Premier League": "circle", "Other Leagues": "diamond"},
         size="size_for_plot",
         hover_name="full_name",
         hover_data={
             "element_type": True,
             "team_short_name": True,
+            "league_status": True,
             "now_cost": ":.1f",
             "av_rating_alt": ":.2f",
             "xGI_norm": ":.2f",
@@ -489,6 +512,7 @@ if not plot_df.empty:
             "xGI_sqrt": "Expected Goal Involvement",
             "element_type": "Position",
             "team_short_name": "Team",
+            "league_status": "League Origin",
             "now_cost": "Price",
             "av_rating_alt": "Rating",
             "xGI_norm": "xGI",
