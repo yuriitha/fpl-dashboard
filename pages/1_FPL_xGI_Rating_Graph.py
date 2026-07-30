@@ -56,6 +56,11 @@ def load_data():
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
     if 'now_cost' in df.columns:
         df = df.sort_values(by="now_cost", ascending=False)
+
+    for h2_col in ['av_rating_alt_h2', 'xGI_norm_h2', 'avg_mins_h2', '60_min_h2', 'matches_played_h2']:
+        if h2_col not in df.columns:
+            base_col = h2_col.replace('_h2', '')
+            df[h2_col] = df[base_col] if base_col in df.columns else 0.0
     
     # Calculate Transfer Activity (Logarithmic Scale)
     if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
@@ -506,8 +511,8 @@ if not plot_df.empty:
         ""
     )
 
-    # ========================== ВІЗУАЛІЗАЦІЯ ==========================
-    st.subheader(f"xGI vs Rating (Players: {len(plot_df)})")
+    # ========================== ВІЗУАЛІЗАЦІЯ — ПОВНИЙ СЕЗОН ==========================
+    st.subheader(f"xGI vs Rating - Full Season (Players: {len(plot_df)})")
 
     fig = px.scatter(
         plot_df,
@@ -554,13 +559,8 @@ if not plot_df.empty:
 
     fig.update_traces(
         textposition='bottom center',
-        textfont=dict(
-            size=10
-        ),
-        marker=dict(
-            opacity=0.75,
-            line=dict(width=0.8, color='white')
-        )
+        textfont=dict(size=10),
+        marker=dict(opacity=0.75, line=dict(width=0.8, color='white'))
     )
 
     # Динамічні сітки для перетворених шкал (кожні 0.1)
@@ -606,6 +606,129 @@ if not plot_df.empty:
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+    # ========================== ГРАФІК 2: ДРУГА ЧАСТИНА СЕЗОНУ (ВІД 03.01.2026) ==========================
+    mask_h2 = (
+        (df['av_rating_alt_h2'] > 0) &
+        df['element_type'].isin(selected_positions if selected_positions else []) &
+        df['team_short_name'].isin(selected_teams if selected_teams else []) &
+        play_pos_mask &
+        league_mask &
+        (df['av_rating_alt_h2']       >= f_rating[0])   & (df['av_rating_alt_h2']       <= f_rating[1]) &
+        (df['matches_played_h2']      >= f_matches[0])  & (df['matches_played_h2']      <= f_matches[1]) &
+        (df['60_min_h2']              >= f_60min[0])    & (df['60_min_h2']              <= f_60min[1]) &
+        (df['now_cost']               >= f_cost[0])     & (df['now_cost']               <= f_cost[1]) &
+        (df['selected_by_percent']    >= f_selected[0]) & (df['selected_by_percent']    <= f_selected[1]) &
+        (df['transfer_activity_pct']  >= f_activity[0]) & (df['transfer_activity_pct']  <= f_activity[1]) &
+        (df['avg_mins_h2']            >= f_avg_mins[0]) & (df['avg_mins_h2']            <= f_avg_mins[1]) &
+        (df['full_name'].str.contains(search_name, case=False, na=False))
+    )
+    plot_df_h2 = df[mask_h2].copy()
+
+    if not plot_df_h2.empty:
+        plot_df_h2['p_top100k'] = plot_df_h2['top_100k'].rank(pct=True)
+        plot_df_h2['p_avgmins'] = plot_df_h2['avg_mins_h2'].rank(pct=True)
+        plot_df_h2['combined_rank'] = (plot_df_h2['p_top100k'] + plot_df_h2['p_avgmins']) / 2
+        plot_df_h2['size_for_plot'] = (plot_df_h2['combined_rank'] ** 2) * 100 + 10
+
+        plot_df_h2['rating_sqrt'] = plot_df_h2['av_rating_alt_h2'] ** 0.5
+        plot_df_h2['xGI_sqrt'] = plot_df_h2['xGI_norm_h2'] ** 0.5
+
+        plot_df_h2['label_text'] = np.where(
+            (plot_df_h2['avg_mins_h2'] >= min_mins_for_label) | (plot_df_h2['top_100k'] > 7.0),
+            plot_df_h2['web_name'],
+            ""
+        )
+
+        st.markdown("<br><hr>", unsafe_allow_html=True)
+        st.subheader(f"xGI vs Rating - 2nd Half of Season (From Jan 3, 2026) (Players: {len(plot_df_h2)})")
+
+        fig_h2 = px.scatter(
+            plot_df_h2,
+            x="rating_sqrt",
+            y="xGI_sqrt",
+            color="element_type",
+            symbol="league_status",
+            symbol_map={"Premier League": "circle", "Other Leagues": "diamond"},
+            size="size_for_plot",
+            hover_name="full_name",
+            hover_data={
+                "element_type": True,
+                "team_short_name": True,
+                "league_status": True,
+                "now_cost": ":.1f",
+                "av_rating_alt_h2": ":.2f",
+                "xGI_norm_h2": ":.2f",
+                "avg_mins_h2": ":.0f",
+                "top_100k": ":.1f",
+                "web_name": False,
+                "matches_played_h2": False,
+                "size_for_plot": False,
+                "combined_rank": False,
+                "rating_sqrt": False,
+                "xGI_sqrt": False,
+                "label_text": False
+            },
+            text="label_text",
+            labels={
+                "rating_sqrt": "Average Rating (H2)",
+                "xGI_sqrt": "Expected Goal Involvement (H2)",
+                "element_type": "Position",
+                "team_short_name": "Team",
+                "league_status": "League Origin",
+                "now_cost": "Price",
+                "av_rating_alt_h2": "Rating (H2)",
+                "xGI_norm_h2": "xGI (H2)",
+                "avg_mins_h2": "Avg Mins (H2)",
+                "top_100k": "Top 100K %"
+            },
+            template="plotly_dark",
+            size_max=20
+        )
+
+        fig_h2.update_traces(
+            textposition='bottom center',
+            textfont=dict(size=10),
+            marker=dict(opacity=0.75, line=dict(width=0.8, color='white'))
+        )
+
+        r_min2, r_max2 = plot_df_h2['av_rating_alt_h2'].min(), plot_df_h2['av_rating_alt_h2'].max()
+        if pd.isna(r_min2) or pd.isna(r_max2): r_min2, r_max2 = 4.0, 10.0
+        r_start2 = np.floor(r_min2 * 10) / 10
+        r_end2 = np.ceil(r_max2 * 10) / 10
+        r_ticks2 = np.arange(r_start2, r_end2 + 0.05, 0.1).round(1)
+
+        x_min2, x_max2 = plot_df_h2['xGI_norm_h2'].min(), plot_df_h2['xGI_norm_h2'].max()
+        if pd.isna(x_min2) or pd.isna(x_max2): x_min2, x_max2 = 0.0, 1.5
+        x_start2 = np.floor(x_min2 * 10) / 10
+        x_end2 = np.ceil(x_max2 * 10) / 10
+        x_ticks2 = np.arange(x_start2, x_end2 + 0.05, 0.1).round(1)
+
+        fig_h2.update_layout(
+            height=800,
+            margin=dict(l=0, r=0, t=40, b=0),
+            xaxis=dict(
+                title="Average Rating (2nd Half of Season)",
+                gridcolor='rgba(255,255,255,0.1)',
+                tickmode='array',
+                tickvals=r_ticks2 ** 0.5,
+                ticktext=r_ticks2
+            ),
+            yaxis=dict(
+                title="Expected Goal Involvement (2nd Half of Season)",
+                gridcolor='rgba(255,255,255,0.1)',
+                tickmode='array',
+                tickvals=x_ticks2 ** 0.5,
+                ticktext=x_ticks2
+            ),
+            legend_title_text='',
+            legend=dict(
+                yanchor="top", y=0.99, xanchor="left", x=0.01,
+                bgcolor="rgba(0,0,0,0.5)"
+            )
+        )
+
+        st.plotly_chart(fig_h2, use_container_width=True)
 
 else:
     st.warning("Немає даних для обраних фільтрів.")
