@@ -64,7 +64,7 @@ except Exception as e:
 
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost",
-    "M Price", "Foot", "selected_by_percent", "league_status", "min_played",
+    "M Price", "Foot", "selected_by_percent", "min_played",
     "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored",
     "assists", "av_rating", "av_rating_alt", "points_per_game", "transfers_in_event",
     "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
@@ -491,7 +491,6 @@ st.dataframe(
         "M Price":             st.column_config.NumberColumn("TM Price",width=55,  format="%.1f"),
         "Foot":                st.column_config.TextColumn("Foot",      width=45),
         "selected_by_percent": st.column_config.NumberColumn("Selected",width=55,  format="%.1f"),
-        "league_status":       st.column_config.TextColumn("League",    width=70),
         "min_played":          st.column_config.NumberColumn("Mins",    width=45),
         "matches_played":      st.column_config.NumberColumn("MP",      width=35),
         "matches_started":     st.column_config.NumberColumn("GS",      width=35),
