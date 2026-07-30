@@ -42,8 +42,9 @@ def load_data():
     url = "http://194.99.22.193:8000/fpl_players"
     df = pd.read_parquet(url)
     if 'av_rating_alt' in df.columns:
-        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce')
-        df = df.sort_values(by="av_rating_alt", ascending=False)
+        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
+    if 'now_cost' in df.columns:
+        df = df.sort_values(by="now_cost", ascending=False)
     
     # Calculate Transfer Activity (Logarithmic Scale)
     if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
@@ -80,33 +81,36 @@ others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
 if others: pl_lines.append(others)
 all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
-rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
-r_min = float(rating_series.min()) if not rating_series.empty else 0.0
-r_max = float(rating_series.max()) if not rating_series.empty else 10.0
+rating_series = df['av_rating_alt'].dropna()
+r_min = 0.0
+r_max = float(rating_series.max()) if not rating_series.empty and rating_series.max() > 0 else 10.0
+
+def _slider_bounds(min_val, max_val, default_span=1.0):
+    mn = float(min_val)
+    mx = float(max_val)
+    if mn >= mx:
+        mx = mn + default_span
+    return (mn, mx)
 
 # Глобальні межі шкали (незмінні)
 GB = {
-    'f_cost':     (float(df['now_cost'].min()),            float(df['now_cost'].max())),
-    'f_matches':  (int(df['matches_played'].min()),        int(df['matches_played'].max())),
-    'f_rating':   (r_min,                                  r_max),
-    'f_avg_mins': (float(df['avg_mins'].min()),            float(df['avg_mins'].max())),
-    'f_60min':    (float(df['60_min'].min()),              float(df['60_min'].max())),
-    'f_selected': (float(df['selected_by_percent'].min()), float(df['selected_by_percent'].max())),
-    'f_top10k':   (float(df['top_10k'].min()),             float(df['top_10k'].max())),
-    'f_top100k':  (float(df['top_100k'].min()),            float(df['top_100k'].max())),
-    'f_activity': (float(df['transfer_activity_pct'].min()), float(df['transfer_activity_pct'].max())),
+    'f_cost':     _slider_bounds(df['now_cost'].min(),            df['now_cost'].max(), 1.0),
+    'f_matches':  (int(df['matches_played'].min()),        max(int(df['matches_played'].max()), int(df['matches_played'].min()) + 1)),
+    'f_rating':   _slider_bounds(r_min,                           r_max, 1.0),
+    'f_avg_mins': _slider_bounds(df['avg_mins'].min(),            df['avg_mins'].max(), 1.0),
+    'f_60min':    _slider_bounds(df['60_min'].min(),              df['60_min'].max(), 1.0),
+    'f_selected': _slider_bounds(df['selected_by_percent'].min(), df['selected_by_percent'].max(), 1.0),
+    'f_activity': _slider_bounds(df['transfer_activity_pct'].min(), df['transfer_activity_pct'].max(), 100.0),
 }
-# Дефолтні значення повзунків (нижня межа захищена)
+# Дефолтні значення повзунків (без обмежень)
 DEFAULTS = {
     'f_cost':     GB['f_cost'],
-    'f_matches':  (5,    GB['f_matches'][1]),
+    'f_matches':  GB['f_matches'],
     'f_rating':   GB['f_rating'],
     'f_avg_mins': GB['f_avg_mins'],
-    'f_60min':    (37.0, GB['f_60min'][1]),
+    'f_60min':    GB['f_60min'],
     'f_selected': GB['f_selected'],
-    'f_top10k':   GB['f_top10k'],
-    'f_top100k':  GB['f_top100k'],
-    'f_activity': (40.0, GB['f_activity'][1]),
+    'f_activity': GB['f_activity'],
 }
 
 # ========================== SESSION STATE ==========================
@@ -130,7 +134,8 @@ def _pills_snapshot():
 def _safe_range(key, default):
     val = st.session_state.get(key, default)
     if isinstance(val, (tuple, list)) and len(val) == 2:
-        return val
+        if val[0] < val[1]:
+            return val
     return default
 
 def get_available(exclude_key=None):
@@ -141,7 +146,6 @@ def get_available(exclude_key=None):
     cv_cost     = _safe_range('f_cost_gr',     DEFAULTS['f_cost'])
     cv_avg_mins = _safe_range('f_avg_mins_gr', DEFAULTS['f_avg_mins'])
     cv_selected = _safe_range('f_selected_gr', DEFAULTS['f_selected'])
-    cv_top100k  = _safe_range('f_top100k_gr',  DEFAULTS['f_top100k'])
     cv_activity = _safe_range('f_activity_gr', DEFAULTS['f_activity'])
     cv_rating   = _safe_range('f_rating_gr',   DEFAULTS['f_rating'])
     cv_search   = st.session_state.get('search_name_gr', '')
@@ -170,8 +174,6 @@ def get_available(exclude_key=None):
         mask &= (df['avg_mins'] >= cv_avg_mins[0]) & (df['avg_mins'] <= cv_avg_mins[1])
     if exclude_key != 'f_selected_gr':
         mask &= (df['selected_by_percent'] >= cv_selected[0]) & (df['selected_by_percent'] <= cv_selected[1])
-    if exclude_key != 'f_top100k_gr':
-        mask &= (df['top_100k'] >= cv_top100k[0]) & (df['top_100k'] <= cv_top100k[1])
     if exclude_key != 'f_activity_gr':
         mask &= (df['transfer_activity_pct'] >= cv_activity[0]) & (df['transfer_activity_pct'] <= cv_activity[1])
     if exclude_key != 'f_rating_gr':
@@ -207,8 +209,6 @@ def get_base_df(exclude_key=None):
         'f_cost_gr':     ('now_cost',            DEFAULTS['f_cost']),
         'f_avg_mins_gr': ('avg_mins',            DEFAULTS['f_avg_mins']),
         'f_selected_gr': ('selected_by_percent', DEFAULTS['f_selected']),
-        'f_top10k_gr':   ('top_10k',             DEFAULTS['f_top10k']),
-        'f_top100k_gr':  ('top_100k',            DEFAULTS['f_top100k']),
         'f_activity_gr': ('transfer_activity_pct', DEFAULTS['f_activity']),
         'f_rating_gr':   ('av_rating_alt',       DEFAULTS['f_rating']),
     }
@@ -340,12 +340,10 @@ def inject_sidebar_layout(inactive_all: list):
 # ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
 auto_update_slider('f_cost_gr',     'f_cost',     'now_cost',            float)
 auto_update_slider('f_matches_gr',  'f_matches',  'matches_played',      int)
-auto_update_slider('f_rating_gr',   'f_rating',   'av_rating_alt',       float, only_positive=True)
+auto_update_slider('f_rating_gr',   'f_rating',   'av_rating_alt',       float)
 auto_update_slider('f_avg_mins_gr', 'f_avg_mins', 'avg_mins',            float)
 auto_update_slider('f_60min_gr',    'f_60min',    '60_min',              float)
 auto_update_slider('f_selected_gr', 'f_selected', 'selected_by_percent', float)
-auto_update_slider('f_top10k_gr',   'f_top10k',   'top_10k',             float)
-auto_update_slider('f_top100k_gr',  'f_top100k',  'top_100k',            float)
 auto_update_slider('f_activity_gr', 'f_activity', 'transfer_activity_pct', float)
 
 # ========================== САЙДБАР ==========================
@@ -416,8 +414,6 @@ with st.sidebar.expander("Performance Stats", expanded=False):
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
     f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected_gr', DEFAULTS['f_selected']), step=0.1, key="f_selected_gr")
-    f_top10k   = st.slider("Top 10k %",  GB['f_top10k'][0],   GB['f_top10k'][1],   value=_safe_range('f_top10k_gr',   DEFAULTS['f_top10k']),   step=0.1, key="f_top10k_gr")
-    f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k_gr',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k_gr")
     f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity_gr', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity_gr")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
@@ -435,8 +431,6 @@ mask = (
     (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
     (df['now_cost']            >= f_cost[0])     & (df['now_cost']            <= f_cost[1]) &
     (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
-    (df['top_10k']             >= f_top10k[0])   & (df['top_10k']             <= f_top10k[1]) &
-    (df['top_100k']            >= f_top100k[0])  & (df['top_100k']            <= f_top100k[1]) &
     (df['transfer_activity_pct'] >= f_activity[0]) & (df['transfer_activity_pct'] <= f_activity[1]) &
     (df['avg_mins']            >= f_avg_mins[0]) & (df['avg_mins']            <= f_avg_mins[1]) &
     (df['full_name'].str.contains(search_name, case=False, na=False))
