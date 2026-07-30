@@ -102,10 +102,10 @@ GB = {
     'f_selected': _slider_bounds(df['selected_by_percent'].min(), df['selected_by_percent'].max(), 1.0),
     'f_activity': _slider_bounds(df['transfer_activity_pct'].min(), df['transfer_activity_pct'].max(), 100.0),
 }
-# Дефолтні значення повзунків (без обмежень)
+# Дефолтні значення повзунків (нижня межа захищена)
 DEFAULTS = {
     'f_cost':     GB['f_cost'],
-    'f_matches':  GB['f_matches'],
+    'f_matches':  (6,    GB['f_matches'][1]),
     'f_rating':   GB['f_rating'],
     'f_avg_mins': GB['f_avg_mins'],
     'f_60min':    GB['f_60min'],
@@ -421,12 +421,12 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
 if 'league_status' not in df.columns:
     df['league_status'] = "Premier League"
 
-st.sidebar.markdown("<p style='font-size:0.875rem;margin-bottom:0.2rem'>League Origin</p>", unsafe_allow_html=True)
 selected_league_origin = st.sidebar.pills(
     "League Origin",
     options=["All", "Premier League", "Other Leagues"],
     default="All",
-    key="pills_league_origin_gr"
+    key="pills_league_origin_gr",
+    label_visibility="collapsed"
 )
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
