@@ -435,12 +435,12 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
 if 'league_status' not in df.columns:
     df['league_status'] = "Premier League"
 
-st.sidebar.markdown("<p style='font-size:0.875rem;margin-bottom:0.2rem'>League Origin</p>", unsafe_allow_html=True)
 selected_league_origin = st.sidebar.pills(
     "League Origin",
     options=["All", "Premier League", "Other Leagues"],
     default="All",
-    key="pills_league_origin_form"
+    key="pills_league_origin_form",
+    label_visibility="collapsed"
 )
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
