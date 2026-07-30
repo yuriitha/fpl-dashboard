@@ -608,26 +608,14 @@ if not plot_df.empty:
     st.plotly_chart(fig, use_container_width=True)
 
     # ========================== ГРАФІК 2: ДРУГА ЧАСТИНА СЕЗОНУ (ВІД 03.01.2026) ==========================
-    mask_h2 = (
-        (df['av_rating_alt_h2'] > 0) &
-        df['element_type'].isin(selected_positions if selected_positions else []) &
-        df['team_short_name'].isin(selected_teams if selected_teams else []) &
-        play_pos_mask &
-        league_mask &
-        (df['av_rating_alt_h2']       >= f_rating[0])   & (df['av_rating_alt_h2']       <= f_rating[1]) &
-        (df['matches_played_h2']      >= f_matches[0])  & (df['matches_played_h2']      <= f_matches[1]) &
-        (df['60_min_h2']              >= f_60min[0])    & (df['60_min_h2']              <= f_60min[1]) &
-        (df['now_cost']               >= f_cost[0])     & (df['now_cost']               <= f_cost[1]) &
-        (df['selected_by_percent']    >= f_selected[0]) & (df['selected_by_percent']    <= f_selected[1]) &
-        (df['transfer_activity_pct']  >= f_activity[0]) & (df['transfer_activity_pct']  <= f_activity[1]) &
-        (df['avg_mins_h2']            >= f_avg_mins[0]) & (df['avg_mins_h2']            <= f_avg_mins[1]) &
-        (df['full_name'].str.contains(search_name, case=False, na=False))
-    )
+    # Використовуємо маску основних фільтрів гравця, перевіряючи наявність оцінки у 2-й частині сезону
+    has_h2_rating = (df['av_rating_alt_h2'] > 0) if 'av_rating_alt_h2' in df.columns else (df['av_rating_alt'] > 0)
+    mask_h2 = mask & has_h2_rating
     plot_df_h2 = df[mask_h2].copy()
 
     if not plot_df_h2.empty:
         plot_df_h2['p_top100k'] = plot_df_h2['top_100k'].rank(pct=True)
-        plot_df_h2['p_avgmins'] = plot_df_h2['avg_mins_h2'].rank(pct=True)
+        plot_df_h2['p_avgmins'] = plot_df_h2['avg_mins_h2'].rank(pct=True) if 'avg_mins_h2' in plot_df_h2.columns else plot_df_h2['avg_mins'].rank(pct=True)
         plot_df_h2['combined_rank'] = (plot_df_h2['p_top100k'] + plot_df_h2['p_avgmins']) / 2
         plot_df_h2['size_for_plot'] = (plot_df_h2['combined_rank'] ** 2) * 100 + 10
 
@@ -635,7 +623,7 @@ if not plot_df.empty:
         plot_df_h2['xGI_sqrt'] = plot_df_h2['xGI_norm_h2'] ** 0.5
 
         plot_df_h2['label_text'] = np.where(
-            (plot_df_h2['avg_mins_h2'] >= min_mins_for_label) | (plot_df_h2['top_100k'] > 7.0),
+            (plot_df_h2['avg_mins'] >= 20) | (plot_df_h2['top_100k'] > 5.0),
             plot_df_h2['web_name'],
             ""
         )
