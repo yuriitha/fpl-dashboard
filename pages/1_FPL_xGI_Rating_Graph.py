@@ -505,10 +505,10 @@ plot_df = df[mask].copy()
 
 # ========================== ЛОГІКА РОЗМІРУ (ПРОЦЕНТИЛІ) ==========================
 if not plot_df.empty:
-    plot_df['p_top100k'] = plot_df['top_100k'].rank(pct=True)
+    plot_df['p_selected'] = plot_df['selected_by_percent'].rank(pct=True)
     plot_df['p_avgmins'] = plot_df['avg_mins'].rank(pct=True)
     
-    plot_df['combined_rank'] = (plot_df['p_top100k'] + plot_df['p_avgmins']) / 2
+    plot_df['combined_rank'] = (plot_df['p_selected'] + plot_df['p_avgmins']) / 2
     # Підносимо до квадрату, щоб створити експоненційну різницю між мінімумом і максимумом
     plot_df['size_for_plot'] = (plot_df['combined_rank'] ** 2) * 100 + 10
 
@@ -518,7 +518,7 @@ if not plot_df.empty:
 
     min_mins_for_label = 60
     plot_df['label_text'] = np.where(
-        (plot_df['avg_mins'] >= min_mins_for_label) | (plot_df['top_100k'] > 7.0),
+        (plot_df['avg_mins'] >= min_mins_for_label) | (plot_df['selected_by_percent'] > 10.0),
         plot_df['web_name'],
         ""
     )
@@ -543,7 +543,7 @@ if not plot_df.empty:
             "av_rating_alt": ":.2f",
             "xGI_norm": ":.2f",
             "avg_mins": ":.0f",
-            "top_100k": ":.1f",
+            "selected_by_percent": ":.1f",
             "web_name": False,
             "matches_played": False,
             "size_for_plot": False,
@@ -563,7 +563,7 @@ if not plot_df.empty:
             "av_rating_alt": "Rating",
             "xGI_norm": "xGI",
             "avg_mins": "Avg Mins",
-            "top_100k": "Top 100K %"
+            "selected_by_percent": "Selected %"
         },
         template="plotly_dark",
         size_max=20
@@ -630,16 +630,16 @@ if not plot_df.empty:
     plot_df_h2 = df[mask_h2].copy()
 
     if not plot_df_h2.empty:
-        plot_df_h2['p_top100k'] = plot_df_h2['top_100k'].rank(pct=True)
+        plot_df_h2['p_selected'] = plot_df_h2['selected_by_percent'].rank(pct=True)
         plot_df_h2['p_avgmins'] = plot_df_h2['avg_mins_h2'].rank(pct=True) if 'avg_mins_h2' in plot_df_h2.columns else plot_df_h2['avg_mins'].rank(pct=True)
-        plot_df_h2['combined_rank'] = (plot_df_h2['p_top100k'] + plot_df_h2['p_avgmins']) / 2
+        plot_df_h2['combined_rank'] = (plot_df_h2['p_selected'] + plot_df_h2['p_avgmins']) / 2
         plot_df_h2['size_for_plot'] = (plot_df_h2['combined_rank'] ** 2) * 100 + 10
 
         plot_df_h2['rating_sqrt'] = plot_df_h2['av_rating_alt_h2'] ** 0.5
         plot_df_h2['xGI_sqrt'] = plot_df_h2['xGI_norm_h2'] ** 0.5
 
         plot_df_h2['label_text'] = np.where(
-            (plot_df_h2['avg_mins'] >= 20) | (plot_df_h2['top_100k'] > 5.0),
+            (plot_df_h2['avg_mins'] >= 20) | (plot_df_h2['selected_by_percent'] > 10.0),
             plot_df_h2['web_name'],
             ""
         )
