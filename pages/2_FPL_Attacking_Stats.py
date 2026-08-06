@@ -422,7 +422,7 @@ selected_positions = st.sidebar.pills(
 
 # --- 2. FPL PRICE ---
 f_cost = st.sidebar.slider(
-    "FPL Price", GB['f_cost'][0], GB['f_cost'][1], step=0.1, format="%.1f", key="f_cost_as"
+    "FPL Price", GB['f_cost_as'][0], GB['f_cost_as'][1], step=0.1, format="%.1f", key="f_cost_as"
 )
 
 # --- 3. TEAM ---
@@ -463,26 +463,26 @@ inject_sidebar_layout(all_inactive)
 
 # --- PERFORMANCE STATS ---
 with st.sidebar.expander("Performance Stats", expanded=False):
-    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  step=1,    key="f_matches_as")
-    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   step=0.05, format="%.2f", key="f_rating_as")
-    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], step=1.0,  key="f_avg_mins_as")
-    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    step=0.5,  key="f_60min_as")
+    f_matches  = st.slider("Matches",      GB['f_matches_as'][0],  GB['f_matches_as'][1],  step=1,    key="f_matches_as")
+    f_rating   = st.slider("Rating",       GB['f_rating_as'][0],   GB['f_rating_as'][1],   step=0.05, format="%.2f", key="f_rating_as")
+    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins_as'][0], GB['f_avg_mins_as'][1], step=1.0,  key="f_avg_mins_as")
+    f_60min    = st.slider("60 Min %",     GB['f_60min_as'][0],    GB['f_60min_as'][1],    step=0.5,  key="f_60min_as")
 
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
-    f_selected = st.slider("Selected %",        GB['f_selected'][0], GB['f_selected'][1], step=0.1, key="f_selected_as")
-    f_top100k  = st.slider("Top 100k %",        GB['f_top100k'][0],  GB['f_top100k'][1],  step=0.1, key="f_top100k_as")
-    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], step=1.0, format="%d%%", key="f_activity_as")
+    f_selected = st.slider("Selected %",        GB['f_selected_as'][0], GB['f_selected_as'][1], step=0.1, key="f_selected_as")
+    f_top100k  = st.slider("Top 100k %",        GB['f_top100k_as'][0],  GB['f_top100k_as'][1],  step=0.1, key="f_top100k_as")
+    f_activity = st.slider("Transfer Activity", GB['f_activity_as'][0], GB['f_activity_as'][1], step=1.0, format="%d%%", key="f_activity_as")
 
 # --- ATTACKING STATS ---
 with st.sidebar.expander("Attacking Stats", expanded=True):
-    f_xgot = st.slider("xGoT/90", GB['f_xgot'][0], GB['f_xgot'][1], step=0.05, key="f_xgot_as")
-    f_xa   = st.slider("xA/90",   GB['f_xa'][0],   GB['f_xa'][1],   step=0.05, key="f_xa_as")
-    f_xgi  = st.slider("xGI/90",  GB['f_xgi'][0],  GB['f_xgi'][1],  step=0.1,  key="f_xgi_as")
-    f_sh   = st.slider("Sh/90",   GB['f_sh'][0],   GB['f_sh'][1],   step=0.5,  key="f_sh_as")
-    f_shot = st.slider("ShoT/90", GB['f_shot'][0], GB['f_shot'][1], step=0.1,  key="f_shot_as")
-    f_kp   = st.slider("KP/90",   GB['f_kp'][0],   GB['f_kp'][1],   step=0.1,  key="f_kp_as")
-    f_pass = st.slider("Pass%",   GB['f_pass'][0], GB['f_pass'][1], step=1.0,  key="f_pass_as")
+    f_xgot = st.slider("xGoT/90", GB['f_xgot_as'][0], GB['f_xgot_as'][1], step=0.05, key="f_xgot_as")
+    f_xa   = st.slider("xA/90",   GB['f_xa_as'][0],   GB['f_xa_as'][1],   step=0.05, key="f_xa_as")
+    f_xgi  = st.slider("xGI/90",  GB['f_xgi_as'][0],  GB['f_xgi_as'][1],  step=0.1,  key="f_xgi_as")
+    f_sh   = st.slider("Sh/90",   GB['f_sh_as'][0],   GB['f_sh_as'][1],   step=0.5,  key="f_sh_as")
+    f_shot = st.slider("ShoT/90", GB['f_shot_as'][0], GB['f_shot_as'][1], step=0.1,  key="f_shot_as")
+    f_kp   = st.slider("KP/90",   GB['f_kp_as'][0],   GB['f_kp_as'][1],   step=0.1,  key="f_kp_as")
+    f_pass = st.slider("Pass%",   GB['f_pass_as'][0], GB['f_pass_as'][1], step=1.0,  key="f_pass_as")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
