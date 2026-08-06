@@ -371,7 +371,7 @@ def inject_sidebar_layout(inactive_all: list):
     }})();
     </script>
     """
-    st.iframe(html=js, height=0, scrolling=False)
+    st.components.v1.html(js, height=0, scrolling=False)
 
 
 
