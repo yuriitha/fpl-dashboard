@@ -14,6 +14,17 @@ st.set_page_config(
 # CSS для відцентрування заголовків та даних і стилізації сайдбару
 st.markdown("""
     <style>
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
+            overscroll-behavior: none !important;
+        }
+        [data-testid="stHeaderActionElements"], a.header-anchor {
+            display: none !important;
+        }
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+            max-width: 100% !important;
+        }
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th {
             text-align: center !important;
         }
@@ -85,6 +96,13 @@ others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
 if others: pl_lines.append(others)
 all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
+def _slider_bounds(min_val, max_val, default_span=1.0):
+    mn = float(min_val)
+    mx = float(max_val)
+    if mn >= mx:
+        mx = mn + default_span
+    return (mn, mx)
+
 def _get_max(col, default=1.0): return float(df[col].max()) if col in df.columns else default
 def _get_min(col, default=0.0): return float(df[col].min()) if col in df.columns else default
 
@@ -102,39 +120,39 @@ r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
 # Глобальні межі шкали (незмінні)
 GB = {
-    'f_cost':     (_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
-    'f_matches':  (int(_get_min('matches_played', 0)), int(_get_max('matches_played', 38))),
-    'f_rating':   (r_min, r_max),
-    'f_avg_mins': (_get_min('avg_mins'), _get_max('avg_mins', 90.0)),
-    'f_60min':    (_get_min('60_min'), _get_max('60_min', 100.0)),
-    'f_selected': (_get_min('selected_by_percent'), _get_max('selected_by_percent', 100.0)),
-    'f_top100k':  (_get_min('top_100k'), _get_max('top_100k', 100.0)),
-    'f_activity': (0.0, 100.0),
-    'f_xgot':     (0.0, _get_max_sane('xGoT_90')),
-    'f_xa':       (0.0, _get_max_sane('xA_90')),
-    'f_xgi':      (0.0, _get_max_sane('xGI_norm')),
-    'f_sh':       (0.0, _get_max_sane('Sh_90')),
-    'f_shot':     (0.0, _get_max_sane('ShoT_90')),
-    'f_kp':       (0.0, _get_max_sane('KP_90')),
-    'f_pass':     (0.0, _get_max('Pass_pct', 100.0)),
+    'f_cost_as':     _slider_bounds(_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
+    'f_matches_as':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 38)), int(_get_min('matches_played', 0)) + 1)),
+    'f_rating_as':   _slider_bounds(r_min, r_max),
+    'f_avg_mins_as': _slider_bounds(_get_min('avg_mins'), _get_max('avg_mins', 90.0)),
+    'f_60min_as':    _slider_bounds(_get_min('60_min'), _get_max('60_min', 100.0)),
+    'f_selected_as': _slider_bounds(_get_min('selected_by_percent'), _get_max('selected_by_percent', 100.0)),
+    'f_top100k_as':  _slider_bounds(_get_min('top_100k'), _get_max('top_100k', 100.0)),
+    'f_activity_as': _slider_bounds(0.0, 100.0),
+    'f_xgot_as':     _slider_bounds(0.0, _get_max_sane('xGoT_90')),
+    'f_xa_as':       _slider_bounds(0.0, _get_max_sane('xA_90')),
+    'f_xgi_as':      _slider_bounds(0.0, _get_max_sane('xGI_norm')),
+    'f_sh_as':       _slider_bounds(0.0, _get_max_sane('Sh_90')),
+    'f_shot_as':     _slider_bounds(0.0, _get_max_sane('ShoT_90')),
+    'f_kp_as':       _slider_bounds(0.0, _get_max_sane('KP_90')),
+    'f_pass_as':     _slider_bounds(0.0, _get_max('Pass_pct', 100.0)),
 }
 # Дефолтні значення повзунків
 DEFAULTS = {
-    'f_cost':     GB['f_cost'],
-    'f_matches':  (5, GB['f_matches'][1]),
-    'f_rating':   GB['f_rating'],
-    'f_avg_mins': GB['f_avg_mins'],
-    'f_60min':    (37.0, GB['f_60min'][1]),
-    'f_selected': GB['f_selected'],
-    'f_top100k':  GB['f_top100k'],
-    'f_activity': (40.0, GB['f_activity'][1]),
-    'f_xgot':     GB['f_xgot'],
-    'f_xa':       GB['f_xa'],
-    'f_xgi':      GB['f_xgi'],
-    'f_sh':       GB['f_sh'],
-    'f_shot':     GB['f_shot'],
-    'f_kp':       GB['f_kp'],
-    'f_pass':     GB['f_pass'],
+    'f_cost_as':     GB['f_cost_as'],
+    'f_matches_as':  GB['f_matches_as'],
+    'f_rating_as':   GB['f_rating_as'],
+    'f_avg_mins_as': GB['f_avg_mins_as'],
+    'f_60min_as':    GB['f_60min_as'],
+    'f_selected_as': GB['f_selected_as'],
+    'f_top100k_as':  GB['f_top100k_as'],
+    'f_activity_as': GB['f_activity_as'],
+    'f_xgot_as':     GB['f_xgot_as'],
+    'f_xa_as':       GB['f_xa_as'],
+    'f_xgi_as':      GB['f_xgi_as'],
+    'f_sh_as':       GB['f_sh_as'],
+    'f_shot_as':     GB['f_shot_as'],
+    'f_kp_as':       GB['f_kp_as'],
+    'f_pass_as':     GB['f_pass_as'],
 }
 
 # ========================== SESSION STATE ==========================
@@ -157,10 +175,62 @@ def _pills_snapshot():
 def _safe_range(key, default):
     val = st.session_state.get(key, default)
     if isinstance(val, (tuple, list)) and len(val) == 2:
-        return val
+        if val[0] < val[1]:
+            return val
     return default
 
+def get_available(exclude_key=None):
+    """Повертає підмножину df за всіма фільтрами, крім exclude_key."""
+    cv_pos      = st.session_state.get('pills_pos_as',   [p for p in sorted_positions if p != 'GK']) or []
+    cv_teams    = st.session_state.get('pills_teams_as', all_teams) or []
+    cv_search   = st.session_state.get('search_name_as', '')
+
+    cv_pl_pos = []
+    for i, line in enumerate(pl_lines):
+        avail = [p for p in line if p in actual_pl_pos]
+        cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_as_{i}', avail))
+
+    mask = pd.Series([True] * len(df), index=df.index)
+    if exclude_key != 'pills_pos_as':   mask &= df['element_type'].isin(cv_pos)
+    if exclude_key != 'pills_teams_as': mask &= df['team_short_name'].isin(cv_teams)
+    if exclude_key != 'pills_pl_as':
+        if cv_pl_pos:
+            if len(cv_pl_pos) == len(all_pl_pos):
+                mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
+            else:
+                mask &= df['Play Pos'].isin(cv_pl_pos)
+    if exclude_key != 'search_name_as': mask &= df['full_name'].str.contains(cv_search, case=False, na=False)
+
+    _slider_cols = {
+        'f_matches_as':  ('matches_played',        DEFAULTS['f_matches_as']),
+        'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
+        'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
+        'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
+        'f_rating_as':   ('av_rating_alt',         DEFAULTS['f_rating_as']),
+        'f_selected_as': ('selected_by_percent',   DEFAULTS['f_selected_as']),
+        'f_top100k_as':  ('top_100k',              DEFAULTS['f_top100k_as']),
+        'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity_as']),
+        'f_xgot_as':     ('xGoT_90',               DEFAULTS['f_xgot_as']),
+        'f_xa_as':       ('xA_90',                 DEFAULTS['f_xa_as']),
+        'f_xgi_as':      ('xGI_norm',              DEFAULTS['f_xgi_as']),
+        'f_sh_as':       ('Sh_90',                 DEFAULTS['f_sh_as']),
+        'f_shot_as':     ('ShoT_90',               DEFAULTS['f_shot_as']),
+        'f_kp_as':       ('KP_90',                 DEFAULTS['f_kp_as']),
+        'f_pass_as':     ('Pass_pct',              DEFAULTS['f_pass_as']),
+    }
+    for k, (col_name, d) in _slider_cols.items():
+        if k != exclude_key and col_name in df.columns:
+            val = _safe_range(k, d)
+            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
+
+    return df[mask]
+
 def get_base_df(exclude_key=None):
+    """
+    Базовий набір даних для розрахунку діапазонів слайдерів.
+    Застосовує: pills + search + DEFAULTS інших слайдерів (крім exclude_key).
+    Використовує DEFAULTS (не поточні значення) — це уникає циркулярних залежностей між слайдерами.
+    """
     cv_pos    = st.session_state.get('pills_pos_as',   [p for p in sorted_positions if p != 'GK']) or []
     cv_teams  = st.session_state.get('pills_teams_as', all_teams) or []
     cv_search = st.session_state.get('search_name_as', '')
@@ -181,37 +251,32 @@ def get_base_df(exclude_key=None):
         else:
             mask &= df['Play Pos'].isin(cv_pl_pos)
 
+    # Застосовуємо DEFAULTS інших слайдерів (не поточні значення!)
     _slider_cols = {
-        'f_matches_as':  ('matches_played', DEFAULTS['f_matches']),
-        'f_60min_as':    ('60_min',         DEFAULTS['f_60min']),
-        'f_cost_as':     ('now_cost',       DEFAULTS['f_cost']),
-        'f_avg_mins_as': ('avg_mins',       DEFAULTS['f_avg_mins']),
-        'f_rating_as':   ('av_rating_alt',  DEFAULTS['f_rating']),
-        'f_selected_as': ('selected_by_percent', DEFAULTS['f_selected']),
-        'f_top100k_as':  ('top_100k',       DEFAULTS['f_top100k']),
-        'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity']),
-        'f_xgot_as':     ('xGoT_90',        DEFAULTS['f_xgot']),
-        'f_xa_as':       ('xA_90',          DEFAULTS['f_xa']),
-        'f_xgi_as':      ('xGI_norm',       DEFAULTS['f_xgi']),
-        'f_sh_as':       ('Sh_90',          DEFAULTS['f_sh']),
-        'f_shot_as':     ('ShoT_90',        DEFAULTS['f_shot']),
-        'f_kp_as':       ('KP_90',          DEFAULTS['f_kp']),
-        'f_pass_as':     ('Pass_pct',       DEFAULTS['f_pass']),
+        'f_matches_as':  ('matches_played',        DEFAULTS['f_matches_as']),
+        'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
+        'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
+        'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
+        'f_rating_as':   ('av_rating_alt',         DEFAULTS['f_rating_as']),
+        'f_selected_as': ('selected_by_percent',   DEFAULTS['f_selected_as']),
+        'f_top100k_as':  ('top_100k',              DEFAULTS['f_top100k_as']),
+        'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity_as']),
+        'f_xgot_as':     ('xGoT_90',               DEFAULTS['f_xgot_as']),
+        'f_xa_as':       ('xA_90',                 DEFAULTS['f_xa_as']),
+        'f_xgi_as':      ('xGI_norm',              DEFAULTS['f_xgi_as']),
+        'f_sh_as':       ('Sh_90',                 DEFAULTS['f_sh_as']),
+        'f_shot_as':     ('ShoT_90',               DEFAULTS['f_shot_as']),
+        'f_kp_as':       ('KP_90',                 DEFAULTS['f_kp_as']),
+        'f_pass_as':     ('Pass_pct',              DEFAULTS['f_pass_as']),
     }
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key and col_name in df.columns:
-            val = _safe_range(k, d)
-            mask &= (df[col_name] >= val[0])
-            if val[1] < d[1] - 1e-4:
-                mask &= (df[col_name] <= val[1])
+            mask &= (df[col_name] >= d[0]) & (df[col_name] <= d[1])
 
     return df[mask]
 
-def get_available(exclude_key=None):
-    return get_base_df(exclude_key)
-
-def auto_update_slider(key, base_key, col, cast=float, only_positive=False):
-    if col not in df.columns:
+def auto_update_slider(key, col, cast=float, only_positive=False):
+    if col not in df.columns or key not in DEFAULTS:
         return
     hash_key = f'_hash_{key}'
     current_hash = str(_pills_snapshot())
@@ -227,13 +292,13 @@ def auto_update_slider(key, base_key, col, cast=float, only_positive=False):
     if series.empty:
         st.session_state[hash_key] = current_hash
         if key not in st.session_state:
-            st.session_state[key] = DEFAULTS[base_key]
+            st.session_state[key] = DEFAULTS[key]
         return
 
     avail_min = cast(series.min())
     avail_max = cast(series.max())
-    def_lower = cast(DEFAULTS[base_key][0])
-    gb_upper  = cast(GB[base_key][1])
+    def_lower = cast(DEFAULTS[key][0])
+    gb_upper  = cast(GB[key][1])
 
     new_lower = max(def_lower, avail_min)
     new_upper = min(gb_upper, avail_max)
@@ -248,13 +313,13 @@ def auto_update_slider(key, base_key, col, cast=float, only_positive=False):
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p style='font-size:0.875rem;margin-bottom:0'>{label}</p>", unsafe_allow_html=True)
-    if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
+    if cols[1].button("All", key=f"btn_all_{key_prefix}", width="stretch"):
         st.session_state[f"pills_{key_prefix}"] = options
         if key_prefix == "pl_pos_as":
             for i, line in enumerate(pl_lines):
                 st.session_state[f"pills_pl_line_as_{i}"] = [p for p in options if p in line]
         st.rerun()
-    if cols[2].button("None", key=f"btn_none_{key_prefix}", use_container_width=True):
+    if cols[2].button("None", key=f"btn_none_{key_prefix}", width="stretch"):
         st.session_state[f"pills_{key_prefix}"] = []
         if key_prefix == "pl_pos_as":
             for i, line in enumerate(pl_lines):
@@ -322,24 +387,24 @@ def inject_sidebar_layout(inactive_all: list):
     st.components.v1.html(js, height=0, scrolling=False)
 
 # ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
-auto_update_slider('f_cost_as',     'f_cost',     'now_cost',            float)
-auto_update_slider('f_matches_as',  'f_matches',  'matches_played',      int)
-auto_update_slider('f_rating_as',   'f_rating',   'av_rating_alt',       float, only_positive=True)
-auto_update_slider('f_avg_mins_as', 'f_avg_mins', 'avg_mins',            float)
-auto_update_slider('f_60min_as',    'f_60min',    '60_min',              float)
-auto_update_slider('f_selected_as', 'f_selected', 'selected_by_percent', float)
-auto_update_slider('f_top100k_as',  'f_top100k',  'top_100k',            float)
-auto_update_slider('f_activity_as', 'f_activity', 'transfer_activity_pct', float)
-auto_update_slider('f_xgot_as',     'f_xgot',     'xGoT_90',             float)
-auto_update_slider('f_xa_as',       'f_xa',       'xA_90',               float)
-auto_update_slider('f_xgi_as',      'f_xgi',      'xGI_norm',            float)
-auto_update_slider('f_sh_as',       'f_sh',       'Sh_90',               float)
-auto_update_slider('f_shot_as',     'f_shot',     'ShoT_90',             float)
-auto_update_slider('f_kp_as',       'f_kp',       'KP_90',               float)
-auto_update_slider('f_pass_as',     'f_pass',     'Pass_pct',            float)
+auto_update_slider('f_cost_as',     'now_cost',            float)
+auto_update_slider('f_matches_as',  'matches_played',      int)
+auto_update_slider('f_rating_as',   'av_rating_alt',       float, only_positive=True)
+auto_update_slider('f_avg_mins_as', 'avg_mins',            float)
+auto_update_slider('f_60min_as',    '60_min',              float)
+auto_update_slider('f_selected_as', 'selected_by_percent', float)
+auto_update_slider('f_top100k_as',  'top_100k',            float)
+auto_update_slider('f_activity_as', 'transfer_activity_pct', float)
+auto_update_slider('f_xgot_as',     'xGoT_90',             float)
+auto_update_slider('f_xa_as',       'xA_90',               float)
+auto_update_slider('f_xgi_as',      'xGI_norm',            float)
+auto_update_slider('f_sh_as',       'Sh_90',               float)
+auto_update_slider('f_shot_as',     'ShoT_90',             float)
+auto_update_slider('f_kp_as',       'KP_90',               float)
+auto_update_slider('f_pass_as',     'Pass_pct',            float)
 
 # ========================== САЙДБАР ==========================
-if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
+if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if '_as' in k]
     for key in keys_to_delete:
         del st.session_state[key]
@@ -398,26 +463,26 @@ inject_sidebar_layout(all_inactive)
 
 # --- PERFORMANCE STATS ---
 with st.sidebar.expander("Performance Stats", expanded=False):
-    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  value=_safe_range('f_matches_as',  DEFAULTS['f_matches']),  step=1,    key="f_matches_as")
-    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   value=_safe_range('f_rating_as',   DEFAULTS['f_rating']),   step=0.05, format="%.2f", key="f_rating_as")
-    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], value=_safe_range('f_avg_mins_as', DEFAULTS['f_avg_mins']), step=1.0,  key="f_avg_mins_as")
-    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    value=_safe_range('f_60min_as',    DEFAULTS['f_60min']),    step=0.5,  key="f_60min_as")
+    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  step=1,    key="f_matches_as")
+    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   step=0.05, format="%.2f", key="f_rating_as")
+    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], step=1.0,  key="f_avg_mins_as")
+    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    step=0.5,  key="f_60min_as")
 
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
-    f_selected = st.slider("Selected %",        GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected_as', DEFAULTS['f_selected']), step=0.1, key="f_selected_as")
-    f_top100k  = st.slider("Top 100k %",        GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k_as',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k_as")
-    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity_as', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity_as")
+    f_selected = st.slider("Selected %",        GB['f_selected'][0], GB['f_selected'][1], step=0.1, key="f_selected_as")
+    f_top100k  = st.slider("Top 100k %",        GB['f_top100k'][0],  GB['f_top100k'][1],  step=0.1, key="f_top100k_as")
+    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], step=1.0, format="%d%%", key="f_activity_as")
 
 # --- ATTACKING STATS ---
 with st.sidebar.expander("Attacking Stats", expanded=True):
-    f_xgot = st.slider("xGoT/90", GB['f_xgot'][0], GB['f_xgot'][1], value=_safe_range('f_xgot_as', DEFAULTS['f_xgot']), step=0.05, key="f_xgot_as")
-    f_xa   = st.slider("xA/90",   GB['f_xa'][0],   GB['f_xa'][1],   value=_safe_range('f_xa_as',   DEFAULTS['f_xa']),   step=0.05, key="f_xa_as")
-    f_xgi  = st.slider("xGI/90",  GB['f_xgi'][0],  GB['f_xgi'][1],  value=_safe_range('f_xgi_as',  DEFAULTS['f_xgi']),  step=0.1,  key="f_xgi_as")
-    f_sh   = st.slider("Sh/90",   GB['f_sh'][0],   GB['f_sh'][1],   value=_safe_range('f_sh_as',   DEFAULTS['f_sh']),   step=0.5,  key="f_sh_as")
-    f_shot = st.slider("ShoT/90", GB['f_shot'][0], GB['f_shot'][1], value=_safe_range('f_shot_as', DEFAULTS['f_shot']), step=0.1,  key="f_shot_as")
-    f_kp   = st.slider("KP/90",   GB['f_kp'][0],   GB['f_kp'][1],   value=_safe_range('f_kp_as',   DEFAULTS['f_kp']),   step=0.1,  key="f_kp_as")
-    f_pass = st.slider("Pass%",   GB['f_pass'][0], GB['f_pass'][1], value=_safe_range('f_pass_as', DEFAULTS['f_pass']), step=1.0,  key="f_pass_as")
+    f_xgot = st.slider("xGoT/90", GB['f_xgot'][0], GB['f_xgot'][1], step=0.05, key="f_xgot_as")
+    f_xa   = st.slider("xA/90",   GB['f_xa'][0],   GB['f_xa'][1],   step=0.05, key="f_xa_as")
+    f_xgi  = st.slider("xGI/90",  GB['f_xgi'][0],  GB['f_xgi'][1],  step=0.1,  key="f_xgi_as")
+    f_sh   = st.slider("Sh/90",   GB['f_sh'][0],   GB['f_sh'][1],   step=0.5,  key="f_sh_as")
+    f_shot = st.slider("ShoT/90", GB['f_shot'][0], GB['f_shot'][1], step=0.1,  key="f_shot_as")
+    f_kp   = st.slider("KP/90",   GB['f_kp'][0],   GB['f_kp'][1],   step=0.1,  key="f_kp_as")
+    f_pass = st.slider("Pass%",   GB['f_pass'][0], GB['f_pass'][1], step=1.0,  key="f_pass_as")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
@@ -433,21 +498,21 @@ mask = (
 )
 
 filter_vars = [
-    ('av_rating_alt',         f_rating,   GB['f_rating']),
-    ('matches_played',        f_matches,  GB['f_matches']),
-    ('60_min',                f_60min,    GB['f_60min']),
-    ('now_cost',              f_cost,     GB['f_cost']),
-    ('selected_by_percent',   f_selected, GB['f_selected']),
-    ('top_100k',              f_top100k,  GB['f_top100k']),
-    ('transfer_activity_pct', f_activity, GB['f_activity']),
-    ('xGoT_90',               f_xgot,     GB['f_xgot']),
-    ('xA_90',                 f_xa,       GB['f_xa']),
-    ('xGI_norm',              f_xgi,      GB['f_xgi']),
-    ('Sh_90',                 f_sh,       GB['f_sh']),
-    ('ShoT_90',               f_shot,     GB['f_shot']),
-    ('KP_90',                 f_kp,       GB['f_kp']),
-    ('Pass_pct',              f_pass,     GB['f_pass']),
-    ('avg_mins',              f_avg_mins, GB['f_avg_mins']),
+    ('av_rating_alt',         f_rating,   GB['f_rating_as']),
+    ('matches_played',        f_matches,  GB['f_matches_as']),
+    ('60_min',                f_60min,    GB['f_60min_as']),
+    ('now_cost',              f_cost,     GB['f_cost_as']),
+    ('selected_by_percent',   f_selected, GB['f_selected_as']),
+    ('top_100k',              f_top100k,  GB['f_top100k_as']),
+    ('transfer_activity_pct', f_activity, GB['f_activity_as']),
+    ('xGoT_90',               f_xgot,     GB['f_xgot_as']),
+    ('xA_90',                 f_xa,       GB['f_xa_as']),
+    ('xGI_norm',              f_xgi,      GB['f_xgi_as']),
+    ('Sh_90',                 f_sh,       GB['f_sh_as']),
+    ('ShoT_90',               f_shot,     GB['f_shot_as']),
+    ('KP_90',                 f_kp,       GB['f_kp_as']),
+    ('Pass_pct',              f_pass,     GB['f_pass_as']),
+    ('avg_mins',              f_avg_mins, GB['f_avg_mins_as']),
 ]
 
 for col_name, val, limit in filter_vars:
@@ -457,6 +522,9 @@ for col_name, val, limit in filter_vars:
             mask &= (df[col_name] <= val[1])
 
 filtered_df = df[mask].copy()
+sort_cols = [c for c in ['xGI_norm', 'now_cost', 'M Price'] if c in filtered_df.columns]
+if sort_cols:
+    filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
 # ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
 # Оновлений порядок стовпчиків: Selected тепер між now_cost та top_100k
@@ -498,11 +566,11 @@ styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90'] if c in existing_cols]) \
     .format(precision=2)
 
-st.subheader(f"Attacking Stats: {len(filtered_df)} players")
+st.subheader(f"Attacking Stats: {len(filtered_df)} players", anchor=False)
 
 st.dataframe(
     styled_df,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
     height=800,
     column_config={
