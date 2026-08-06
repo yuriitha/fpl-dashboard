@@ -14,6 +14,17 @@ st.set_page_config(
 
 st.markdown("""
     <style>
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
+            overscroll-behavior: none !important;
+        }
+        [data-testid="stHeaderActionElements"], a.header-anchor {
+            display: none !important;
+        }
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+            max-width: 100% !important;
+        }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         [data-testid="stSidebar"] button {
             width: 60px !important; min-width: 60px !important; max-width: 60px !important;
@@ -54,8 +65,9 @@ def load_data():
     df = pd.read_parquet(url)
     if 'av_rating_alt' in df.columns:
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
-    if 'now_cost' in df.columns:
-        df = df.sort_values(by="now_cost", ascending=False)
+    sort_cols = [c for c in ['now_cost', 'M Price'] if c in df.columns]
+    if sort_cols:
+        df = df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
     for h2_col in ['av_rating_alt_h2', 'xGI_norm_h2', 'avg_mins_h2', '60_min_h2', 'matches_played_h2']:
         if h2_col not in df.columns:
@@ -271,13 +283,13 @@ def auto_update_slider(key, base_key, col, cast=float, only_positive=False):
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p style='font-size:0.875rem;margin-bottom:0'>{label}</p>", unsafe_allow_html=True)
-    if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
+    if cols[1].button("All", key=f"btn_all_{key_prefix}", width="stretch"):
         st.session_state[f"pills_{key_prefix}"] = options
         if key_prefix == "pl_pos_gr":
             for i, line in enumerate(pl_lines):
                 st.session_state[f"pills_pl_line_gr_{i}"] = [p for p in options if p in line]
         st.rerun()
-    if cols[2].button("None", key=f"btn_none_{key_prefix}", use_container_width=True):
+    if cols[2].button("None", key=f"btn_none_{key_prefix}", width="stretch"):
         st.session_state[f"pills_{key_prefix}"] = []
         if key_prefix == "pl_pos_gr":
             for i, line in enumerate(pl_lines):
@@ -382,7 +394,7 @@ auto_update_slider('f_selected_gr', 'f_selected', 'selected_by_percent', float)
 auto_update_slider('f_activity_gr', 'f_activity', 'transfer_activity_pct', float)
 
 # ========================== САЙДБАР ==========================
-if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
+if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if '_gr' in k]
     for key in keys_to_delete:
         del st.session_state[key]
@@ -441,15 +453,15 @@ inject_sidebar_layout(all_inactive)
 
 # --- PERFORMANCE STATS ---
 with st.sidebar.expander("Performance Stats", expanded=False):
-    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  value=_safe_range('f_matches_gr',  DEFAULTS['f_matches']),  step=1,    key="f_matches_gr")
-    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   value=_safe_range('f_rating_gr',   DEFAULTS['f_rating']),   step=0.05, format="%.2f", key="f_rating_gr")
-    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], value=_safe_range('f_avg_mins_gr', DEFAULTS['f_avg_mins']), step=1.0,  key="f_avg_mins_gr")
-    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    value=_safe_range('f_60min_gr',    DEFAULTS['f_60min']),    step=0.5,  key="f_60min_gr")
+    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  step=1,    key="f_matches_gr")
+    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   step=0.05, format="%.2f", key="f_rating_gr")
+    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], step=1.0,  key="f_avg_mins_gr")
+    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    step=0.5,  key="f_60min_gr")
 
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
-    f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected_gr', DEFAULTS['f_selected']), step=0.1, key="f_selected_gr")
-    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity_gr', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity_gr")
+    f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], step=0.1, key="f_selected_gr")
+    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], step=1.0, format="%d%%", key="f_activity_gr")
 
 st.sidebar.markdown('<div class="league-origin-wrapper">', unsafe_allow_html=True)
 selected_league_origin = st.sidebar.pills(
@@ -512,7 +524,7 @@ if not plot_df.empty:
     )
 
     # ========================== ВІЗУАЛІЗАЦІЯ — ПОВНИЙ СЕЗОН ==========================
-    st.subheader(f"xGI vs Rating - Full Season (Players: {len(plot_df)})")
+    st.subheader(f"xGI vs Rating - Full Season (Players: {len(plot_df)})", anchor=False)
 
     fig = px.scatter(
         plot_df,
@@ -605,7 +617,7 @@ if not plot_df.empty:
         )
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # ========================== ГРАФІК 2: ДРУГА ЧАСТИНА СЕЗОНУ (ВІД 03.01.2026) ==========================
     # Використовуємо маску основних фільтрів гравця, перевіряючи наявність оцінки у 2-й частині сезону
@@ -629,7 +641,7 @@ if not plot_df.empty:
         )
 
         st.markdown("<br><hr>", unsafe_allow_html=True)
-        st.subheader(f"xGI vs Rating - 2nd Half of Season (From Jan 3, 2026) (Players: {len(plot_df_h2)})")
+        st.subheader(f"xGI vs Rating - 2nd Half of Season (From Jan 3, 2026) (Players: {len(plot_df_h2)})", anchor=False)
 
         fig_h2 = px.scatter(
             plot_df_h2,
@@ -716,7 +728,7 @@ if not plot_df.empty:
             )
         )
 
-        st.plotly_chart(fig_h2, use_container_width=True)
+        st.plotly_chart(fig_h2, width="stretch")
 
 else:
     st.warning("Немає даних для обраних фільтрів.")
