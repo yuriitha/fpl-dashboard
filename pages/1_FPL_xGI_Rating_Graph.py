@@ -577,17 +577,19 @@ if not plot_df.empty:
 
     # Динамічні сітки для перетворених шкал (кожні 0.1)
     r_min, r_max = plot_df['av_rating_alt'].min(), plot_df['av_rating_alt'].max()
-    if pd.isna(r_min) or pd.isna(r_max):
-        r_min, r_max = 4.0, 10.0
-    r_start = np.floor(r_min * 10) / 10
+    if pd.isna(r_max) or r_max < 6.5:
+        r_max = 10.0
+    r_start = 6.5
     r_end = np.ceil(r_max * 10) / 10
+    if r_end < r_start: r_end = r_start + 0.5
     r_ticks = np.arange(r_start, r_end + 0.05, 0.1).round(1)
             
     x_min, x_max = plot_df['xGI_norm'].min(), plot_df['xGI_norm'].max()
     if pd.isna(x_min) or pd.isna(x_max):
-        x_min, x_max = 0.0, 1.5
-    x_start = np.floor(x_min * 10) / 10
-    x_end = np.ceil(x_max * 10) / 10
+        x_min, x_max = 0.0, 1.2
+    x_start = max(0.0, np.floor(x_min * 10) / 10)
+    x_end = min(1.20, np.ceil(x_max * 10) / 10)
+    if x_end < x_start: x_end = 1.20
     x_ticks = np.arange(x_start, x_end + 0.05, 0.1).round(1)
 
     fig.update_layout(
@@ -598,14 +600,16 @@ if not plot_df.empty:
             gridcolor='rgba(255,255,255,0.1)',
             tickmode='array',
             tickvals=r_ticks ** 0.5,
-            ticktext=r_ticks
+            ticktext=r_ticks,
+            range=[r_start ** 0.5, (r_end + 0.02) ** 0.5]
         ),
         yaxis=dict(
             title="Expected Goal Involvement",
             gridcolor='rgba(255,255,255,0.1)',
             tickmode='array',
             tickvals=x_ticks ** 0.5,
-            ticktext=x_ticks
+            ticktext=x_ticks,
+            range=[x_start ** 0.5, (x_end + 0.02) ** 0.5]
         ),
         legend_title_text='', 
         legend=dict(
@@ -693,15 +697,19 @@ if not plot_df.empty:
         )
 
         r_min2, r_max2 = plot_df_h2['av_rating_alt_h2'].min(), plot_df_h2['av_rating_alt_h2'].max()
-        if pd.isna(r_min2) or pd.isna(r_max2): r_min2, r_max2 = 4.0, 10.0
-        r_start2 = np.floor(r_min2 * 10) / 10
+        if pd.isna(r_max2) or r_max2 < 6.5:
+            r_max2 = 10.0
+        r_start2 = 6.5
         r_end2 = np.ceil(r_max2 * 10) / 10
+        if r_end2 < r_start2: r_end2 = r_start2 + 0.5
         r_ticks2 = np.arange(r_start2, r_end2 + 0.05, 0.1).round(1)
 
         x_min2, x_max2 = plot_df_h2['xGI_norm_h2'].min(), plot_df_h2['xGI_norm_h2'].max()
-        if pd.isna(x_min2) or pd.isna(x_max2): x_min2, x_max2 = 0.0, 1.5
-        x_start2 = np.floor(x_min2 * 10) / 10
-        x_end2 = np.ceil(x_max2 * 10) / 10
+        if pd.isna(x_min2) or pd.isna(x_max2):
+            x_min2, x_max2 = 0.0, 1.2
+        x_start2 = max(0.0, np.floor(x_min2 * 10) / 10)
+        x_end2 = min(1.20, np.ceil(x_max2 * 10) / 10)
+        if x_end2 < x_start2: x_end2 = 1.20
         x_ticks2 = np.arange(x_start2, x_end2 + 0.05, 0.1).round(1)
 
         fig_h2.update_layout(
@@ -712,14 +720,16 @@ if not plot_df.empty:
                 gridcolor='rgba(255,255,255,0.1)',
                 tickmode='array',
                 tickvals=r_ticks2 ** 0.5,
-                ticktext=r_ticks2
+                ticktext=r_ticks2,
+                range=[r_start2 ** 0.5, (r_end2 + 0.02) ** 0.5]
             ),
             yaxis=dict(
                 title="Expected Goal Involvement (2nd Half of Season)",
                 gridcolor='rgba(255,255,255,0.1)',
                 tickmode='array',
                 tickvals=x_ticks2 ** 0.5,
-                ticktext=x_ticks2
+                ticktext=x_ticks2,
+                range=[x_start2 ** 0.5, (x_end2 + 0.02) ** 0.5]
             ),
             legend_title_text='',
             legend=dict(
