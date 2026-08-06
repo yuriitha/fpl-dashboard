@@ -37,8 +37,9 @@ def load_data():
     df = pd.read_parquet(url)
     if 'av_rating_alt' in df.columns:
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
-    if 'now_cost' in df.columns:
-        df = df.sort_values(by="now_cost", ascending=False)
+    sort_cols = [c for c in ['now_cost', 'M Price'] if c in df.columns]
+    if sort_cols:
+        df = df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
     import numpy as np
     
     # Calculate Transfer Activity (Logarithmic Scale)
@@ -473,8 +474,9 @@ mask = (
     (df['full_name'].str.contains(search_name, case=False, na=False))
 )
 filtered_df = df[mask].copy()
-if 'now_cost' in filtered_df.columns:
-    filtered_df = filtered_df.sort_values(by="now_cost", ascending=False)
+sort_cols = [c for c in ['now_cost', 'M Price'] if c in filtered_df.columns]
+if sort_cols:
+    filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
 # ========================== ТАБЛИЦЯ ==========================
 st.subheader(f"Players filtered: {len(filtered_df)}")
