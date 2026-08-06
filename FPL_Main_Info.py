@@ -274,13 +274,13 @@ def auto_update_slider(key, col, cast=float, only_positive=False):
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p style='font-size:0.875rem;margin-bottom:0'>{label}</p>", unsafe_allow_html=True)
-    if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
+    if cols[1].button("All", key=f"btn_all_{key_prefix}", width="stretch"):
         st.session_state[f"pills_{key_prefix}"] = options
         if key_prefix == "pl_pos":
             for i, line in enumerate(pl_lines):
                 st.session_state[f"pills_pl_line_{i}"] = [p for p in options if p in line]
         st.rerun()
-    if cols[2].button("None", key=f"btn_none_{key_prefix}", use_container_width=True):
+    if cols[2].button("None", key=f"btn_none_{key_prefix}", width="stretch"):
         st.session_state[f"pills_{key_prefix}"] = []
         if key_prefix == "pl_pos":
             for i, line in enumerate(pl_lines):
@@ -371,7 +371,7 @@ def inject_sidebar_layout(inactive_all: list):
     }})();
     </script>
     """
-    st.components.v1.html(js, height=0, scrolling=False)
+    st.iframe(html=js, height=0, scrolling=False)
 
 
 
@@ -385,7 +385,7 @@ auto_update_slider('f_selected', 'selected_by_percent', float)
 auto_update_slider('f_activity', 'transfer_activity_pct', float)
 
 # ========================== САЙДБАР ==========================
-if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
+if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.rerun()
@@ -443,15 +443,15 @@ inject_sidebar_layout(all_inactive)
 
 # --- PERFORMANCE STATS ---
 with st.sidebar.expander("Performance Stats", expanded=False):
-    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  value=_safe_range('f_matches',  DEFAULTS['f_matches']),  step=1,    key="f_matches")
-    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   value=_safe_range('f_rating',   DEFAULTS['f_rating']),   step=0.05, format="%.2f", key="f_rating")
-    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], value=_safe_range('f_avg_mins', DEFAULTS['f_avg_mins']), step=1.0,  key="f_avg_mins")
-    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    value=_safe_range('f_60min',    DEFAULTS['f_60min']),    step=0.5,  key="f_60min")
+    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  step=1,    key="f_matches")
+    f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   step=0.05, format="%.2f", key="f_rating")
+    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], step=1.0,  key="f_avg_mins")
+    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    step=0.5,  key="f_60min")
 
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
-    f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected', DEFAULTS['f_selected']), step=0.1, key="f_selected")
-    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity")
+    f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], step=0.1, key="f_selected")
+    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], step=1.0, format="%d%%", key="f_activity")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
@@ -480,7 +480,7 @@ if 'now_cost' in filtered_df.columns:
 st.subheader(f"Players filtered: {len(filtered_df)}")
 st.dataframe(
     filtered_df[display_columns],
-    use_container_width=True, hide_index=True, height=800,
+    width="stretch", hide_index=True, height=800,
     column_config={
         "full_name":           st.column_config.TextColumn("Player",    width="medium", pinned=True),
         "Age":                 st.column_config.NumberColumn("Age",     width=40,  format="%d"),
