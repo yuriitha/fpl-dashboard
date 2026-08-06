@@ -9,6 +9,9 @@ st.markdown("""
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
             overscroll-behavior: none !important;
         }
+        [data-testid="stHeaderActionElements"], a.header-anchor {
+            display: none !important;
+        }
         .block-container {
             padding-top: 1.5rem !important;
             padding-bottom: 1rem !important;
@@ -487,7 +490,7 @@ if sort_cols:
     filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
 # ========================== ТАБЛИЦЯ ==========================
-st.subheader(f"Players filtered: {len(filtered_df)}")
+st.subheader(f"Players filtered: {len(filtered_df)}", anchor=False)
 st.dataframe(
     filtered_df[display_columns],
     width="stretch", hide_index=True, height=800,
