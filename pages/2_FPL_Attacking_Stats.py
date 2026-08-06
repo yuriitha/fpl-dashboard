@@ -139,10 +139,10 @@ GB = {
 # Дефолтні значення повзунків
 DEFAULTS = {
     'f_cost_as':     GB['f_cost_as'],
-    'f_matches_as':  GB['f_matches_as'],
+    'f_matches_as':  (max(GB['f_matches_as'][0], 5), GB['f_matches_as'][1]),
     'f_rating_as':   GB['f_rating_as'],
     'f_avg_mins_as': GB['f_avg_mins_as'],
-    'f_60min_as':    GB['f_60min_as'],
+    'f_60min_as':    (max(GB['f_60min_as'][0], 37.0), GB['f_60min_as'][1]),
     'f_selected_as': GB['f_selected_as'],
     'f_top100k_as':  GB['f_top100k_as'],
     'f_activity_as': GB['f_activity_as'],
@@ -530,7 +530,7 @@ if sort_cols:
 # Оновлений порядок стовпчиків: Selected тепер між now_cost та top_100k
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
-    "selected_by_percent", "top_100k", "min_played", "matches_played", "matches_started", 
+    "selected_by_percent", "min_played", "matches_played", "matches_started", 
     "avg_mins", "60_min", "av_rating_alt", 
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm", 
     "Sh_90", "ShoT_90", "KP_90", "Touches_90", "Pass_pct", "BC_90", "PBC_90"
@@ -560,7 +560,6 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25):
 
 # Створення стилізованого DataFrame
 styled_df = filtered_df[existing_cols].style \
-    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['top_100k'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90','A_90', 'xA_90', 'xGI_norm'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90'] if c in existing_cols]) \
@@ -581,7 +580,6 @@ st.dataframe(
         "team_short_name":     st.column_config.TextColumn("Team",      width=45),
         "now_cost":            st.column_config.NumberColumn("Price",   width=40,  format="%.1f"),
         "selected_by_percent": st.column_config.NumberColumn("Selected",width=55,  format="%.1f%%"),
-        "top_100k":            st.column_config.NumberColumn("Top 100K",width=55,  format="%.1f%%"),
         "min_played":          st.column_config.NumberColumn("Mins",    width=45),
         "matches_played":      st.column_config.NumberColumn("MP",      width=35),
         "matches_started":     st.column_config.NumberColumn("GS",      width=35),
