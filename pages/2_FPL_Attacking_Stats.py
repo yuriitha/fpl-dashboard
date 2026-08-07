@@ -538,11 +538,13 @@ display_columns = [
 # Перевірка наявності колонок
 existing_cols = [c for c in display_columns if c in filtered_df.columns]
 
-def soft_gradient(s, cmap_name='Blues', alpha=0.25):
+def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None):
     if s.empty:
         return ['' for _ in s]
     s_min, s_max = s.min(), s.max()
-    if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
+    if max_cap is not None and not pd.isna(s_max):
+        s_max = min(s_max, max_cap)
+    if pd.isna(s_min) or pd.isna(s_max) or s_min >= s_max:
         return ['' for _ in s]
     
     cmap = plt.get_cmap(cmap_name)
@@ -553,14 +555,15 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25):
         if pd.isna(val):
             styles.append('')
         else:
-            r, g, b, _ = cmap(norm(val))
+            val_clamped = min(val, s_max)
+            r, g, b, _ = cmap(norm(val_clamped))
             styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
     return styles
 
 # Створення стилізованого DataFrame
 styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90','A_90', 'xA_90', 'xGI_norm'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, max_cap=0.90, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90', 'A_90', 'xA_90', 'xGI_norm'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90'] if c in existing_cols]) \
     .format(precision=2)
 
