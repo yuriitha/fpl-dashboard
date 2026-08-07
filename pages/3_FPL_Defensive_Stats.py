@@ -138,8 +138,6 @@ GB = {
     'f_selected_ds': _slider_bounds(_get_min('selected_by_percent'), _get_max('selected_by_percent', 100.0)),
     'f_activity_ds': _slider_bounds(0.0, 100.0),
     'f_cs_ds':       _slider_bounds(0.0, _get_max_sane('CS_90')),
-    'f_gc_ds':       _slider_bounds(0.0, _get_max_sane('GC_90')),
-    'f_xgc_ds':      _slider_bounds(0.0, _get_max_sane('xGC_90')),
     'f_dc_ds':       _slider_bounds(0.0, _get_max_sane('DC_90')),
     'f_clr_ds':      _slider_bounds(0.0, _get_max_sane('Clr_90')),
     'f_blk_ds':      _slider_bounds(0.0, _get_max_sane('Blk_90')),
@@ -160,8 +158,6 @@ DEFAULTS = {
     'f_selected_ds': GB['f_selected_ds'],
     'f_activity_ds': GB['f_activity_ds'],
     'f_cs_ds':       GB['f_cs_ds'],
-    'f_gc_ds':       GB['f_gc_ds'],
-    'f_xgc_ds':      GB['f_xgc_ds'],
     'f_dc_ds':       GB['f_dc_ds'],
     'f_clr_ds':      GB['f_clr_ds'],
     'f_blk_ds':      GB['f_blk_ds'],
@@ -227,8 +223,6 @@ def get_available(exclude_key=None):
         'f_selected_ds': ('selected_by_percent',   DEFAULTS['f_selected_ds']),
         'f_activity_ds': ('transfer_activity_pct', DEFAULTS['f_activity_ds']),
         'f_cs_ds':       ('CS_90',                 DEFAULTS['f_cs_ds']),
-        'f_gc_ds':       ('GC_90',                 DEFAULTS['f_gc_ds']),
-        'f_xgc_ds':      ('xGC_90',                DEFAULTS['f_xgc_ds']),
         'f_dc_ds':       ('DC_90',                 DEFAULTS['f_dc_ds']),
         'f_clr_ds':      ('Clr_90',                DEFAULTS['f_clr_ds']),
         'f_blk_ds':      ('Blk_90',                DEFAULTS['f_blk_ds']),
@@ -276,8 +270,6 @@ def get_base_df(exclude_key=None):
         'f_selected_ds': ('selected_by_percent',   DEFAULTS['f_selected_ds']),
         'f_activity_ds': ('transfer_activity_pct', DEFAULTS['f_activity_ds']),
         'f_cs_ds':       ('CS_90',                 DEFAULTS['f_cs_ds']),
-        'f_gc_ds':       ('GC_90',                 DEFAULTS['f_gc_ds']),
-        'f_xgc_ds':      ('xGC_90',                DEFAULTS['f_xgc_ds']),
         'f_dc_ds':       ('DC_90',                 DEFAULTS['f_dc_ds']),
         'f_clr_ds':      ('Clr_90',                DEFAULTS['f_clr_ds']),
         'f_blk_ds':      ('Blk_90',                DEFAULTS['f_blk_ds']),
@@ -413,8 +405,6 @@ auto_update_slider('f_60min_ds',    '60_min',              float)
 auto_update_slider('f_selected_ds', 'selected_by_percent', float)
 auto_update_slider('f_activity_ds', 'transfer_activity_pct', float)
 auto_update_slider('f_cs_ds',       'CS_90',               float)
-auto_update_slider('f_gc_ds',       'GC_90',               float)
-auto_update_slider('f_xgc_ds',      'xGC_90',              float)
 auto_update_slider('f_dc_ds',       'DC_90',               float)
 auto_update_slider('f_clr_ds',      'Clr_90',              float)
 auto_update_slider('f_blk_ds',      'Blk_90',              float)
@@ -497,8 +487,6 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
 # --- DEFENSIVE STATS ---
 with st.sidebar.expander("Defensive Stats", expanded=True):
     f_cs   = st.slider("CS/90",           GB['f_cs_ds'][0],   GB['f_cs_ds'][1],   step=0.05, key="f_cs_ds")
-    f_gc   = st.slider("GC/90",           GB['f_gc_ds'][0],   GB['f_gc_ds'][1],   step=0.05, key="f_gc_ds")
-    f_xgc  = st.slider("xGC/90",          GB['f_xgc_ds'][0],  GB['f_xgc_ds'][1],  step=0.05, key="f_xgc_ds")
     f_dc   = st.slider("DC/90",           GB['f_dc_ds'][0],   GB['f_dc_ds'][1],   step=0.5,  key="f_dc_ds")
     f_clr  = st.slider("Clearances/90",   GB['f_clr_ds'][0],  GB['f_clr_ds'][1],  step=0.5,  key="f_clr_ds")
     f_blk  = st.slider("Blocks/90",       GB['f_blk_ds'][0],  GB['f_blk_ds'][1],  step=0.1,  key="f_blk_ds")
@@ -529,8 +517,6 @@ filter_vars = [
     ('selected_by_percent',   f_selected, GB['f_selected_ds']),
     ('transfer_activity_pct', f_activity, GB['f_activity_ds']),
     ('CS_90',                 f_cs,       GB['f_cs_ds']),
-    ('GC_90',                 f_gc,       GB['f_gc_ds']),
-    ('xGC_90',                f_xgc,      GB['f_xgc_ds']),
     ('DC_90',                 f_dc,       GB['f_dc_ds']),
     ('Clr_90',                f_clr,      GB['f_clr_ds']),
     ('Blk_90',                f_blk,      GB['f_blk_ds']),
@@ -556,9 +542,9 @@ if sort_cols:
 # ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
-    "selected_by_percent", "min_played", "matches_played", "matches_started", 
+    "selected_by_percent", "min_played", "matches_played", 
     "avg_mins", "60_min", "av_rating_alt", 
-    "clean_sheets", "CS_90", "goals_conceded", "GC_90", "xGC_90", 
+    "clean_sheets", "CS_90", "goals_conceded", 
     "DC_90", "Clr_90", "Blk_90", "Int_90", "Tck_90", "Rec_90",
     "Touches_90", "Pass_pct", "yellow_cards", "red_cards"
 ]
@@ -593,7 +579,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
 styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['clean_sheets', 'CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['goals_conceded', 'GC_90', 'xGC_90'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['goals_conceded'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols]) \
     .format(precision=2)
 
@@ -615,15 +601,12 @@ st.dataframe(
         "selected_by_percent": st.column_config.NumberColumn("Selected",    width=55,  format="%.1f%%"),
         "min_played":          st.column_config.NumberColumn("Mins",        width=45),
         "matches_played":      st.column_config.NumberColumn("MP",          width=35),
-        "matches_started":     st.column_config.NumberColumn("GS",          width=35),
         "avg_mins":            st.column_config.NumberColumn("AvgMins",     width=40,  format="%d"),
         "60_min":              st.column_config.NumberColumn("60Mins%",     width=50,  format="%.1f"),
         "av_rating_alt":       st.column_config.NumberColumn("RatA",        width=40,  format="%.2f"),
         "clean_sheets":        st.column_config.NumberColumn("CS",          width=35,  format="%d"),
         "CS_90":               st.column_config.NumberColumn("CS/90",       width=40,  format="%.2f"),
         "goals_conceded":      st.column_config.NumberColumn("GC",          width=35,  format="%d"),
-        "GC_90":               st.column_config.NumberColumn("GC/90",       width=40,  format="%.2f"),
-        "xGC_90":              st.column_config.NumberColumn("xGC/90",      width=45,  format="%.2f"),
         "DC_90":               st.column_config.NumberColumn("DC/90",       width=45,  format="%.2f"),
         "Clr_90":              st.column_config.NumberColumn("Clr/90",      width=45,  format="%.2f"),
         "Blk_90":              st.column_config.NumberColumn("Blk/90",      width=45,  format="%.2f"),
