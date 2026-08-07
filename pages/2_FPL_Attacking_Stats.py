@@ -142,7 +142,7 @@ DEFAULTS = {
     'f_matches_as':  (max(GB['f_matches_as'][0], 5), GB['f_matches_as'][1]),
     'f_rating_as':   GB['f_rating_as'],
     'f_avg_mins_as': GB['f_avg_mins_as'],
-    'f_60min_as':    (max(GB['f_60min_as'][0], 37.0), GB['f_60min_as'][1]),
+    'f_60min_as':    (max(GB['f_60min_as'][0], 40.5), GB['f_60min_as'][1]),
     'f_selected_as': GB['f_selected_as'],
     'f_top100k_as':  GB['f_top100k_as'],
     'f_activity_as': GB['f_activity_as'],
@@ -522,14 +522,13 @@ for col_name, val, limit in filter_vars:
             mask &= (df[col_name] <= val[1])
 
 filtered_df = df[mask].copy()
-sort_cols = [c for c in ['xGI_norm', 'now_cost', 'M Price'] if c in filtered_df.columns]
+sort_cols = [c for c in ['now_cost', 'M Price'] if c in filtered_df.columns]
 if sort_cols:
     filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
 # ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
-# Оновлений порядок стовпчиків: Selected тепер між now_cost та top_100k
 display_columns = [
-    "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", 
+    "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
     "selected_by_percent", "min_played", "matches_played", "matches_started", 
     "avg_mins", "60_min", "av_rating_alt", 
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm", 
@@ -579,6 +578,7 @@ st.dataframe(
         "Play Pos":            st.column_config.TextColumn("Pl Pos",    width=45),
         "team_short_name":     st.column_config.TextColumn("Team",      width=45),
         "now_cost":            st.column_config.NumberColumn("Price",   width=40,  format="%.1f"),
+        "M Price":             st.column_config.NumberColumn("TM Price",width=55,  format="%.1f"),
         "selected_by_percent": st.column_config.NumberColumn("Selected",width=55,  format="%.1f%%"),
         "min_played":          st.column_config.NumberColumn("Mins",    width=45),
         "matches_played":      st.column_config.NumberColumn("MP",      width=35),
