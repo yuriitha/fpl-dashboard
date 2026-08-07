@@ -146,7 +146,6 @@ GB = {
     'f_activity_gks': _slider_bounds(0.0, 100.0),
     'f_svs_gks':      _slider_bounds(0.0, _get_max_sane('Svs_90')),
     'f_cs_gks':       _slider_bounds(0.0, _get_max_sane('CS_90')),
-    'f_gc_gks':       _slider_bounds(0.0, _get_max_sane('GC_90')),
     'f_xgc_gks':      _slider_bounds(0.0, _get_max_sane('xGC_90')),
     'f_xgp_gks':      _slider_bounds(_get_min_sane('xGP_90', -2.0), _get_max_sane('xGP_90', 2.0)),
     'f_tchs_gks':     _slider_bounds(0.0, _get_max_sane('Touches_90')),
@@ -164,7 +163,6 @@ DEFAULTS = {
     'f_activity_gks': GB['f_activity_gks'],
     'f_svs_gks':      GB['f_svs_gks'],
     'f_cs_gks':       GB['f_cs_gks'],
-    'f_gc_gks':       GB['f_gc_gks'],
     'f_xgc_gks':      GB['f_xgc_gks'],
     'f_xgp_gks':      GB['f_xgp_gks'],
     'f_tchs_gks':     GB['f_tchs_gks'],
@@ -227,7 +225,6 @@ def get_available(exclude_key=None):
         'f_activity_gks': ('transfer_activity_pct', DEFAULTS['f_activity_gks']),
         'f_svs_gks':      ('Svs_90',                DEFAULTS['f_svs_gks']),
         'f_cs_gks':       ('CS_90',                 DEFAULTS['f_cs_gks']),
-        'f_gc_gks':       ('GC_90',                 DEFAULTS['f_gc_gks']),
         'f_xgc_gks':      ('xGC_90',                DEFAULTS['f_xgc_gks']),
         'f_xgp_gks':      ('xGP_90',                DEFAULTS['f_xgp_gks']),
         'f_tchs_gks':     ('Touches_90',            DEFAULTS['f_tchs_gks']),
@@ -272,7 +269,6 @@ def get_base_df(exclude_key=None):
         'f_activity_gks': ('transfer_activity_pct', DEFAULTS['f_activity_gks']),
         'f_svs_gks':      ('Svs_90',                DEFAULTS['f_svs_gks']),
         'f_cs_gks':       ('CS_90',                 DEFAULTS['f_cs_gks']),
-        'f_gc_gks':       ('GC_90',                 DEFAULTS['f_gc_gks']),
         'f_xgc_gks':      ('xGC_90',                DEFAULTS['f_xgc_gks']),
         'f_xgp_gks':      ('xGP_90',                DEFAULTS['f_xgp_gks']),
         'f_tchs_gks':     ('Touches_90',            DEFAULTS['f_tchs_gks']),
@@ -405,7 +401,6 @@ auto_update_slider('f_selected_gks', 'selected_by_percent', float)
 auto_update_slider('f_activity_gks', 'transfer_activity_pct', float)
 auto_update_slider('f_svs_gks',      'Svs_90',              float)
 auto_update_slider('f_cs_gks',       'CS_90',               float)
-auto_update_slider('f_gc_gks',       'GC_90',               float)
 auto_update_slider('f_xgc_gks',      'xGC_90',              float)
 auto_update_slider('f_xgp_gks',      'xGP_90',              float)
 auto_update_slider('f_tchs_gks',     'Touches_90',          float)
@@ -485,7 +480,6 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
 with st.sidebar.expander("Goalkeeper Stats", expanded=True):
     f_svs  = st.slider("Saves/90",   GB['f_svs_gks'][0], GB['f_svs_gks'][1], step=0.05, key="f_svs_gks")
     f_cs   = st.slider("CS/90",      GB['f_cs_gks'][0],  GB['f_cs_gks'][1],  step=0.05, key="f_cs_gks")
-    f_gc   = st.slider("GC/90",      GB['f_gc_gks'][0],  GB['f_gc_gks'][1],  step=0.05, key="f_gc_gks")
     f_xgc  = st.slider("xGC/90",     GB['f_xgc_gks'][0], GB['f_xgc_gks'][1], step=0.05, key="f_xgc_gks")
     f_xgp  = st.slider("xGP/90",     GB['f_xgp_gks'][0], GB['f_xgp_gks'][1], step=0.05, key="f_xgp_gks")
     f_tchs = st.slider("Touches/90", GB['f_tchs_gks'][0], GB['f_tchs_gks'][1], step=0.5, key="f_tchs_gks")
@@ -513,7 +507,6 @@ filter_vars = [
     ('transfer_activity_pct', f_activity, GB['f_activity_gks']),
     ('Svs_90',                f_svs,      GB['f_svs_gks']),
     ('CS_90',                 f_cs,       GB['f_cs_gks']),
-    ('GC_90',                 f_gc,       GB['f_gc_gks']),
     ('xGC_90',                f_xgc,      GB['f_xgc_gks']),
     ('xGP_90',                f_xgp,      GB['f_xgp_gks']),
     ('Touches_90',            f_tchs,     GB['f_tchs_gks']),
@@ -537,8 +530,8 @@ display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
     "selected_by_percent", "min_played", "matches_played", 
     "avg_mins", "60_min", "av_rating_alt", 
-    "clean_sheets", "CS_90", "goals_conceded", "GC_90", "xGC_90", "xGP_90",
-    "saves", "Svs_90", "penalties_saved", "gk_value",
+    "clean_sheets", "CS_90", "xGC_90", "xGP_90",
+    "saves", "Svs_90", "penalties_saved",
     "Touches_90", "Pass_pct", "yellow_cards", "red_cards"
 ]
 
@@ -571,8 +564,8 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
 
 styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['clean_sheets', 'CS_90', 'saves', 'Svs_90', 'penalties_saved', 'xGP_90', 'gk_value'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['goals_conceded', 'GC_90', 'xGC_90'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['clean_sheets', 'CS_90', 'saves', 'Svs_90', 'penalties_saved', 'xGP_90'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols]) \
     .format(precision=2)
 
@@ -599,14 +592,11 @@ st.dataframe(
         "av_rating_alt":       st.column_config.NumberColumn("RatA",        width=40,  format="%.2f"),
         "clean_sheets":        st.column_config.NumberColumn("CS",          width=35,  format="%d"),
         "CS_90":               st.column_config.NumberColumn("CS/90",       width=40,  format="%.2f"),
-        "goals_conceded":      st.column_config.NumberColumn("GC",          width=35,  format="%d"),
-        "GC_90":               st.column_config.NumberColumn("GC/90",       width=40,  format="%.2f"),
         "xGC_90":              st.column_config.NumberColumn("xGC/90",      width=45,  format="%.2f"),
         "xGP_90":              st.column_config.NumberColumn("xGP/90",      width=45,  format="%.2f"),
         "saves":               st.column_config.NumberColumn("Svs",         width=35,  format="%d"),
         "Svs_90":              st.column_config.NumberColumn("Svs/90",      width=45,  format="%.2f"),
         "penalties_saved":     st.column_config.NumberColumn("PS",          width=35,  format="%d"),
-        "gk_value":            st.column_config.NumberColumn("GK Val",      width=45,  format="%.3f"),
         "Touches_90":          st.column_config.NumberColumn("Tchs/90",     width=50,  format="%.2f"),
         "Pass_pct":            st.column_config.NumberColumn("Pass%",       width=45,  format="%.1f"),
         "yellow_cards":        st.column_config.NumberColumn("YC",          width=35,  format="%d"),
