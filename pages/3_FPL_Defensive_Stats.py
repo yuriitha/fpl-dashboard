@@ -59,12 +59,22 @@ def load_data():
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
 
     # Розрахунок/безпечне отримання захисних метрик per 90 при відсутності в parquet
-    if 'CS_90' not in df.columns and 'clean_sheets' in df.columns and 'min_played' in df.columns:
+    if 'clean_sheets' in df.columns and 'min_played' in df.columns:
         df['CS_90'] = np.where(df['min_played'] > 0, (df['clean_sheets'] / df['min_played'] * 90).round(2), 0.0)
-    if 'GC_90' not in df.columns and 'goals_conceded' in df.columns and 'min_played' in df.columns:
+    elif 'CS_90' not in df.columns:
+        df['CS_90'] = 0.0
+
+    if 'goals_conceded' in df.columns and 'min_played' in df.columns:
         df['GC_90'] = np.where(df['min_played'] > 0, (df['goals_conceded'] / df['min_played'] * 90).round(2), 0.0)
-    if 'xGC_90' not in df.columns and 'expected_goals_conceded_per_90' in df.columns:
-        df['xGC_90'] = df['expected_goals_conceded_per_90'].fillna(0.0).round(2)
+    elif 'GC_90' not in df.columns:
+        df['GC_90'] = 0.0
+
+    if 'expected_goals_conceded_per_90' in df.columns:
+        df['xGC_90'] = np.where(df.get('xGC_90', 0) > 0, df['xGC_90'], df['expected_goals_conceded_per_90'].fillna(0.0).round(2))
+    elif 'xGC_90' not in df.columns:
+        df['xGC_90'] = 0.0
+
+    df['xGP_90'] = (df['xGC_90'] - df['GC_90']).round(2)
 
     for def_col in ['Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90', 'clean_sheets', 'goals_conceded', 'yellow_cards', 'red_cards', 'CS_90', 'GC_90', 'xGC_90', 'DC_90']:
         if def_col not in df.columns:
