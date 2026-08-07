@@ -556,7 +556,7 @@ display_columns = [
     "avg_mins", "60_min", "av_rating_alt", 
     "clean_sheets", "CS_90", 
     "DC_90", "Clr_90", "Blk_90", "Int_90", "Tck_90", "Rec_90",
-    "Touches_90", "Pass_pct", "yellow_cards", "red_cards"
+    "Touches_90", "Pass_pct", "yellow_cards", "YC_90", "red_cards", "RC_90"
 ]
 
 existing_cols = [c for c in display_columns if c in filtered_df.columns]
@@ -624,6 +624,8 @@ st.dataframe(
         "Touches_90":          st.column_config.NumberColumn("Tchs/90",     width=50,  format="%.2f"),
         "Pass_pct":            st.column_config.NumberColumn("Pass%",       width=45,  format="%.1f"),
         "yellow_cards":        st.column_config.NumberColumn("YC",          width=35,  format="%d"),
+        "YC_90":               st.column_config.NumberColumn("YC/90",       width=40,  format="%.2f"),
         "red_cards":           st.column_config.NumberColumn("RC",          width=35,  format="%d"),
+        "RC_90":               st.column_config.NumberColumn("RC/90",       width=40,  format="%.2f"),
     }
 )
