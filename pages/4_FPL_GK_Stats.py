@@ -59,16 +59,27 @@ def load_data():
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
 
     # Розрахунок/безпечне отримання воротарських метрик при відсутності в parquet
-    if 'CS_90' not in df.columns and 'clean_sheets' in df.columns and 'min_played' in df.columns:
+    if 'clean_sheets' in df.columns and 'min_played' in df.columns:
         df['CS_90'] = np.where(df['min_played'] > 0, (df['clean_sheets'] / df['min_played'] * 90).round(2), 0.0)
-    if 'GC_90' not in df.columns and 'goals_conceded' in df.columns and 'min_played' in df.columns:
+    elif 'CS_90' not in df.columns:
+        df['CS_90'] = 0.0
+
+    if 'goals_conceded' in df.columns and 'min_played' in df.columns:
         df['GC_90'] = np.where(df['min_played'] > 0, (df['goals_conceded'] / df['min_played'] * 90).round(2), 0.0)
-    if 'xGC_90' not in df.columns and 'expected_goals_conceded_per_90' in df.columns:
-        df['xGC_90'] = df['expected_goals_conceded_per_90'].fillna(0.0).round(2)
-    if 'Svs_90' not in df.columns and 'saves_per_90' in df.columns:
-        df['Svs_90'] = df['saves_per_90'].fillna(0.0).round(2)
-    if 'xGP_90' not in df.columns and 'xGC_90' in df.columns and 'GC_90' in df.columns:
-        df['xGP_90'] = (df['xGC_90'] - df['GC_90']).round(2)
+    elif 'GC_90' not in df.columns:
+        df['GC_90'] = 0.0
+
+    if 'saves' in df.columns and 'min_played' in df.columns:
+        df['Svs_90'] = np.where(df['min_played'] > 0, (df['saves'] / df['min_played'] * 90).round(2), 0.0)
+    elif 'Svs_90' not in df.columns:
+        df['Svs_90'] = 0.0
+
+    if 'expected_goals_conceded_per_90' in df.columns:
+        df['xGC_90'] = np.where(df.get('xGC_90', 0) > 0, df['xGC_90'], df['expected_goals_conceded_per_90'].fillna(0.0).round(2))
+    elif 'xGC_90' not in df.columns:
+        df['xGC_90'] = 0.0
+
+    df['xGP_90'] = (df['xGC_90'] - df['GC_90']).round(2)
 
     for gk_col in ['saves', 'penalties_saved', 'clean_sheets', 'goals_conceded', 'yellow_cards', 'red_cards', 'Svs_90', 'CS_90', 'GC_90', 'xGC_90', 'xGP_90', 'gk_value']:
         if gk_col not in df.columns:
