@@ -66,6 +66,10 @@ def load_data():
     if 'xGC_90' not in df.columns and 'expected_goals_conceded_per_90' in df.columns:
         df['xGC_90'] = df['expected_goals_conceded_per_90'].fillna(0.0).round(2)
 
+    for def_col in ['Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90', 'clean_sheets', 'goals_conceded', 'yellow_cards', 'red_cards', 'CS_90', 'GC_90', 'xGC_90', 'DC_90']:
+        if def_col not in df.columns:
+            df[def_col] = 0.0
+
     sort_cols = [c for c in ['now_cost', 'M Price'] if c in df.columns]
     if sort_cols:
         df = df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
