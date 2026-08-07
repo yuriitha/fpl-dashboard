@@ -133,7 +133,7 @@ GB = {
     'f_xgi_as':      _slider_bounds(0.0, _get_max_sane('xGI_norm')),
     'f_sh_as':       _slider_bounds(0.0, _get_max_sane('Sh_90')),
     'f_shot_as':     _slider_bounds(0.0, _get_max_sane('ShoT_90')),
-    'f_kp_as':       _slider_bounds(0.0, _get_max_sane('KP_90')),
+    'f_tchs_as':     _slider_bounds(0.0, _get_max_sane('Touches_90')),
     'f_pass_as':     _slider_bounds(0.0, _get_max('Pass_pct', 100.0)),
 }
 # Дефолтні значення повзунків
@@ -151,7 +151,7 @@ DEFAULTS = {
     'f_xgi_as':      GB['f_xgi_as'],
     'f_sh_as':       GB['f_sh_as'],
     'f_shot_as':     GB['f_shot_as'],
-    'f_kp_as':       GB['f_kp_as'],
+    'f_tchs_as':     GB['f_tchs_as'],
     'f_pass_as':     GB['f_pass_as'],
 }
 
@@ -215,7 +215,7 @@ def get_available(exclude_key=None):
         'f_xgi_as':      ('xGI_norm',              DEFAULTS['f_xgi_as']),
         'f_sh_as':       ('Sh_90',                 DEFAULTS['f_sh_as']),
         'f_shot_as':     ('ShoT_90',               DEFAULTS['f_shot_as']),
-        'f_kp_as':       ('KP_90',                 DEFAULTS['f_kp_as']),
+        'f_tchs_as':     ('Touches_90',            DEFAULTS['f_tchs_as']),
         'f_pass_as':     ('Pass_pct',              DEFAULTS['f_pass_as']),
     }
     for k, (col_name, d) in _slider_cols.items():
@@ -266,7 +266,7 @@ def get_base_df(exclude_key=None):
         'f_xgi_as':      ('xGI_norm',              DEFAULTS['f_xgi_as']),
         'f_sh_as':       ('Sh_90',                 DEFAULTS['f_sh_as']),
         'f_shot_as':     ('ShoT_90',               DEFAULTS['f_shot_as']),
-        'f_kp_as':       ('KP_90',                 DEFAULTS['f_kp_as']),
+        'f_tchs_as':     ('Touches_90',            DEFAULTS['f_tchs_as']),
         'f_pass_as':     ('Pass_pct',              DEFAULTS['f_pass_as']),
     }
     for k, (col_name, d) in _slider_cols.items():
@@ -400,7 +400,7 @@ auto_update_slider('f_xa_as',       'xA_90',               float)
 auto_update_slider('f_xgi_as',      'xGI_norm',            float)
 auto_update_slider('f_sh_as',       'Sh_90',               float)
 auto_update_slider('f_shot_as',     'ShoT_90',             float)
-auto_update_slider('f_kp_as',       'KP_90',               float)
+auto_update_slider('f_tchs_as',     'Touches_90',          float)
 auto_update_slider('f_pass_as',     'Pass_pct',            float)
 
 # ========================== САЙДБАР ==========================
@@ -476,13 +476,13 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
 
 # --- ATTACKING STATS ---
 with st.sidebar.expander("Attacking Stats", expanded=True):
-    f_xgot = st.slider("xGoT/90", GB['f_xgot_as'][0], GB['f_xgot_as'][1], step=0.05, key="f_xgot_as")
-    f_xa   = st.slider("xA/90",   GB['f_xa_as'][0],   GB['f_xa_as'][1],   step=0.05, key="f_xa_as")
-    f_xgi  = st.slider("xGI/90",  GB['f_xgi_as'][0],  GB['f_xgi_as'][1],  step=0.1,  key="f_xgi_as")
-    f_sh   = st.slider("Sh/90",   GB['f_sh_as'][0],   GB['f_sh_as'][1],   step=0.5,  key="f_sh_as")
-    f_shot = st.slider("ShoT/90", GB['f_shot_as'][0], GB['f_shot_as'][1], step=0.1,  key="f_shot_as")
-    f_kp   = st.slider("KP/90",   GB['f_kp_as'][0],   GB['f_kp_as'][1],   step=0.1,  key="f_kp_as")
-    f_pass = st.slider("Pass%",   GB['f_pass_as'][0], GB['f_pass_as'][1], step=1.0,  key="f_pass_as")
+    f_xgot = st.slider("xGoT/90",   GB['f_xgot_as'][0], GB['f_xgot_as'][1], step=0.05, key="f_xgot_as")
+    f_xa   = st.slider("xA/90",     GB['f_xa_as'][0],   GB['f_xa_as'][1],   step=0.05, key="f_xa_as")
+    f_xgi  = st.slider("xGI/90",    GB['f_xgi_as'][0],  GB['f_xgi_as'][1],  step=0.1,  key="f_xgi_as")
+    f_sh   = st.slider("Shots/90",  GB['f_sh_as'][0],   GB['f_sh_as'][1],   step=0.5,  key="f_sh_as")
+    f_shot = st.slider("OnTarget/90", GB['f_shot_as'][0], GB['f_shot_as'][1], step=0.1, key="f_shot_as")
+    f_tchs = st.slider("Touches/90", GB['f_tchs_as'][0], GB['f_tchs_as'][1], step=0.5,  key="f_tchs_as")
+    f_pass = st.slider("Pass%",     GB['f_pass_as'][0], GB['f_pass_as'][1], step=1.0,  key="f_pass_as")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
@@ -510,7 +510,7 @@ filter_vars = [
     ('xGI_norm',              f_xgi,      GB['f_xgi_as']),
     ('Sh_90',                 f_sh,       GB['f_sh_as']),
     ('ShoT_90',               f_shot,     GB['f_shot_as']),
-    ('KP_90',                 f_kp,       GB['f_kp_as']),
+    ('Touches_90',            f_tchs,     GB['f_tchs_as']),
     ('Pass_pct',              f_pass,     GB['f_pass_as']),
     ('avg_mins',              f_avg_mins, GB['f_avg_mins_as']),
 ]
