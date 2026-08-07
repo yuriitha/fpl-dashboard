@@ -544,7 +544,7 @@ display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
     "selected_by_percent", "min_played", "matches_played", 
     "avg_mins", "60_min", "av_rating_alt", 
-    "clean_sheets", "CS_90", "goals_conceded", 
+    "clean_sheets", "CS_90", 
     "DC_90", "Clr_90", "Blk_90", "Int_90", "Tck_90", "Rec_90",
     "Touches_90", "Pass_pct", "yellow_cards", "red_cards"
 ]
@@ -579,7 +579,6 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
 styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['clean_sheets', 'CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['goals_conceded'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols]) \
     .format(precision=2)
 
@@ -606,7 +605,6 @@ st.dataframe(
         "av_rating_alt":       st.column_config.NumberColumn("RatA",        width=40,  format="%.2f"),
         "clean_sheets":        st.column_config.NumberColumn("CS",          width=35,  format="%d"),
         "CS_90":               st.column_config.NumberColumn("CS/90",       width=40,  format="%.2f"),
-        "goals_conceded":      st.column_config.NumberColumn("GC",          width=35,  format="%d"),
         "DC_90":               st.column_config.NumberColumn("DC/90",       width=45,  format="%.2f"),
         "Clr_90":              st.column_config.NumberColumn("Clr/90",      width=45,  format="%.2f"),
         "Blk_90":              st.column_config.NumberColumn("Blk/90",      width=45,  format="%.2f"),
