@@ -14,6 +14,17 @@ st.set_page_config(
 
 st.markdown("""
     <style>
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
+            overscroll-behavior: none !important;
+        }
+        [data-testid="stHeaderActionElements"], a.header-anchor {
+            display: none !important;
+        }
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+            max-width: 100% !important;
+        }
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th {
             text-align: center !important;
         }
@@ -74,7 +85,7 @@ for _, row in df[['away_team_code', 'away_team']].dropna().drop_duplicates().ite
 all_seasons = sorted([s for s in df['season'].dropna().unique() if s != "2009/10"])
 
 # Sidebar
-if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
+if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if k.startswith('ts_')]
     for key in keys_to_delete:
         del st.session_state[key]
@@ -103,10 +114,10 @@ search_name = st.sidebar.text_input("Search Team", placeholder="Enter team name.
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p style='font-size:0.875rem;margin-bottom:0'>{label}</p>", unsafe_allow_html=True)
-    if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
+    if cols[1].button("All", key=f"btn_all_{key_prefix}", width="stretch"):
         st.session_state[f"ts_{key_prefix}"] = options
         st.rerun()
-    if cols[2].button("None", key=f"btn_none_{key_prefix}", use_container_width=True):
+    if cols[2].button("None", key=f"btn_none_{key_prefix}", width="stretch"):
         st.session_state[f"ts_{key_prefix}"] = []
         st.rerun()
 
@@ -197,7 +208,7 @@ col1, col2 = st.columns([0.35, 0.65])
 
 # Current Ratings Table
 with col1:
-    st.subheader("Current Team Ratings")
+    st.subheader("Current Team Ratings", anchor=False)
     
     current_season = all_seasons[-1]
     curr_season_df = df[(df['league'] == 'League One') & (df['season'] == current_season)]
@@ -268,7 +279,7 @@ with col1:
         st.dataframe(
             df_ratings_styled,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             height=878, # League One also has 24 teams
             column_config={
                 'Pos': st.column_config.NumberColumn("Pos", width=30),
@@ -283,7 +294,7 @@ with col1:
 
 # Upcoming Matches Table
 with col2:
-    st.subheader("Upcoming Matches")
+    st.subheader("Upcoming Matches", anchor=False)
     df_future = df[(df['match_result'].isna()) & (df['league'] == 'League One')].copy()
     if not df_future.empty:
         cols = ['match_date', 'home_team', 'away_team', 'home_team_code', 'away_team_code', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
@@ -303,7 +314,7 @@ with col2:
         st.dataframe(
             df_future_styled,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             height=len(df_future) * 35 + 40,
             column_config={
                 'match_date': st.column_config.DatetimeColumn("Date", format="DD/MM/YYYY HH:mm"),
@@ -321,7 +332,7 @@ with col2:
         st.info("No upcoming matches found.")
 
 # Charts
-st.subheader("Historical Ratings")
+st.subheader("Historical Ratings", anchor=False)
 
 # Prepare historical data
 hist_home = df_played[['match_date', 'season', 'league', 'home_team', 'home_team_code', 'home_rating_att_post', 'home_rating_def_post']].rename(
@@ -410,8 +421,8 @@ if not df_hist.empty:
         )
         return fig
 
-    st.plotly_chart(create_chart(df_hist, 'total', "Overall Rating (Attack - Defense)"), use_container_width=True)
-    st.plotly_chart(create_chart(df_hist, 'att', "Attack Rating"), use_container_width=True)
-    st.plotly_chart(create_chart(df_hist, 'def', "Defense Rating"), use_container_width=True)
+    st.plotly_chart(create_chart(df_hist, 'total', "Overall Rating (Attack - Defense)"), width="stretch")
+    st.plotly_chart(create_chart(df_hist, 'att', "Attack Rating"), width="stretch")
+    st.plotly_chart(create_chart(df_hist, 'def', "Defense Rating"), width="stretch")
 else:
     st.info("No historical data available for selected filters.")
