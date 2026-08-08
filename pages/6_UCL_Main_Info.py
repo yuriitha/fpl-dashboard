@@ -11,6 +11,17 @@ st.set_page_config(
 # CSS для максимальної компактності та відцентрування
 st.markdown("""
     <style>
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
+            overscroll-behavior: none !important;
+        }
+        [data-testid="stHeaderActionElements"], a.header-anchor {
+            display: none !important;
+        }
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+            max-width: 100% !important;
+        }
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
@@ -29,8 +40,9 @@ st.markdown("""
 def load_data():
     url = "http://194.99.22.193:8000/ucl_players"
     df = pd.read_parquet(url)
-    if 'Price' in df.columns:
-        df = df.sort_values(by="Price", ascending=False)
+    sort_cols = [c for c in ['Price', 'TM Value'] if c in df.columns]
+    if sort_cols:
+        df = df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
     return df
 
 try:
@@ -135,13 +147,16 @@ mask = (
     (df['PPM'] >= f_ppm[0]) & (df['PPM'] <= f_ppm[1])
 )
 filtered_df = df[mask].copy()
+sort_cols = [c for c in ['Price', 'TM Value'] if c in filtered_df.columns]
+if sort_cols:
+    filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
 # ========================== ВІДОБРАЖЕННЯ ТАБЛИЦІ ==========================
-st.subheader(f"UCL Players filtered: {len(filtered_df)}")
+st.subheader(f"UCL Players filtered: {len(filtered_df)}", anchor=False)
 
 st.dataframe(
     filtered_df[display_columns],
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
     height=800,
     column_config={
