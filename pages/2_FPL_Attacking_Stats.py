@@ -531,8 +531,8 @@ display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
     "selected_by_percent", "min_played", "matches_played", "matches_started", 
     "avg_mins", "60_min", "av_rating_alt", 
-    "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm", 
-    "Sh_90", "ShoT_90", "KP_90", "Touches_90", "Pass_pct", "BC_90", "PBC_90"
+    "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm", "BCM_90",
+    "Sh_90", "ShoT_90", "KP_90", "Cross_90", "Cross_pct", "Touches_90", "Pass_pct", "BC_90", "PBC_90", "Contest_pct", "Dispossessed_90", "Prog_Distance_90"
 ]
 
 # Перевірка наявності колонок
@@ -564,7 +564,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None):
 styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, max_cap=0.90, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90', 'A_90', 'xA_90', 'xGI_norm'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Cross_90', 'Cross_pct', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90', 'Contest_pct', 'Prog_Distance_90'] if c in existing_cols]) \
     .format(precision=2)
 
 st.subheader(f"Attacking Stats: {len(filtered_df)} players", anchor=False)
@@ -595,12 +595,18 @@ st.dataframe(
         "A_90":                st.column_config.NumberColumn("A/90",    width=40),
         "xA_90":               st.column_config.NumberColumn("xA/90",   width=40),
         "xGI_norm":            st.column_config.NumberColumn("xGI/90",  width=50),
+        "BCM_90":              st.column_config.NumberColumn("BCM/90",  width=40, format="%.2f"),
         "Sh_90":               st.column_config.NumberColumn("Sh/90",   width=40),
         "ShoT_90":             st.column_config.NumberColumn("ShoT/90", width=40),
         "KP_90":               st.column_config.NumberColumn("KP/90",   width=40),
+        "Cross_90":            st.column_config.NumberColumn("Crs/90",  width=40, format="%.2f"),
+        "Cross_pct":           st.column_config.NumberColumn("Crs%",    width=40, format="%.1f"),
         "Touches_90":          st.column_config.NumberColumn("Tchs/90", width=50),
         "Pass_pct":            st.column_config.NumberColumn("Pass%",   width=45),
         "BC_90":               st.column_config.NumberColumn("BC/90",   width=40),
         "PBC_90":              st.column_config.NumberColumn("PBC/90",  width=40),
+        "Contest_pct":         st.column_config.NumberColumn("Drib%",   width=40, format="%.1f"),
+        "Dispossessed_90":     st.column_config.NumberColumn("Disp/90", width=45, format="%.2f"),
+        "Prog_Distance_90":    st.column_config.NumberColumn("ProgDist/90", width=55, format="%.1f"),
     }
 )
