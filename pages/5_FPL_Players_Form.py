@@ -14,6 +14,17 @@ st.set_page_config(
 
 st.markdown("""
     <style>
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
+            overscroll-behavior: none !important;
+        }
+        [data-testid="stHeaderActionElements"], a.header-anchor {
+            display: none !important;
+        }
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+            max-width: 100% !important;
+        }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         [data-testid="stSidebar"] button {
             width: 60px !important; min-width: 60px !important; max-width: 60px !important;
@@ -276,13 +287,13 @@ def auto_update_slider(key, base_key, col, cast=float, only_positive=False):
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p style='font-size:0.875rem;margin-bottom:0'>{label}</p>", unsafe_allow_html=True)
-    if cols[1].button("All", key=f"btn_all_{key_prefix}", use_container_width=True):
+    if cols[1].button("All", key=f"btn_all_{key_prefix}", width="stretch"):
         st.session_state[f"pills_{key_prefix}"] = options
         if key_prefix == "pl_pos_form":
             for i, line in enumerate(pl_lines):
                 st.session_state[f"pills_pl_line_form_{i}"] = [p for p in options if p in line]
         st.rerun()
-    if cols[2].button("None", key=f"btn_none_{key_prefix}", use_container_width=True):
+    if cols[2].button("None", key=f"btn_none_{key_prefix}", width="stretch"):
         st.session_state[f"pills_{key_prefix}"] = []
         if key_prefix == "pl_pos_form":
             for i, line in enumerate(pl_lines):
@@ -389,7 +400,7 @@ auto_update_slider('f_top100k_form',  'f_top100k',  'top_100k',            float
 auto_update_slider('f_activity_form', 'f_activity', 'transfer_activity_pct', float)
 
 # ========================== САЙДБАР ==========================
-if st.sidebar.button("Reset All Filters", use_container_width=True, type="primary"):
+if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if '_form' in k]
     for key in keys_to_delete:
         del st.session_state[key]
@@ -448,17 +459,17 @@ inject_sidebar_layout(all_inactive)
 
 # --- PERFORMANCE STATS ---
 with st.sidebar.expander("Performance Stats", expanded=False):
-    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  value=_safe_range('f_matches_form',  DEFAULTS['f_matches']),  step=1,    key="f_matches_form")
-    f_rating   = st.slider("Rating (L10)", GB['f_rating'][0],   GB['f_rating'][1],   value=_safe_range('f_rating_form',   DEFAULTS['f_rating']),   step=0.05, format="%.2f", key="f_rating_form")
-    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], value=_safe_range('f_avg_mins_form', DEFAULTS['f_avg_mins']), step=1.0,  key="f_avg_mins_form")
-    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    value=_safe_range('f_60min_form',    DEFAULTS['f_60min']),    step=0.5,  key="f_60min_form")
+    f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  step=1,    key="f_matches_form")
+    f_rating   = st.slider("Rating (L10)", GB['f_rating'][0],   GB['f_rating'][1],   step=0.05, format="%.2f", key="f_rating_form")
+    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], step=1.0,  key="f_avg_mins_form")
+    f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    step=0.5,  key="f_60min_form")
 
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
-    f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], value=_safe_range('f_selected_form', DEFAULTS['f_selected']), step=0.1, key="f_selected_form")
-    f_top10k   = st.slider("Top 10k %",  GB['f_top10k'][0],   GB['f_top10k'][1],   value=_safe_range('f_top10k_form',   DEFAULTS['f_top10k']),   step=0.1, key="f_top10k_form")
-    f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  value=_safe_range('f_top100k_form',  DEFAULTS['f_top100k']),  step=0.1, key="f_top100k_form")
-    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], value=_safe_range('f_activity_form', DEFAULTS['f_activity']), step=1.0, format="%d%%", key="f_activity_form")
+    f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], step=0.1, key="f_selected_form")
+    f_top10k   = st.slider("Top 10k %",  GB['f_top10k'][0],   GB['f_top10k'][1],   step=0.1, key="f_top10k_form")
+    f_top100k  = st.slider("Top 100k %", GB['f_top100k'][0],  GB['f_top100k'][1],  step=0.1, key="f_top100k_form")
+    f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], step=1.0, format="%d%%", key="f_activity_form")
 
 # --- LEAGUE ORIGIN FILTER ---
 if 'league_status' not in df.columns:
@@ -526,7 +537,7 @@ if not plot_df.empty:
     )
 
     # ========================== ВІЗУАЛІЗАЦІЯ ==========================
-    st.subheader(f"xGI vs Rating - Last 10 Games (Players: {len(plot_df)})")
+    st.subheader(f"xGI vs Rating - Last 10 Games (Players: {len(plot_df)})", anchor=False)
 
     fig = px.scatter(
         plot_df,
@@ -624,7 +635,7 @@ if not plot_df.empty:
         )
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 else:
     st.warning("Немає даних для обраних фільтрів.")
