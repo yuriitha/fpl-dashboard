@@ -555,8 +555,8 @@ display_columns = [
     "selected_by_percent", "min_played", "matches_played", 
     "avg_mins", "60_min", "av_rating_alt", 
     "clean_sheets", "CS_90", 
-    "DC_90", "Clr_90", "Blk_90", "Int_90", "Tck_90", "Rec_90",
-    "Touches_90", "Pass_pct", "yellow_cards", "YC_90", "red_cards", "RC_90"
+    "DC_90", "Clr_90", "Blk_90", "Int_90", "Tck_90", "Tackle_pct", "Rec_90", "Aerial_pct", "Duel_pct",
+    "Touches_90", "Pass_pct", "Dispossessed_90", "yellow_cards", "YC_90", "red_cards", "RC_90"
 ]
 
 existing_cols = [c for c in display_columns if c in filtered_df.columns]
@@ -588,7 +588,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
 
 styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['clean_sheets', 'CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90'] if c in existing_cols]) \
+    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['clean_sheets', 'CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Tackle_pct', 'Rec_90', 'Aerial_pct', 'Duel_pct'] if c in existing_cols]) \
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols]) \
     .format(precision=2)
 
@@ -620,9 +620,13 @@ st.dataframe(
         "Blk_90":              st.column_config.NumberColumn("Blk/90",      width=45,  format="%.2f"),
         "Int_90":              st.column_config.NumberColumn("Int/90",      width=45,  format="%.2f"),
         "Tck_90":              st.column_config.NumberColumn("Tck/90",      width=45,  format="%.2f"),
+        "Tackle_pct":          st.column_config.NumberColumn("Tack%",       width=45,  format="%.1f"),
         "Rec_90":              st.column_config.NumberColumn("Rec/90",      width=45,  format="%.2f"),
+        "Aerial_pct":          st.column_config.NumberColumn("Air%",        width=45,  format="%.1f"),
+        "Duel_pct":            st.column_config.NumberColumn("Duel%",       width=45,  format="%.1f"),
         "Touches_90":          st.column_config.NumberColumn("Tchs/90",     width=50,  format="%.2f"),
         "Pass_pct":            st.column_config.NumberColumn("Pass%",       width=45,  format="%.1f"),
+        "Dispossessed_90":     st.column_config.NumberColumn("Disp/90",     width=45,  format="%.2f"),
         "yellow_cards":        st.column_config.NumberColumn("YC",          width=35,  format="%d"),
         "YC_90":               st.column_config.NumberColumn("YC/90",       width=40,  format="%.2f"),
         "red_cards":           st.column_config.NumberColumn("RC",          width=35,  format="%d"),
