@@ -527,33 +527,37 @@ if not df_hist.empty:
                         }}
                     }}
 
-                    var items = traces.map(function(t) {{
+                    var activeItems = [];
+                    var activeYs = [];
+
+                    traces.forEach(function(t) {{
                         var txt = t.innerText || t.textContent || '';
-                        var m = txt.match(/Rating:\\s*([0-9.-]+)/);
-                        var val = m ? parseFloat(m[1]) : (isDefense ? 9999 : -9999);
-                        return {{ node: t, val: val }};
-                    }});
-
-                    items.sort(function(a, b) {{
-                        return isDefense ? (a.val - b.val) : (b.val - a.val);
-                    }});
-
-                    var ys = traces.map(function(t) {{
+                        var mVal = txt.match(/Rating:\\s*([0-9.-]+)/);
                         var tr = t.getAttribute('transform') || '';
-                        var m = tr.match(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/);
-                        return m ? parseFloat(m[2]) : 0;
-                    }}).sort(function(a, b) {{ return a - b; }});
-
-                    items.forEach(function(item, idx) {{
-                        if (ys[idx] !== undefined) {{
-                            var currentTr = item.node.getAttribute('transform') || '';
-                            var newTr = currentTr.replace(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/, function(match, xVal, yVal) {{
-                                return 'translate(' + xVal + ',' + ys[idx] + ')';
-                            }});
-                            item.node.setAttribute('transform', newTr);
+                        var mY = tr.match(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/);
+                        
+                        if (mVal && mY) {{
+                            var yVal = parseFloat(mY[2]);
+                            var rVal = parseFloat(mVal[1]);
+                            if (yVal > 0 && !isNaN(rVal)) {{
+                                activeItems.push({{ node: t, val: rVal, xVal: mY[1] }});
+                                activeYs.push(yVal);
+                            }}
                         }}
-                        groups.appendChild(item.node);
                     }});
+
+                    if (activeItems.length > 1) {{
+                        activeYs.sort(function(a, b) {{ return a - b; }});
+                        activeItems.sort(function(a, b) {{
+                            return isDefense ? (a.val - b.val) : (b.val - a.val);
+                        }});
+
+                        activeItems.forEach(function(item, idx) {{
+                            var newTr = 'translate(' + item.xVal + ',' + activeYs[idx] + ')';
+                            item.node.setAttribute('transform', newTr);
+                            groups.appendChild(item.node);
+                        }});
+                    }}
                 }});
             }} catch(e) {{}}
         }}
