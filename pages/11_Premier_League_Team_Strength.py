@@ -380,14 +380,10 @@ if not df_hist.empty:
         season_offsets[s] = (curr_offset, max_m)
         curr_offset += max_m
 
-    def assign_x_pos(gdf):
-        s = gdf['season'].iloc[0]
-        off, _ = season_offsets[s]
-        gdf = gdf.sort_values('date').copy()
-        gdf['x_pos'] = off + np.arange(1, len(gdf) + 1)
-        return gdf
-
-    df_hist = df_hist.groupby(['team_name', 'season'], group_keys=False).apply(assign_x_pos)
+    df_hist = df_hist.sort_values('date').copy()
+    df_hist['match_in_season'] = df_hist.groupby(['team_name', 'season'])['date'].rank(method='first').astype(int)
+    df_hist['offset'] = df_hist['season'].map(lambda s: season_offsets[s][0] if s in season_offsets else 0)
+    df_hist['x_pos'] = df_hist['offset'] + df_hist['match_in_season']
 
     def create_chart(df, y_col, title):
         fig = go.Figure()
