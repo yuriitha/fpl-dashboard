@@ -356,54 +356,86 @@ if final_teams:
 if not df_hist.empty:
     df_hist['total'] = df_hist['att'] - df_hist['def']
 
+    # Compute global X indices per season so all teams in the same season align on X-axis
+    selected_seasons = sorted(df_hist['season'].unique())
+    season_offsets = {}
+    curr_offset = 0
+    season_boundaries = []
+    season_start_boundaries = []
+    tick_vals = []
+    tick_text = []
+
+    for s in selected_seasons:
+        s_df = df_hist[df_hist['season'] == s]
+        max_m = s_df.groupby('team_name').size().max() if not s_df.empty else 38
+        start_x = curr_offset + 0.5
+        end_x = curr_offset + max_m + 0.5
+        mid_x = (start_x + end_x) / 2
+        
+        season_start_boundaries.append(start_x)
+        season_boundaries.append(end_x)
+        tick_vals.append(mid_x)
+        tick_text.append(s)
+        
+        season_offsets[s] = (curr_offset, max_m)
+        curr_offset += max_m
+
+    def assign_x_pos(gdf):
+        s = gdf['season'].iloc[0]
+        off, _ = season_offsets[s]
+        gdf = gdf.sort_values('date').copy()
+        gdf['x_pos'] = off + np.arange(1, len(gdf) + 1)
+        return gdf
+
+    df_hist = df_hist.groupby(['team_name', 'season'], group_keys=False).apply(assign_x_pos)
+
     def create_chart(df, y_col, title):
         fig = go.Figure()
         for t_name in df['team_name'].unique():
-            tdf = df[df['team_name'] == t_name].sort_values('date').copy()
+            tdf = df[df['team_name'] == t_name].sort_values('x_pos').copy()
             tdf_clean = tdf.dropna(subset=[y_col])
             
             if tdf_clean.empty:
                 continue
 
-            tdf['match_num'] = np.arange(1, len(tdf) + 1)
-            
-            # Знаходимо кінці відрізків для підписів
-            next_date = tdf['date'].shift(-1)
-            is_end = (next_date - tdf['date'] > pd.Timedelta(days=30)) | next_date.isna()
+            # Знаходимо кінці відрізків для підписів назв команд
+            next_x = tdf['x_pos'].shift(-1)
+            is_end = (next_x - tdf['x_pos'] > 1.5) | next_x.isna()
             endpoints = tdf[is_end]
             
-            # Вставляємо NaN для проміжків > 30 днів, щоб розірвати лінію
-            gaps = tdf['date'].diff() > pd.Timedelta(days=30)
+            # Вставляємо NaN для проміжків у x_pos > 1.5, щоб розірвати лінію при пропусках
+            gaps = tdf['x_pos'].diff() > 1.5
             if gaps.any():
                 insertions = []
                 for idx, row in tdf[gaps].iterrows():
                     nan_row = row.copy()
                     nan_row[y_col] = np.nan
-                    nan_row['match_num'] = row['match_num'] - 0.5
+                    nan_row['x_pos'] = row['x_pos'] - 0.5
                     insertions.append(nan_row)
                 if insertions:
-                    tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('match_num')
+                    tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('x_pos')
             
             color = team_colors.get(t_name, '#888888')
             t_code = tdf['team_code'].dropna().iloc[0] if not tdf['team_code'].dropna().empty else t_name
             
             date_str = tdf['date'].dt.strftime('%d/%m/%Y').fillna('')
-            customdata = np.column_stack((date_str, tdf['match_num']))
+            season_str = tdf['season'].fillna('')
+            customdata = np.column_stack((date_str, season_str))
 
             fig.add_trace(go.Scatter(
-                x=tdf['match_num'], y=tdf[y_col],
+                x=tdf['x_pos'], y=tdf[y_col],
                 mode='lines',
                 name=t_code,
                 line=dict(color=color, width=2),
                 customdata=customdata,
-                hovertemplate=f"<b>{t_code}</b> ({t_name})<br>Match #%{{customdata[1]}} (%{{customdata[0]}})<br>Rating: %{{y:.3f}}<extra></extra>",
+                hovertemplate=f"<b>{t_code}</b> ({t_name})<br>Season %{{customdata[1]}} (%{{customdata[0]}})<br>Rating: %{{y:.3f}}<extra></extra>",
                 showlegend=False
             ))
             
             # Додаємо назву команди (код) в кінці кожного відрізка
             for _, ep in endpoints.iterrows():
                 fig.add_annotation(
-                    x=ep['match_num'],
+                    x=ep['x_pos'],
                     y=ep[y_col],
                     text=t_code,
                     showarrow=False,
@@ -412,13 +444,25 @@ if not df_hist.empty:
                     xshift=5
                 )
 
+        # Вертикальні лінії для початку та кінця сезонів
+        for sb in season_start_boundaries:
+            fig.add_vline(x=sb, line_dash="dash", line_color="rgba(150, 150, 150, 0.5)", line_width=1)
+        if season_boundaries:
+            fig.add_vline(x=season_boundaries[-1], line_dash="dash", line_color="rgba(150, 150, 150, 0.5)", line_width=1)
+
         yaxis_config = dict(title="Rating", nticks=20)
         if title == "Defense Rating":
             yaxis_config['autorange'] = "reversed"
 
         fig.update_layout(
             title=title,
-            xaxis_title="Match Number",
+            xaxis=dict(
+                tickmode='array',
+                tickvals=tick_vals,
+                ticktext=tick_text,
+                title="",
+                showgrid=False
+            ),
             yaxis=yaxis_config,
             height=800,
             hovermode="x unified",
