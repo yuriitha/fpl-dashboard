@@ -362,13 +362,15 @@ if not df_hist.empty:
             tdf = df[df['team_name'] == t_name].sort_values('date').copy()
             tdf_clean = tdf.dropna(subset=[y_col])
             
+            if tdf_clean.empty:
+                continue
+
+            tdf['match_num'] = np.arange(1, len(tdf) + 1)
+            
             # Знаходимо кінці відрізків для підписів
-            if not tdf_clean.empty:
-                next_date = tdf_clean['date'].shift(-1)
-                is_end = (next_date - tdf_clean['date'] > pd.Timedelta(days=30)) | next_date.isna()
-                endpoints = tdf_clean[is_end]
-            else:
-                endpoints = pd.DataFrame()
+            next_date = tdf['date'].shift(-1)
+            is_end = (next_date - tdf['date'] > pd.Timedelta(days=30)) | next_date.isna()
+            endpoints = tdf[is_end]
             
             # Вставляємо NaN для проміжків > 30 днів, щоб розірвати лінію
             gaps = tdf['date'].diff() > pd.Timedelta(days=30)
@@ -377,27 +379,31 @@ if not df_hist.empty:
                 for idx, row in tdf[gaps].iterrows():
                     nan_row = row.copy()
                     nan_row[y_col] = np.nan
-                    nan_row['date'] = row['date'] - pd.Timedelta(hours=1)
+                    nan_row['match_num'] = row['match_num'] - 0.5
                     insertions.append(nan_row)
                 if insertions:
-                    tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('date')
+                    tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('match_num')
             
             color = team_colors.get(t_name, '#888888')
             t_code = tdf['team_code'].dropna().iloc[0] if not tdf['team_code'].dropna().empty else t_name
             
+            date_str = tdf['date'].dt.strftime('%d/%m/%Y').fillna('')
+            customdata = np.column_stack((date_str, tdf['match_num']))
+
             fig.add_trace(go.Scatter(
-                x=tdf['date'], y=tdf[y_col],
+                x=tdf['match_num'], y=tdf[y_col],
                 mode='lines',
                 name=t_code,
                 line=dict(color=color, width=2),
-                hovertemplate=f"<b>{t_code}</b> ({t_name})<br>Date: %{{x}}<br>Rating: %{{y:.3f}}<extra></extra>",
+                customdata=customdata,
+                hovertemplate=f"<b>{t_code}</b> ({t_name})<br>Match #%{{customdata[1]}} (%{{customdata[0]}})<br>Rating: %{{y:.3f}}<extra></extra>",
                 showlegend=False
             ))
             
             # Додаємо назву команди (код) в кінці кожного відрізка
             for _, ep in endpoints.iterrows():
                 fig.add_annotation(
-                    x=ep['date'],
+                    x=ep['match_num'],
                     y=ep[y_col],
                     text=t_code,
                     showarrow=False,
@@ -412,7 +418,7 @@ if not df_hist.empty:
 
         fig.update_layout(
             title=title,
-            xaxis_title="Date",
+            xaxis_title="Match Number",
             yaxis=yaxis_config,
             height=800,
             hovermode="x unified",
