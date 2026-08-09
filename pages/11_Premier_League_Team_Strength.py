@@ -484,14 +484,35 @@ if not df_hist.empty:
     st.plotly_chart(create_chart(df_hist, 'att', "Attack Rating"), width="stretch")
     st.plotly_chart(create_chart(df_hist, 'def', "Defense Rating"), width="stretch")
 
-    js_hover_sorter = r"""
+    import json
+    offsets_list = [off for off, _ in season_offsets.values()]
+    offsets_json = json.dumps(offsets_list)
+
+    js_hover_sorter = f"""
     <script>
-    (function() {
-        function sortHoverBoxes() {
-            try {
+    (function() {{
+        var seasonOffsets = {offsets_json};
+        function sortHoverBoxes() {{
+            try {{
                 var doc = window.parent.document;
                 var hoverlayers = doc.querySelectorAll('.hoverlayer');
-                hoverlayers.forEach(function(hoverlayer) {
+                hoverlayers.forEach(function(hoverlayer) {{
+                    var titleEl = hoverlayer.querySelector('text.legendtitletext');
+                    if (titleEl) {{
+                        var val = titleEl.textContent.trim();
+                        var num = parseFloat(val);
+                        if (!isNaN(num) && !val.includes('GW')) {{
+                            var gw = num;
+                            for (var i = seasonOffsets.length - 1; i >= 0; i--) {{
+                                if (num > seasonOffsets[i]) {{
+                                    gw = num - seasonOffsets[i];
+                                    break;
+                                }}
+                            }}
+                            titleEl.innerHTML = '<tspan style="font-weight:bold">GW ' + Math.round(gw) + '</tspan>';
+                        }}
+                    }}
+
                     var groups = hoverlayer.querySelector('.groups');
                     if (!groups) return;
                     var traces = Array.from(groups.querySelectorAll('g.traces'));
@@ -499,43 +520,45 @@ if not df_hist.empty:
 
                     var chartContainer = hoverlayer.closest('.js-plotly-plot');
                     var isDefense = false;
-                    if (chartContainer) {
-                        var titleEl = chartContainer.querySelector('.gtitle');
-                        if (titleEl && titleEl.textContent.includes('Defense')) {
+                    if (chartContainer) {{
+                        var tEl = chartContainer.querySelector('.gtitle');
+                        if (tEl && tEl.textContent.includes('Defense')) {{
                             isDefense = true;
-                        }
-                    }
+                        }}
+                    }}
 
-                    var items = traces.map(function(t) {
+                    var items = traces.map(function(t) {{
                         var txt = t.innerText || t.textContent || '';
-                        var m = txt.match(/Rating:\s*([0-9.-]+)/);
+                        var m = txt.match(/Rating:\\s*([0-9.-]+)/);
                         var val = m ? parseFloat(m[1]) : (isDefense ? 9999 : -9999);
-                        return { node: t, val: val };
-                    });
+                        return {{ node: t, val: val }};
+                    }});
 
-                    items.sort(function(a, b) {
+                    items.sort(function(a, b) {{
                         return isDefense ? (a.val - b.val) : (b.val - a.val);
-                    });
+                    }});
 
-                    var ys = traces.map(function(t) {
+                    var ys = traces.map(function(t) {{
                         var tr = t.getAttribute('transform') || '';
-                        var m = tr.match(/translate\([^,]+,\s*([0-9.-]+)\)/);
-                        return m ? parseFloat(m[1]) : 0;
-                    }).sort(function(a, b) { return a - b; });
+                        var m = tr.match(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/);
+                        return m ? parseFloat(m[2]) : 0;
+                    }}).sort(function(a, b) {{ return a - b; }});
 
-                    items.forEach(function(item, idx) {
-                        if (ys[idx] !== undefined) {
+                    items.forEach(function(item, idx) {{
+                        if (ys[idx] !== undefined) {{
                             var currentTr = item.node.getAttribute('transform') || '';
-                            var newTr = currentTr.replace(/translate\(([^,]+),\s*([0-9.-]+)\)/, 'translate($1,' + ys[idx] + ')');
+                            var newTr = currentTr.replace(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/, function(match, xVal, yVal) {{
+                                return 'translate(' + xVal + ',' + ys[idx] + ')';
+                            }});
                             item.node.setAttribute('transform', newTr);
-                        }
+                        }}
                         groups.appendChild(item.node);
-                    });
-                });
-            } catch(e) {}
-        }
+                    }});
+                }});
+            }} catch(e) {{}}
+        }}
         setInterval(sortHoverBoxes, 50);
-    })();
+    }})();
     </script>
     """
     st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
