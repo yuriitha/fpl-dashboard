@@ -521,8 +521,7 @@ if not df_hist.empty:
                             var rVal = parseFloat(mVal[1]);
                             if (yVal > 0 && !isNaN(rVal)) {
                                 var gwStr = mGw ? mGw[0] : '';
-                                activeItems.push({ node: t, val: rVal, xVal: mY[1], gwStr: gwStr });
-                                activeYs.push(yVal);
+                                activeItems.push({ node: t, val: rVal, xVal: mY[1], yVal: yVal, gwStr: gwStr });
                             }
                         }
                     });
@@ -562,7 +561,8 @@ if not df_hist.empty:
                     }
 
                     if (activeItems.length > 1) {
-                        activeYs.sort(function(a, b) { return a - b; });
+                        var activeYs = activeItems.map(function(item) { return item.yVal; }).sort(function(a, b) { return a - b; });
+
                         activeItems.sort(function(a, b) {
                             return isDefense ? (a.val - b.val) : (b.val - a.val);
                         });
