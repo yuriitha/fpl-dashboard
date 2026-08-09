@@ -356,48 +356,95 @@ if final_teams:
 if not df_hist.empty:
     df_hist['total'] = df_hist['att'] - df_hist['def']
 
+    # Compute global X indices per season so all teams in the same season align on X-axis
+    selected_seasons = sorted(df_hist['season'].unique())
+    season_offsets = {}
+    curr_offset = 0
+    season_boundaries = []
+    season_start_boundaries = []
+    tick_vals = []
+    tick_text = []
+
+    for s in selected_seasons:
+        s_df = df_hist[df_hist['season'] == s]
+        max_m = s_df.groupby('team_name').size().max() if not s_df.empty else 38
+        start_x = curr_offset + 0.5
+        end_x = curr_offset + max_m + 0.5
+        mid_x = (start_x + end_x) / 2
+        
+        season_start_boundaries.append(start_x)
+        season_boundaries.append(end_x)
+        tick_vals.append(mid_x)
+        tick_text.append(s)
+        
+        season_offsets[s] = (curr_offset, max_m)
+        curr_offset += max_m
+
+    df_hist = df_hist.sort_values('date').copy()
+    df_hist['match_in_season'] = df_hist.groupby(['team_name', 'season'])['date'].rank(method='first').astype(int)
+    df_hist['offset'] = df_hist['season'].map(lambda s: season_offsets[s][0] if s in season_offsets else 0)
+    df_hist['x_pos'] = df_hist['offset'] + df_hist['match_in_season']
+
     def create_chart(df, y_col, title):
         fig = go.Figure()
-        for t_name in df['team_name'].unique():
-            tdf = df[df['team_name'] == t_name].sort_values('date').copy()
+
+        # Sort teams by their latest rating so hover entries appear in descending order of strength
+        is_defense = (title == "Defense Rating")
+        latest_ratings = {}
+        for t in df['team_name'].unique():
+            tdf_t = df[df['team_name'] == t].dropna(subset=[y_col]).sort_values('x_pos')
+            if not tdf_t.empty:
+                latest_ratings[t] = tdf_t[y_col].iloc[-1]
+            else:
+                latest_ratings[t] = 999 if is_defense else -999
+
+        sorted_teams = sorted(df['team_name'].unique(), key=lambda t: latest_ratings.get(t, 999 if is_defense else -999), reverse=not is_defense)
+
+        for t_name in sorted_teams:
+            tdf = df[df['team_name'] == t_name].sort_values('x_pos').copy()
             tdf_clean = tdf.dropna(subset=[y_col])
             
-            # Знаходимо кінці відрізків для підписів
-            if not tdf_clean.empty:
-                next_date = tdf_clean['date'].shift(-1)
-                is_end = (next_date - tdf_clean['date'] > pd.Timedelta(days=30)) | next_date.isna()
-                endpoints = tdf_clean[is_end]
-            else:
-                endpoints = pd.DataFrame()
+            if tdf_clean.empty:
+                continue
+
+            # Знаходимо кінці відрізків для підписів назв команд
+            next_x = tdf['x_pos'].shift(-1)
+            is_end = (next_x - tdf['x_pos'] > 1.5) | next_x.isna()
+            endpoints = tdf[is_end]
             
-            # Вставляємо NaN для проміжків > 30 днів, щоб розірвати лінію
-            gaps = tdf['date'].diff() > pd.Timedelta(days=30)
+            # Вставляємо NaN для проміжків у x_pos > 1.5, щоб розірвати лінію при пропусках
+            gaps = tdf['x_pos'].diff() > 1.5
             if gaps.any():
                 insertions = []
                 for idx, row in tdf[gaps].iterrows():
                     nan_row = row.copy()
                     nan_row[y_col] = np.nan
-                    nan_row['date'] = row['date'] - pd.Timedelta(hours=1)
+                    nan_row['x_pos'] = row['x_pos'] - 0.5
                     insertions.append(nan_row)
                 if insertions:
-                    tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('date')
+                    tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('x_pos')
             
             color = team_colors.get(t_name, '#888888')
             t_code = tdf['team_code'].dropna().iloc[0] if not tdf['team_code'].dropna().empty else t_name
             
+            date_str = tdf['date'].dt.strftime('%d/%m/%Y').fillna('')
+            season_str = tdf['season'].fillna('')
+            customdata = np.column_stack((date_str, season_str))
+
             fig.add_trace(go.Scatter(
-                x=tdf['date'], y=tdf[y_col],
+                x=tdf['x_pos'], y=tdf[y_col],
                 mode='lines',
                 name=t_code,
                 line=dict(color=color, width=2),
-                hovertemplate=f"<b>{t_code}</b> ({t_name})<br>Date: %{{x}}<br>Rating: %{{y:.3f}}<extra></extra>",
+                customdata=customdata,
+                hovertemplate=f"<b>{t_code}</b> (%{{customdata[0]}})<br>Rating: %{{y:.3f}}<extra></extra>",
                 showlegend=False
             ))
             
             # Додаємо назву команди (код) в кінці кожного відрізка
             for _, ep in endpoints.iterrows():
                 fig.add_annotation(
-                    x=ep['date'],
+                    x=ep['x_pos'],
                     y=ep[y_col],
                     text=t_code,
                     showarrow=False,
@@ -406,13 +453,25 @@ if not df_hist.empty:
                     xshift=5
                 )
 
+        # Вертикальні лінії для початку та кінця сезонів
+        for sb in season_start_boundaries:
+            fig.add_vline(x=sb, line_dash="dash", line_color="rgba(150, 150, 150, 0.5)", line_width=1)
+        if season_boundaries:
+            fig.add_vline(x=season_boundaries[-1], line_dash="dash", line_color="rgba(150, 150, 150, 0.5)", line_width=1)
+
         yaxis_config = dict(title="Rating", nticks=20)
         if title == "Defense Rating":
             yaxis_config['autorange'] = "reversed"
 
         fig.update_layout(
             title=title,
-            xaxis_title="Date",
+            xaxis=dict(
+                tickmode='array',
+                tickvals=tick_vals,
+                ticktext=tick_text,
+                title="",
+                showgrid=False
+            ),
             yaxis=yaxis_config,
             height=800,
             hovermode="x unified",
@@ -424,5 +483,84 @@ if not df_hist.empty:
     st.plotly_chart(create_chart(df_hist, 'total', "Overall Rating (Attack - Defense)"), width="stretch")
     st.plotly_chart(create_chart(df_hist, 'att', "Attack Rating"), width="stretch")
     st.plotly_chart(create_chart(df_hist, 'def', "Defense Rating"), width="stretch")
+
+    import json
+    offsets_list = [off for off, _ in season_offsets.values()]
+    offsets_json = json.dumps(offsets_list)
+
+    js_hover_sorter = f"""
+    <script>
+    (function() {{
+        var seasonOffsets = {offsets_json};
+        function sortHoverBoxes() {{
+            try {{
+                var doc = window.parent.document;
+                var hoverlayers = doc.querySelectorAll('.hoverlayer');
+                hoverlayers.forEach(function(hoverlayer) {{
+                    var titleEl = hoverlayer.querySelector('text.legendtitletext');
+                    if (titleEl) {{
+                        var val = titleEl.textContent.trim();
+                        var num = parseFloat(val);
+                        if (!isNaN(num) && !val.includes('GW')) {{
+                            var gw = num;
+                            for (var i = seasonOffsets.length - 1; i >= 0; i--) {{
+                                if (num > seasonOffsets[i]) {{
+                                    gw = num - seasonOffsets[i];
+                                    break;
+                                }}
+                            }}
+                            titleEl.innerHTML = '<tspan style="font-weight:bold">GW ' + Math.round(gw) + '</tspan>';
+                        }}
+                    }}
+
+                    var groups = hoverlayer.querySelector('.groups');
+                    if (!groups) return;
+                    var traces = Array.from(groups.querySelectorAll('g.traces'));
+                    if (traces.length <= 1) return;
+
+                    var chartContainer = hoverlayer.closest('.js-plotly-plot');
+                    var isDefense = false;
+                    if (chartContainer) {{
+                        var tEl = chartContainer.querySelector('.gtitle');
+                        if (tEl && tEl.textContent.includes('Defense Rating')) {{
+                            isDefense = true;
+                        }}
+                    }}
+
+                    var items = traces.map(function(t) {{
+                        var txt = t.innerText || t.textContent || '';
+                        var m = txt.match(/Rating:\\s*([0-9.-]+)/);
+                        var val = m ? parseFloat(m[1]) : (isDefense ? 9999 : -9999);
+                        return {{ node: t, val: val }};
+                    }});
+
+                    items.sort(function(a, b) {{
+                        return isDefense ? (a.val - b.val) : (b.val - a.val);
+                    }});
+
+                    var ys = traces.map(function(t) {{
+                        var tr = t.getAttribute('transform') || '';
+                        var m = tr.match(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/);
+                        return m ? parseFloat(m[2]) : 0;
+                    }}).sort(function(a, b) {{ return a - b; }});
+
+                    items.forEach(function(item, idx) {{
+                        if (ys[idx] !== undefined) {{
+                            var currentTr = item.node.getAttribute('transform') || '';
+                            var newTr = currentTr.replace(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/, function(match, xVal, yVal) {{
+                                return 'translate(' + xVal + ',' + ys[idx] + ')';
+                            }});
+                            item.node.setAttribute('transform', newTr);
+                        }}
+                        groups.appendChild(item.node);
+                    }});
+                }});
+            }} catch(e) {{}}
+        }}
+        setInterval(sortHoverBoxes, 50);
+    }})();
+    </script>
+    """
+    st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
 else:
     st.info("No historical data available for selected filters.")
