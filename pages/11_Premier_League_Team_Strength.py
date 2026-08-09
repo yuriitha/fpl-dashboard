@@ -387,7 +387,20 @@ if not df_hist.empty:
 
     def create_chart(df, y_col, title):
         fig = go.Figure()
-        for t_name in df['team_name'].unique():
+
+        # Sort teams by their latest rating so hover entries appear in descending order of strength
+        is_defense = (title == "Defense Rating")
+        latest_ratings = {}
+        for t in df['team_name'].unique():
+            tdf_t = df[df['team_name'] == t].dropna(subset=[y_col]).sort_values('x_pos')
+            if not tdf_t.empty:
+                latest_ratings[t] = tdf_t[y_col].iloc[-1]
+            else:
+                latest_ratings[t] = 999 if is_defense else -999
+
+        sorted_teams = sorted(df['team_name'].unique(), key=lambda t: latest_ratings.get(t, 999 if is_defense else -999), reverse=not is_defense)
+
+        for t_name in sorted_teams:
             tdf = df[df['team_name'] == t_name].sort_values('x_pos').copy()
             tdf_clean = tdf.dropna(subset=[y_col])
             
