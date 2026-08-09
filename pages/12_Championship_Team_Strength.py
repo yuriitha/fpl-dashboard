@@ -429,7 +429,8 @@ if not df_hist.empty:
             
             date_str = tdf['date'].dt.strftime('%d/%m/%Y').fillna('')
             season_str = tdf['season'].fillna('')
-            customdata = np.column_stack((date_str, season_str))
+            gw_str = "GW " + tdf['match_in_season'].astype(int).astype(str)
+            customdata = np.column_stack((date_str, season_str, gw_str))
 
             fig.add_trace(go.Scatter(
                 x=tdf['x_pos'], y=tdf[y_col],
@@ -437,7 +438,7 @@ if not df_hist.empty:
                 name=t_code,
                 line=dict(color=color, width=2),
                 customdata=customdata,
-                hovertemplate=f"<b>{t_code}</b> (%{{customdata[0]}})<br>Rating: %{{y:.3f}}<extra></extra>",
+                hovertemplate=f"<b>{t_code}</b> (%{{customdata[0]}})<br>Rating: %{{y:.3f}}<extra>%{{customdata[2]}}</extra>",
                 showlegend=False
             ))
             
@@ -484,85 +485,99 @@ if not df_hist.empty:
     st.plotly_chart(create_chart(df_hist, 'att', "Attack Rating"), width="stretch")
     st.plotly_chart(create_chart(df_hist, 'def', "Defense Rating"), width="stretch")
 
-    import json
-    offsets_list = [off for off, _ in season_offsets.values()]
-    offsets_json = json.dumps(offsets_list)
-
-    js_hover_sorter = f"""
+    js_hover_sorter = r"""
     <script>
-    (function() {{
-        var seasonOffsets = {offsets_json};
-        function sortHoverBoxes() {{
-            try {{
+    (function() {
+        function sortHoverBoxes() {
+            try {
                 var doc = window.parent.document;
                 var hoverlayers = doc.querySelectorAll('.hoverlayer');
-                hoverlayers.forEach(function(hoverlayer) {{
-                    var titleEl = hoverlayer.querySelector('text.legendtitletext');
-                    if (titleEl) {{
-                        var val = titleEl.textContent.trim();
-                        var num = parseFloat(val);
-                        if (!isNaN(num) && !val.includes('GW')) {{
-                            var gw = num;
-                            for (var i = seasonOffsets.length - 1; i >= 0; i--) {{
-                                if (num > seasonOffsets[i]) {{
-                                    gw = num - seasonOffsets[i];
-                                    break;
-                                }}
-                            }}
-                            titleEl.innerHTML = '<tspan style="font-weight:bold">GW ' + Math.round(gw) + '</tspan>';
-                        }}
-                    }}
-
+                hoverlayers.forEach(function(hoverlayer) {
                     var groups = hoverlayer.querySelector('.groups');
                     if (!groups) return;
                     var traces = Array.from(groups.querySelectorAll('g.traces'));
-                    if (traces.length <= 1) return;
 
                     var chartContainer = hoverlayer.closest('.js-plotly-plot');
                     var isDefense = false;
-                    if (chartContainer) {{
+                    if (chartContainer) {
                         var tEl = chartContainer.querySelector('.gtitle');
-                        if (tEl && tEl.textContent.includes('Defense Rating')) {{
+                        if (tEl && tEl.textContent.includes('Defense Rating')) {
                             isDefense = true;
-                        }}
-                    }}
+                        }
+                    }
 
                     var activeItems = [];
                     var activeYs = [];
 
-                    traces.forEach(function(t) {{
+                    traces.forEach(function(t) {
                         var txt = t.innerText || t.textContent || '';
-                        var mVal = txt.match(/Rating:\\s*([0-9.-]+)/);
+                        var mGw = txt.match(/GW\s*\d+/);
+                        var mVal = txt.match(/Rating:\s*([0-9.-]+)/);
                         var tr = t.getAttribute('transform') || '';
-                        var mY = tr.match(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/);
+                        var mY = tr.match(/translate\(([^,]+),\s*([0-9.-]+)\)/);
                         
-                        if (mVal && mY) {{
+                        if (mVal && mY) {
                             var yVal = parseFloat(mY[2]);
                             var rVal = parseFloat(mVal[1]);
-                            if (yVal > 0 && !isNaN(rVal)) {{
-                                activeItems.push({{ node: t, val: rVal, xVal: mY[1] }});
+                            if (yVal > 0 && !isNaN(rVal)) {
+                                var gwStr = mGw ? mGw[0] : '';
+                                activeItems.push({ node: t, val: rVal, xVal: mY[1], gwStr: gwStr });
                                 activeYs.push(yVal);
-                            }}
-                        }}
-                    }});
+                            }
+                        }
+                    });
 
-                    if (activeItems.length > 1) {{
-                        activeYs.sort(function(a, b) {{ return a - b; }});
-                        activeItems.sort(function(a, b) {{
+                    // Filter out traces from adjacent season at season boundary
+                    var gwCounts = {};
+                    activeItems.forEach(function(item) {
+                        if (item.gwStr) gwCounts[item.gwStr] = (gwCounts[item.gwStr] || 0) + 1;
+                    });
+                    var majorityGw = null;
+                    var maxCount = 0;
+                    for (var gw in gwCounts) {
+                        if (gwCounts[gw] > maxCount) {
+                            maxCount = gwCounts[gw];
+                            majorityGw = gw;
+                        }
+                    }
+                    if (majorityGw) {
+                        activeItems = activeItems.filter(function(item) { return item.gwStr === majorityGw; });
+                    }
+
+                    // Hide non-matching traces from DOM
+                    traces.forEach(function(t) {
+                        var isKeeper = activeItems.some(function(item) { return item.node === t; });
+                        if (!isKeeper) {
+                            t.style.display = 'none';
+                        } else {
+                            t.style.display = '';
+                        }
+                    });
+
+                    if (activeItems.length > 0 && activeItems[0].gwStr) {
+                        var titleEl = hoverlayer.querySelector('text.legendtitletext');
+                        if (titleEl) {
+                            titleEl.innerHTML = '<tspan style="font-weight:bold">' + activeItems[0].gwStr + '</tspan>';
+                        }
+                    }
+
+                    if (activeItems.length > 1) {
+                        activeYs.sort(function(a, b) { return a - b; });
+                        activeItems.sort(function(a, b) {
                             return isDefense ? (a.val - b.val) : (b.val - a.val);
-                        }});
+                        });
 
-                        activeItems.forEach(function(item, idx) {{
+                        activeItems.forEach(function(item, idx) {
                             var newTr = 'translate(' + item.xVal + ',' + activeYs[idx] + ')';
                             item.node.setAttribute('transform', newTr);
                             groups.appendChild(item.node);
-                        }});
-                    }}
-                }});
-            }} catch(e) {{}}
-        }}
+                        });
+                    }
+                });
+            } catch(e) {}
+        }
         setInterval(sortHoverBoxes, 50);
-    }})();
+    })();
     </script>
     """
     st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
