@@ -522,7 +522,7 @@ if not df_hist.empty:
                     var isDefense = false;
                     if (chartContainer) {{
                         var tEl = chartContainer.querySelector('.gtitle');
-                        if (tEl && tEl.textContent.includes('Defense')) {{
+                        if (tEl && tEl.textContent.includes('Defense Rating')) {{
                             isDefense = true;
                         }}
                     }}
