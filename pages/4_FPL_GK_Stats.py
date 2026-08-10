@@ -157,7 +157,7 @@ GB = {
     'f_activity_gks': _slider_bounds(0.0, 100.0),
     'f_svs_gks':      _slider_bounds(0.0, _get_max_sane('Svs_90')),
     'f_cs_gks':       _slider_bounds(0.0, _get_max_sane('CS_90')),
-    'f_xgc_gks':      _slider_bounds(0.0, _get_max_sane('xGC_90')),
+    'f_xgc_gks':      _slider_bounds(_get_min_sane('xGC_90', -2.0), _get_max_sane('xGC_90', 2.0)),
     'f_xgp_gks':      _slider_bounds(_get_min_sane('xGP_90', -2.0), _get_max_sane('xGP_90', 2.0)),
     'f_tchs_gks':     _slider_bounds(0.0, _get_max_sane('Touches_90')),
     'f_pass_gks':     _slider_bounds(0.0, _get_max('Pass_pct', 100.0)),
@@ -166,10 +166,10 @@ GB = {
 # Дефолтні значення повзунків
 DEFAULTS = {
     'f_cost_gks':     GB['f_cost_gks'],
-    'f_matches_gks':  GB['f_matches_gks'],
+    'f_matches_gks':  (max(GB['f_matches_gks'][0], 5), GB['f_matches_gks'][1]),
     'f_rating_gks':   GB['f_rating_gks'],
     'f_avg_mins_gks': GB['f_avg_mins_gks'],
-    'f_60min_gks':    GB['f_60min_gks'],
+    'f_60min_gks':    (max(GB['f_60min_gks'][0], 40.5), GB['f_60min_gks'][1]),
     'f_selected_gks': GB['f_selected_gks'],
     'f_activity_gks': GB['f_activity_gks'],
     'f_svs_gks':      GB['f_svs_gks'],
