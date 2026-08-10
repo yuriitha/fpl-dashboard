@@ -45,6 +45,12 @@ st.markdown("""
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
 
+        .playing-pos-wrapper {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            gap: 0.1rem !important;
+        }
         .playing-pos-wrapper button {
             width: 48px !important; min-width: 48px !important; max-width: 48px !important;
         }
