@@ -528,9 +528,9 @@ if sort_cols:
 # ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price", "selected_by_percent",
-    "min_played_1y", "pct_goals_1y", "pct_xg_1y", "pct_xgot_1y", "pct_assists_1y", "pct_xa_1y", "pct_shots_1y",
+    "min_played_1y", "pct_goals_1y", "pct_xg_1y", "pct_xgot_1y", "pct_assists_1y", "pct_xa_1y", "pct_shots_1y", "pct_bcc_1y",
     "pct_clearances_1y", "pct_blocks_1y", "pct_interceptions_1y", "pct_tackles_1y", "pct_recoveries_1y",
-    "min_played_3y", "pct_goals_3y", "pct_xg_3y", "pct_xgot_3y", "pct_assists_3y", "pct_xa_3y", "pct_shots_3y",
+    "min_played_3y", "pct_goals_3y", "pct_xg_3y", "pct_xgot_3y", "pct_assists_3y", "pct_xa_3y", "pct_shots_3y", "pct_bcc_3y",
     "pct_clearances_3y", "pct_blocks_3y", "pct_interceptions_3y", "pct_tackles_3y", "pct_recoveries_3y"
 ]
 
@@ -563,7 +563,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
 
 styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['pct_shots_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_shots_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols])
+    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['pct_shots_1y', 'pct_bcc_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_shots_3y', 'pct_bcc_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols])
 
 st.subheader(f"FPL Players Form: {len(filtered_df)} players", anchor=False)
 
@@ -588,6 +588,7 @@ st.dataframe(
         "pct_assists_1y":       st.column_config.NumberColumn("A 1y",        width=40,  format="%.1f"),
         "pct_xa_1y":            st.column_config.NumberColumn("xA 1y",       width=40,  format="%.1f"),
         "pct_shots_1y":         st.column_config.NumberColumn("Sh 1y",       width=40,  format="%.1f"),
+        "pct_bcc_1y":           st.column_config.NumberColumn("BCC 1y",      width=42,  format="%.1f"),
         "pct_clearances_1y":    st.column_config.NumberColumn("Clr 1y",      width=40,  format="%.1f"),
         "pct_blocks_1y":        st.column_config.NumberColumn("Blk 1y",      width=40,  format="%.1f"),
         "pct_interceptions_1y": st.column_config.NumberColumn("Int 1y",      width=40,  format="%.1f"),
@@ -600,6 +601,7 @@ st.dataframe(
         "pct_assists_3y":       st.column_config.NumberColumn("A 3y",        width=40,  format="%.1f"),
         "pct_xa_3y":            st.column_config.NumberColumn("xA 3y",       width=40,  format="%.1f"),
         "pct_shots_3y":         st.column_config.NumberColumn("Sh 3y",       width=40,  format="%.1f"),
+        "pct_bcc_3y":           st.column_config.NumberColumn("BCC 3y",      width=42,  format="%.1f"),
         "pct_clearances_3y":    st.column_config.NumberColumn("Clr 3y",      width=40,  format="%.1f"),
         "pct_blocks_3y":        st.column_config.NumberColumn("Blk 3y",      width=40,  format="%.1f"),
         "pct_interceptions_3y": st.column_config.NumberColumn("Int 3y",      width=40,  format="%.1f"),
