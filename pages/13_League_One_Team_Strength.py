@@ -47,14 +47,35 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+import requests
+
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://194.99.22.193:8000/team_strength_model"
     df = pd.read_parquet(url)
-    return df
+
+    last_update_str = ""
+    try:
+        meta_url = "http://194.99.22.193:8000/team_strength_metadata"
+        meta_resp = requests.get(meta_url, timeout=3)
+        if meta_resp.status_code == 200:
+            meta_json = meta_resp.json()
+            dt_raw = meta_json.get("last_scraped_at") or meta_json.get("last_processed_date")
+            if dt_raw:
+                dt_obj = pd.to_datetime(dt_raw)
+                last_update_str = dt_obj.strftime("%d/%m/%Y %H:%M")
+    except Exception:
+        pass
+
+    if not last_update_str and 'match_date' in df.columns:
+        played = df.dropna(subset=['match_result'])
+        if not played.empty:
+            last_update_str = pd.to_datetime(played['match_date'].max()).strftime("%d/%m/%Y %H:%M")
+
+    return df, last_update_str
 
 try:
-    df = load_data()
+    df, last_update_str = load_data()
 except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
@@ -294,7 +315,12 @@ with col1:
 
 # Upcoming Matches Table
 with col2:
-    st.subheader("Upcoming Matches", anchor=False)
+    head_col1, head_col2 = st.columns([0.5, 0.5])
+    with head_col1:
+        st.subheader("Upcoming Matches", anchor=False)
+    with head_col2:
+        if last_update_str:
+            st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: 0.6rem; margin-bottom: 0;'>Data updated: <b>{last_update_str}</b></p>", unsafe_allow_html=True)
     df_future = df[(df['match_result'].isna()) & (df['league'] == 'League One')].copy()
     if not df_future.empty:
         cols = ['match_date', 'home_team', 'away_team', 'home_team_code', 'away_team_code', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
@@ -407,16 +433,19 @@ if not df_hist.empty:
             if tdf_clean.empty:
                 continue
 
-            # Знаходимо кінці відрізків для підписів назв команд
+            # Знаходимо кінці відрізків для підписів назв команд (лише виліт / кінець вибірки)
             next_x = tdf['x_pos'].shift(-1)
             is_end = (next_x - tdf['x_pos'] > 1.5) | next_x.isna()
             endpoints = tdf[is_end]
             
-            # Вставляємо NaN для проміжків у x_pos > 1.5, щоб розірвати лінію при пропусках
-            gaps = tdf['x_pos'].diff() > 1.5
-            if gaps.any():
+            # Вставляємо NaN між сезонами або проміжками (хвилини/пропуски), щоб розірвати графік між сезонами
+            season_changed = (tdf['season'] != tdf['season'].shift(-1)) & tdf['season'].shift(-1).notna()
+            gap_occurred = (tdf['x_pos'].diff() > 1.5)
+            break_lines = season_changed | gap_occurred
+            
+            if break_lines.any():
                 insertions = []
-                for idx, row in tdf[gaps].iterrows():
+                for idx, row in tdf[break_lines].iterrows():
                     nan_row = row.copy()
                     nan_row[y_col] = np.nan
                     nan_row['x_pos'] = row['x_pos'] - 0.5
