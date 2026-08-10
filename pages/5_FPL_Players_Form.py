@@ -360,26 +360,6 @@ def inject_sidebar_layout(inactive_all: list):
     (function() {{
         var inactiveList = {json.dumps(inactive_all)};
         function forceLayout() {{
-            try {{
-                var buttons = window.parent.document.querySelectorAll('[data-testid="stSidebar"] button');
-                buttons.forEach(function(b) {{
-                    var txt = b.innerText.trim();
-                    if (txt === "All" || txt === "None" || txt === "Reset All Filters") return;
-                    if (txt.length === 2 && ["GK", "RB", "CB", "LB", "RM", "DM", "CM", "LM", "RW", "AM", "LW", "SS", "CF"].includes(txt)) {{
-                        b.classList.add('playing-pos-button');
-                        b.parentElement.classList.add('playing-pos-wrapper');
-                        b.style.setProperty('width', '48px', 'important');
-                        b.style.setProperty('min-width', '48px', 'important');
-                        b.style.setProperty('max-width', '48px', 'important');
-                    }} else {{
-                        b.style.setProperty('width', '60px', 'important');
-                        b.style.setProperty('min-width', '60px', 'important');
-                        b.style.setProperty('max-width', '60px', 'important');
-                    }}
-                    var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
-                    if (b.style.opacity !== expectedOpacity) {{
-                        b.style.opacity = expectedOpacity;
-                    }}
                 }});
             }} catch(e) {{}}
         }}
