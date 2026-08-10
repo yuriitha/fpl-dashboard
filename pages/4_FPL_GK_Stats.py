@@ -244,7 +244,10 @@ def get_available(exclude_key=None):
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key and col_name in df.columns:
             val = _safe_range(k, d)
-            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
+            if val[0] > GB[k][0] + 1e-4:
+                mask &= (df[col_name] >= val[0])
+            if val[1] < GB[k][1] - 1e-4:
+                mask &= (df[col_name] <= val[1])
 
     return df[mask]
 
@@ -527,10 +530,10 @@ filter_vars = [
 
 for col_name, val, limit in filter_vars:
     if col_name in df.columns:
-        mask &= (df[col_name] >= val[0])
+        if val[0] > limit[0] + 1e-4:
+            mask &= (df[col_name] >= val[0])
         if val[1] < limit[1] - 1e-4:
             mask &= (df[col_name] <= val[1])
-
 filtered_df = df[mask].copy()
 sort_cols = [c for c in ['now_cost', 'M Price'] if c in filtered_df.columns]
 if sort_cols:
