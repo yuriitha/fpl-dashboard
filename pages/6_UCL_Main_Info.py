@@ -25,11 +25,11 @@ st.markdown("""
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
         
-        [data-testid="stVerticalBlock"] {
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
             gap: 0.4rem !important;
         }
 
-        [data-testid="stHorizontalBlock"] {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
             gap: 0.1rem !important;
         }
     </style>
