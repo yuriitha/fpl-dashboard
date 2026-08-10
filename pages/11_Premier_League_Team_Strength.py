@@ -60,7 +60,7 @@ def load_data():
         meta_resp = requests.get(meta_url, timeout=3)
         if meta_resp.status_code == 200:
             meta_json = meta_resp.json()
-            dt_raw = meta_json.get("last_processed_date")
+            dt_raw = meta_json.get("last_scraped_at") or meta_json.get("last_processed_date")
             if dt_raw:
                 dt_obj = pd.to_datetime(dt_raw)
                 last_update_str = dt_obj.strftime("%d/%m/%Y %H:%M")
