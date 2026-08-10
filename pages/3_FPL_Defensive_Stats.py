@@ -554,7 +554,7 @@ display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
     "selected_by_percent", "min_played", "matches_played", 
     "avg_mins", "60_min", "av_rating_alt", 
-    "clean_sheets", "CS_90", 
+    "clean_sheets", "CS_90",
     "DC_90", "Clr_90", "Blk_90", "Int_90", "Tck_90", "Rec_90", "Aerial_pct", "Duel_pct",
     "Touches_90", "Pass_pct", "yellow_cards", "YC_90", "red_cards", "RC_90"
 ]
