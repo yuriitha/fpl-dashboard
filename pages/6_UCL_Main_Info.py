@@ -18,7 +18,7 @@ st.markdown("""
             display: none !important;
         }
         .block-container {
-            padding-top: 1.5rem !important;
+            padding-top: 2.5rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
@@ -153,7 +153,6 @@ if sort_cols:
 
 # ========================== ВІДОБРАЖЕННЯ ТАБЛИЦІ ==========================
 st.subheader(f"UCL Players filtered: {len(filtered_df)}", anchor=False)
-st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
 st.dataframe(
     filtered_df[display_columns],
