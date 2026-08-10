@@ -153,6 +153,7 @@ if sort_cols:
 
 # ========================== ВІДОБРАЖЕННЯ ТАБЛИЦІ ==========================
 st.subheader(f"UCL Players filtered: {len(filtered_df)}", anchor=False)
+st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
 st.dataframe(
     filtered_df[display_columns],
