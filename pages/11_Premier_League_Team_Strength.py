@@ -482,9 +482,18 @@ if not df_hist.empty:
                         'color': color
                     })
 
-        # Запобігаємо наплаванню підписів команд при однакових X координатах (1D Y-Displacement)
+        # Запобігаємо наплаванню підписів команд при однакових X координатах (Adaptive Y-Displacement)
         if all_annotations:
             ann_df = pd.DataFrame(all_annotations)
+            y_min = df[y_col].min()
+            y_max = df[y_col].max()
+            y_span = (y_max - y_min) if (pd.notna(y_max) and pd.notna(y_min) and y_max > y_min) else 1.0
+            
+            # Адаптивний мінімальний зазор залежно від масштабу Y (бл. 2% від діапазону)
+            min_gap = max(0.015, y_span * 0.020)
+            max_shift = min_gap * 2.5
+            is_reversed = (title == "Defense Rating")
+
             for x_val, group in ann_df.groupby('x'):
                 if len(group) == 1:
                     r = group.iloc[0]
@@ -495,19 +504,32 @@ if not df_hist.empty:
                         xanchor='left', xshift=5
                     )
                 else:
-                    y_sorted = group.sort_values('y')
+                    if is_reversed:
+                        y_sorted = group.sort_values('y', ascending=True)
+                    else:
+                        y_sorted = group.sort_values('y', ascending=False)
+                        
                     y_vals = y_sorted['y'].values.copy()
-                    min_gap = 0.055
                     
-                    for i in range(1, len(y_vals)):
-                        if y_vals[i] - y_vals[i-1] < min_gap:
-                            y_vals[i] = y_vals[i-1] + min_gap
-                            
+                    if is_reversed:
+                        for i in range(1, len(y_vals)):
+                            if y_vals[i] - y_vals[i-1] < min_gap:
+                                y_vals[i] = y_vals[i-1] + min_gap
+                    else:
+                        for i in range(1, len(y_vals)):
+                            if y_vals[i-1] - y_vals[i] < min_gap:
+                                y_vals[i] = y_vals[i-1] - min_gap
+                                
                     shift_center = y_vals.mean() - y_sorted['y'].values.mean()
                     y_vals -= shift_center
                     
+                    # Обмежуємо максимальний зсув, щоб підписи залишалися максимально близькими до кінців ліній
+                    shifts = y_vals - y_sorted['y'].values
+                    shifts_clamped = np.clip(shifts, -max_shift, max_shift)
+                    final_y = y_sorted['y'].values + shifts_clamped
+                    
                     for idx, (_, r) in enumerate(y_sorted.iterrows()):
-                        adj_y = y_vals[idx]
+                        adj_y = final_y[idx]
                         fig.add_annotation(
                             x=r['x'], y=adj_y, text=r['text'],
                             showarrow=False,
