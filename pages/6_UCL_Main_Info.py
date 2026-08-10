@@ -54,8 +54,8 @@ except Exception as e:
 # ========================== ПІДГОТОВКА СПИСКУ КОЛОНОК ==========================
 display_columns = [
     "Player", "Age", "Pos", "Pl Pos", "Team", "Team Name", "Price", "Foot", 
-    "TM Value", "Selected", "Top 1K", "Top 5K", "Captain", "Mins", "G", "A", 
-    "POTM", "PPM", "Value", "In", "Out", "In 24", "Out 24", "Status", "Training Status"
+    "TM Value", "Selected", "Mins", "G", "A", 
+    "POTM", "PPM", "Value", "In", "Out", "In 24", "Out 24"
 ]
 
 # ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
@@ -120,17 +120,11 @@ for idx, line in enumerate(pl_lines):
 c_min, c_max = float(df['Price'].min()), float(df['Price'].max())
 f_cost = st.sidebar.slider("UCL Price", c_min, c_max, (c_min, c_max), 0.1)
 
-# Matches: дефолт = 1 (використовуємо Mins як аналог активності, якщо немає matches_played)
-# Якщо у вас є колонка з кількістю матчів, замініть 'Mins' на неї. 
-# Поки що фільтруємо по хвилинах > 0 як ознаку гри.
 m_min, m_max = int(df['Mins'].min()), int(df['Mins'].max())
 f_mins = st.sidebar.slider("Minutes played", m_min, m_max, (1, m_max))
 
 s_min, s_max = float(df['Selected'].min()), float(df['Selected'].max())
 f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
-
-t5_min, t5_max = float(df['Top 5K'].min()), float(df['Top 5K'].max())
-f_top5k = st.sidebar.slider("Top 5K %", t5_min, t5_max, (t5_min, t5_max), 0.1)
 
 ppm_min, ppm_max = float(df['PPM'].min()), float(df['PPM'].max())
 f_ppm = st.sidebar.slider("PPM (Points Per Match)", ppm_min, ppm_max, (ppm_min, ppm_max), 0.1)
@@ -143,7 +137,6 @@ mask = (
     (df['Price'] >= f_cost[0]) & (df['Price'] <= f_cost[1]) &
     (df['Mins'] >= f_mins[0]) & (df['Mins'] <= f_mins[1]) &
     (df['Selected'] >= f_selected[0]) & (df['Selected'] <= f_selected[1]) &
-    (df['Top 5K'] >= f_top5k[0]) & (df['Top 5K'] <= f_top5k[1]) &
     (df['PPM'] >= f_ppm[0]) & (df['PPM'] <= f_ppm[1])
 )
 filtered_df = df[mask].copy()
@@ -154,8 +147,10 @@ if sort_cols:
 # ========================== ВІДОБРАЖЕННЯ ТАБЛИЦІ ==========================
 st.subheader(f"UCL Players filtered: {len(filtered_df)}", anchor=False)
 
+existing_display_cols = [c for c in display_columns if c in filtered_df.columns]
+
 st.dataframe(
-    filtered_df[display_columns],
+    filtered_df[existing_display_cols],
     width="stretch",
     hide_index=True,
     height=800,
@@ -169,20 +164,15 @@ st.dataframe(
         "Price": st.column_config.NumberColumn("Price", width=40, format="%.1f"),
         "TM Value": st.column_config.NumberColumn("TM Value", width=50, format="%.1f"),
         "Selected": st.column_config.NumberColumn("Sel %", width=45, format="%.1f"),
-        "Top 1K": st.column_config.NumberColumn("Top 1K", width=45, format="%.1f"),
-        "Top 5K": st.column_config.NumberColumn("Top 5K", width=45, format="%.1f"),
-	"Captain": st.column_config.NumberColumn("Cap", width=45, format="%.1f"),
         "Mins": st.column_config.NumberColumn("Mins", width=40),
         "G": st.column_config.NumberColumn("G", width=35),
         "A": st.column_config.NumberColumn("A", width=35),
         "POTM": st.column_config.NumberColumn("POTM", width=40),
         "PPM": st.column_config.NumberColumn("PPM", width=40, format="%.1f"),
-	"Value": st.column_config.NumberColumn("Value", width=40, format="%.1f"),
+        "Value": st.column_config.NumberColumn("Value", width=40, format="%.1f"),
         "In": st.column_config.NumberColumn("In", width=60),
         "Out": st.column_config.NumberColumn("Out", width=60),
         "In 24": st.column_config.NumberColumn("In 24", width=50),
         "Out 24": st.column_config.NumberColumn("Out 24", width=50),
-        "Status": st.column_config.TextColumn("Status", width=85),
-	"Training Status": st.column_config.TextColumn("Training Status", width="medium"),
     }
 )
