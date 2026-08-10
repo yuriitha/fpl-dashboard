@@ -163,7 +163,7 @@ GB = {
 # Дефолтні значення повзунків
 DEFAULTS = {
     'f_cost_form':     GB['f_cost_form'],
-    'f_matches_form':  (max(GB['f_matches_form'][0], 5), GB['f_matches_form'][1]),
+    'f_matches_form':  GB['f_matches_form'],
     'f_rating_form':   GB['f_rating_form'],
     'f_mins1y_form':   GB['f_mins1y_form'],
     'f_mins3y_form':   GB['f_mins3y_form'],
@@ -563,8 +563,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
 
 styled_df = filtered_df[existing_cols].style \
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['pct_shots_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_shots_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols]) \
-    .format(precision=1)
+    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['pct_shots_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_shots_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols])
 
 st.subheader(f"FPL Players Form: {len(filtered_df)} players", anchor=False)
 
@@ -575,36 +574,36 @@ st.dataframe(
     height=800,
     column_config={
         "full_name":            st.column_config.TextColumn("Player",        width="medium", pinned=True),
-        "Age":                  st.column_config.NumberColumn("Age",         width=40,  format="%d"),
-        "element_type":         st.column_config.TextColumn("Pos",           width=45),
-        "Play Pos":             st.column_config.TextColumn("Pl Pos",        width=45),
-        "team_short_name":      st.column_config.TextColumn("Team",          width=45),
+        "Age":                  st.column_config.NumberColumn("Age",         width=35,  format="%d"),
+        "element_type":         st.column_config.TextColumn("Pos",           width=40),
+        "Play Pos":             st.column_config.TextColumn("Pl Pos",        width=40),
+        "team_short_name":      st.column_config.TextColumn("Team",          width=40),
         "now_cost":             st.column_config.NumberColumn("Price",       width=40,  format="%.1f"),
-        "M Price":              st.column_config.NumberColumn("TM Price",    width=55,  format="%.1f"),
-        "selected_by_percent":  st.column_config.NumberColumn("Selected",    width=55,  format="%.1f%%"),
-        "min_played_1y":        st.column_config.NumberColumn("Mins 1y",     width=55,  format="%d"),
-        "pct_goals_1y":         st.column_config.NumberColumn("G 1y pct",    width=50,  format="%.1f%%"),
-        "pct_xg_1y":            st.column_config.NumberColumn("xG 1y pct",   width=55,  format="%.1f%%"),
-        "pct_xgot_1y":          st.column_config.NumberColumn("xGOT 1y pct", width=65,  format="%.1f%%"),
-        "pct_assists_1y":       st.column_config.NumberColumn("A 1y pct",    width=50,  format="%.1f%%"),
-        "pct_xa_1y":            st.column_config.NumberColumn("xA 1y pct",   width=55,  format="%.1f%%"),
-        "pct_shots_1y":         st.column_config.NumberColumn("Shots 1y pct",width=65,  format="%.1f%%"),
-        "pct_clearances_1y":    st.column_config.NumberColumn("Clr 1y pct",  width=60,  format="%.1f%%"),
-        "pct_blocks_1y":        st.column_config.NumberColumn("Blk 1y pct",  width=60,  format="%.1f%%"),
-        "pct_interceptions_1y": st.column_config.NumberColumn("Int 1y pct",  width=60,  format="%.1f%%"),
-        "pct_tackles_1y":       st.column_config.NumberColumn("Tck 1y pct",  width=60,  format="%.1f%%"),
-        "pct_recoveries_1y":    st.column_config.NumberColumn("Rec 1y pct",  width=60,  format="%.1f%%"),
-        "min_played_3y":        st.column_config.NumberColumn("Mins 3y",     width=55,  format="%d"),
-        "pct_goals_3y":         st.column_config.NumberColumn("G 3y pct",    width=50,  format="%.1f%%"),
-        "pct_xg_3y":            st.column_config.NumberColumn("xG 3y pct",   width=55,  format="%.1f%%"),
-        "pct_xgot_3y":          st.column_config.NumberColumn("xGOT 3y pct", width=65,  format="%.1f%%"),
-        "pct_assists_3y":       st.column_config.NumberColumn("A 3y pct",    width=50,  format="%.1f%%"),
-        "pct_xa_3y":            st.column_config.NumberColumn("xA 3y pct",   width=55,  format="%.1f%%"),
-        "pct_shots_3y":         st.column_config.NumberColumn("Shots 3y pct",width=65,  format="%.1f%%"),
-        "pct_clearances_3y":    st.column_config.NumberColumn("Clr 3y pct",  width=60,  format="%.1f%%"),
-        "pct_blocks_3y":        st.column_config.NumberColumn("Blk 3y pct",  width=60,  format="%.1f%%"),
-        "pct_interceptions_3y": st.column_config.NumberColumn("Int 3y pct",  width=60,  format="%.1f%%"),
-        "pct_tackles_3y":       st.column_config.NumberColumn("Tck 3y pct",  width=60,  format="%.1f%%"),
-        "pct_recoveries_3y":    st.column_config.NumberColumn("Rec 3y pct",  width=60,  format="%.1f%%"),
+        "M Price":              st.column_config.NumberColumn("TM Price",    width=50,  format="%.1f"),
+        "selected_by_percent":  st.column_config.NumberColumn("Selected",    width=50,  format="%.1f%%"),
+        "min_played_1y":        st.column_config.NumberColumn("Mins 1y",     width=50,  format="%d"),
+        "pct_goals_1y":         st.column_config.NumberColumn("G 1y",        width=40,  format="%.1f%%"),
+        "pct_xg_1y":            st.column_config.NumberColumn("xG 1y",       width=40,  format="%.1f%%"),
+        "pct_xgot_1y":          st.column_config.NumberColumn("xGOT 1y",     width=45,  format="%.1f%%"),
+        "pct_assists_1y":       st.column_config.NumberColumn("A 1y",        width=40,  format="%.1f%%"),
+        "pct_xa_1y":            st.column_config.NumberColumn("xA 1y",       width=40,  format="%.1f%%"),
+        "pct_shots_1y":         st.column_config.NumberColumn("Sh 1y",       width=40,  format="%.1f%%"),
+        "pct_clearances_1y":    st.column_config.NumberColumn("Clr 1y",      width=40,  format="%.1f%%"),
+        "pct_blocks_1y":        st.column_config.NumberColumn("Blk 1y",      width=40,  format="%.1f%%"),
+        "pct_interceptions_1y": st.column_config.NumberColumn("Int 1y",      width=40,  format="%.1f%%"),
+        "pct_tackles_1y":       st.column_config.NumberColumn("Tck 1y",      width=40,  format="%.1f%%"),
+        "pct_recoveries_1y":    st.column_config.NumberColumn("Rec 1y",      width=40,  format="%.1f%%"),
+        "min_played_3y":        st.column_config.NumberColumn("Mins 3y",     width=50,  format="%d"),
+        "pct_goals_3y":         st.column_config.NumberColumn("G 3y",        width=40,  format="%.1f%%"),
+        "pct_xg_3y":            st.column_config.NumberColumn("xG 3y",       width=40,  format="%.1f%%"),
+        "pct_xgot_3y":          st.column_config.NumberColumn("xGOT 3y",     width=45,  format="%.1f%%"),
+        "pct_assists_3y":       st.column_config.NumberColumn("A 3y",        width=40,  format="%.1f%%"),
+        "pct_xa_3y":            st.column_config.NumberColumn("xA 3y",       width=40,  format="%.1f%%"),
+        "pct_shots_3y":         st.column_config.NumberColumn("Sh 3y",       width=40,  format="%.1f%%"),
+        "pct_clearances_3y":    st.column_config.NumberColumn("Clr 3y",      width=40,  format="%.1f%%"),
+        "pct_blocks_3y":        st.column_config.NumberColumn("Blk 3y",      width=40,  format="%.1f%%"),
+        "pct_interceptions_3y": st.column_config.NumberColumn("Int 3y",      width=40,  format="%.1f%%"),
+        "pct_tackles_3y":       st.column_config.NumberColumn("Tck 3y",      width=40,  format="%.1f%%"),
+        "pct_recoveries_3y":    st.column_config.NumberColumn("Rec 3y",      width=40,  format="%.1f%%"),
     }
 )
