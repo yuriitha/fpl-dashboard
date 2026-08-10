@@ -80,7 +80,7 @@ def load_data():
     if 'av_rating_alt' in df.columns:
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
 
-    sort_cols = [c for c in ['now_cost', 'M Price'] if c in df.columns]
+    sort_cols = [c for c in ['now_cost'] if c in df.columns]
     if sort_cols:
         df = df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
     
@@ -546,13 +546,13 @@ for col_name, val, limit in filter_vars:
             mask &= (df[col_name] <= val[1])
 
 filtered_df = df[mask].copy()
-sort_cols = [c for c in ['now_cost', 'M Price'] if c in filtered_df.columns]
+sort_cols = [c for c in ['now_cost'] if c in filtered_df.columns]
 if sort_cols:
     filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
 # ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
 display_columns = [
-    "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price", "selected_by_percent",
+    "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "selected_by_percent",
     "min_played_1y", "pct_mins_avail_1y", "pct_goals_1y", "pct_xg_1y", "pct_xgot_1y", "pct_assists_1y", "pct_xa_1y", "pct_shots_1y", "pct_bcc_1y",
     "pct_clearances_1y", "pct_blocks_1y", "pct_interceptions_1y", "pct_tackles_1y", "pct_recoveries_1y",
     "min_played_3y", "pct_mins_avail_3y", "pct_goals_3y", "pct_xg_3y", "pct_xgot_3y", "pct_assists_3y", "pct_xa_3y", "pct_shots_3y", "pct_bcc_3y",
@@ -604,7 +604,6 @@ st.dataframe(
         "Play Pos":             st.column_config.TextColumn("Pl Pos",        width=40),
         "team_short_name":      st.column_config.TextColumn("Team",          width=40),
         "now_cost":             st.column_config.NumberColumn("Price",       width=40,  format="%.1f"),
-        "M Price":              st.column_config.NumberColumn("TM Price",    width=50,  format="%.1f"),
         "selected_by_percent":  st.column_config.NumberColumn("Selected",    width=55,  format="%.1f%%"),
         "min_played_1y":        st.column_config.NumberColumn("Mins 1y",     width=45,  format="%d"),
         "pct_mins_avail_1y":    st.column_config.NumberColumn("Avail 1y",    width=48,  format="%.1f"),
