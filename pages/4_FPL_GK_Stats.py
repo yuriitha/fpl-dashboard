@@ -166,10 +166,10 @@ GB = {
 # Дефолтні значення повзунків
 DEFAULTS = {
     'f_cost_gks':     GB['f_cost_gks'],
-    'f_matches_gks':  (max(GB['f_matches_gks'][0], 5), GB['f_matches_gks'][1]),
+    'f_matches_gks':  GB['f_matches_gks'],
     'f_rating_gks':   GB['f_rating_gks'],
     'f_avg_mins_gks': GB['f_avg_mins_gks'],
-    'f_60min_gks':    (max(GB['f_60min_gks'][0], 40.5), GB['f_60min_gks'][1]),
+    'f_60min_gks':    GB['f_60min_gks'],
     'f_selected_gks': GB['f_selected_gks'],
     'f_activity_gks': GB['f_activity_gks'],
     'f_svs_gks':      GB['f_svs_gks'],
@@ -534,6 +534,7 @@ for col_name, val, limit in filter_vars:
             mask &= (df[col_name] >= val[0])
         if val[1] < limit[1] - 1e-4:
             mask &= (df[col_name] <= val[1])
+
 filtered_df = df[mask].copy()
 sort_cols = [c for c in ['now_cost', 'M Price'] if c in filtered_df.columns]
 if sort_cols:
