@@ -438,8 +438,8 @@ if not df_hist.empty:
             is_end = (next_x - tdf['x_pos'] > 1.5) | next_x.isna()
             endpoints = tdf[is_end]
             
-            # Вставляємо NaN між сезонами або проміжками (хвилини/пропуски), щоб розірвати графік між сезонами
-            season_changed = (tdf['season'] != tdf['season'].shift(-1)) & tdf['season'].shift(-1).notna()
+            # Вставляємо NaN між сезонами (на початку кожного нового сезону) або проміжками (понад 1.5 туру), щоб розірвати графік саме в міжсезоння
+            season_changed = (tdf['season'] != tdf['season'].shift(1)) & tdf['season'].shift(1).notna()
             gap_occurred = (tdf['x_pos'].diff() > 1.5)
             break_lines = season_changed | gap_occurred
             
