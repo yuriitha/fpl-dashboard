@@ -413,6 +413,7 @@ if not df_hist.empty:
 
     def create_chart(df, y_col, title):
         fig = go.Figure()
+        all_annotations = []
 
         # Sort teams by their latest rating so hover entries appear in descending order of strength
         is_defense = (title == "Defense Rating")
@@ -471,17 +472,48 @@ if not df_hist.empty:
                 showlegend=False
             ))
             
-            # Додаємо назву команди (код) в кінці кожного відрізка
+            # Збираємо підписи назв команд для подальшого уникання накладання
             for _, ep in endpoints.iterrows():
-                fig.add_annotation(
-                    x=ep['x_pos'],
-                    y=ep[y_col],
-                    text=t_code,
-                    showarrow=False,
-                    font=dict(color=color, size=11, family="Arial, sans-serif"),
-                    xanchor='left',
-                    xshift=5
-                )
+                if pd.notna(ep[y_col]):
+                    all_annotations.append({
+                        'x': ep['x_pos'],
+                        'y': ep[y_col],
+                        'text': t_code,
+                        'color': color
+                    })
+
+        # Запобігаємо наплаванню підписів команд при однакових X координатах (1D Y-Displacement)
+        if all_annotations:
+            ann_df = pd.DataFrame(all_annotations)
+            for x_val, group in ann_df.groupby('x'):
+                if len(group) == 1:
+                    r = group.iloc[0]
+                    fig.add_annotation(
+                        x=r['x'], y=r['y'], text=r['text'],
+                        showarrow=False,
+                        font=dict(color=r['color'], size=11, family="Arial, sans-serif"),
+                        xanchor='left', xshift=5
+                    )
+                else:
+                    y_sorted = group.sort_values('y')
+                    y_vals = y_sorted['y'].values.copy()
+                    min_gap = 0.055
+                    
+                    for i in range(1, len(y_vals)):
+                        if y_vals[i] - y_vals[i-1] < min_gap:
+                            y_vals[i] = y_vals[i-1] + min_gap
+                            
+                    shift_center = y_vals.mean() - y_sorted['y'].values.mean()
+                    y_vals -= shift_center
+                    
+                    for idx, (_, r) in enumerate(y_sorted.iterrows()):
+                        adj_y = y_vals[idx]
+                        fig.add_annotation(
+                            x=r['x'], y=adj_y, text=r['text'],
+                            showarrow=False,
+                            font=dict(color=r['color'], size=11, family="Arial, sans-serif"),
+                            xanchor='left', xshift=5
+                        )
 
         # Вертикальні лінії для початку та кінця сезонів
         for sb in season_start_boundaries:
