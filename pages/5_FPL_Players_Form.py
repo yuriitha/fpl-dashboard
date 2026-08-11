@@ -509,7 +509,6 @@ with st.sidebar.expander("Performance Stats", expanded=False):
 
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
-    f_cost     = st.slider("Price",             GB['f_cost_form'][0],     GB['f_cost_form'][1],     step=0.1, key="f_cost_form")
     f_selected = st.slider("Selected %",        GB['f_selected_form'][0], GB['f_selected_form'][1], step=0.1, key="f_selected_form")
     f_activity = st.slider("Transfer Activity", GB['f_activity_form'][0], GB['f_activity_form'][1], step=1.0, format="%d%%", key="f_activity_form")
 
