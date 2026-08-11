@@ -58,12 +58,14 @@ def load_data():
 
     pct_cols = [
         'min_played_1y', 'min_played_3y',
+        'pct_mins_avail_1y', 'pct_mins_avail_3y',
         'pct_goals_1y', 'pct_goals_3y',
         'pct_assists_1y', 'pct_assists_3y',
         'pct_xg_1y', 'pct_xg_3y',
         'pct_xgot_1y', 'pct_xgot_3y',
         'pct_xa_1y', 'pct_xa_3y',
         'pct_shots_1y', 'pct_shots_3y',
+        'pct_bcc_1y', 'pct_bcc_3y',
         'pct_clearances_1y', 'pct_clearances_3y',
         'pct_blocks_1y', 'pct_blocks_3y',
         'pct_interceptions_1y', 'pct_interceptions_3y',
@@ -154,10 +156,14 @@ GB = {
     'f_xg1y_form':     _slider_bounds(0.0, _get_max_sane('pct_xg_1y')),
     'f_a1y_form':      _slider_bounds(0.0, _get_max_sane('pct_assists_1y')),
     'f_xa1y_form':     _slider_bounds(0.0, _get_max_sane('pct_xa_1y')),
+    'f_avail1y_form':  _slider_bounds(0.0, 100.0),
+    'f_bcc1y_form':    _slider_bounds(0.0, _get_max_sane('pct_bcc_1y')),
     'f_g3y_form':      _slider_bounds(0.0, _get_max_sane('pct_goals_3y')),
     'f_xg3y_form':     _slider_bounds(0.0, _get_max_sane('pct_xg_3y')),
     'f_a3y_form':      _slider_bounds(0.0, _get_max_sane('pct_assists_3y')),
     'f_xa3y_form':     _slider_bounds(0.0, _get_max_sane('pct_xa_3y')),
+    'f_avail3y_form':  _slider_bounds(0.0, 100.0),
+    'f_bcc3y_form':    _slider_bounds(0.0, _get_max_sane('pct_bcc_3y')),
 }
 
 # Дефолтні значення повзунків
@@ -173,9 +179,14 @@ DEFAULTS = {
     'f_xg1y_form':     GB['f_xg1y_form'],
     'f_a1y_form':      GB['f_a1y_form'],
     'f_xa1y_form':     GB['f_xa1y_form'],
+    'f_avail1y_form':  GB['f_avail1y_form'],
+    'f_bcc1y_form':    GB['f_bcc1y_form'],
     'f_g3y_form':      GB['f_g3y_form'],
     'f_xg3y_form':     GB['f_xg3y_form'],
     'f_a3y_form':      GB['f_a3y_form'],
+    'f_xa3y_form':     GB['f_xa3y_form'],
+    'f_avail3y_form':  GB['f_avail3y_form'],
+    'f_bcc3y_form':    GB['f_bcc3y_form'],
     'f_xa3y_form':     GB['f_xa3y_form'],
 }
 
@@ -460,20 +471,23 @@ avail_pl = set(get_available('pills_pl_form')['Play Pos'].dropna().unique()) if 
 filter_header("Playing Position", all_pl_pos, "pl_pos_form")
 selected_pl_pos = []
 
-for idx, line in enumerate(pl_lines):
-    available_in_line = [p for p in line if p in actual_pl_pos]
-    if not available_in_line:
-        continue
-    line_key = f"pills_pl_line_form_{idx}"
-    if line_key not in st.session_state:
-        st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos_form if p in available_in_line]
+for i, line in enumerate(pl_lines):
+    avail_in_line = [p for p in line if p in actual_pl_pos]
+    if avail_in_line:
+        sel_line = st.sidebar.pills(
+            f"Лінія {i+1}",
+            options=avail_in_line,
+            default=st.session_state.get(f'pills_pl_line_form_{i}', avail_in_line),
+            selection_mode="multi",
+            key=f'pills_pl_line_form_{i}'
+        )
+        if sel_line:
+            selected_pl_pos.extend(sel_line)
 
-    line_res = st.sidebar.pills(
-        label=f"pl_line_{idx}", options=available_in_line, key=line_key,
-        selection_mode="multi", label_visibility="collapsed"
-    )
-    if line_res:
-        selected_pl_pos.extend(line_res)
+avail_df    = get_available(exclude_key=None)
+avail_pos   = avail_df['element_type'].unique().tolist()   if 'element_type' in avail_df.columns   else []
+avail_teams = avail_df['team_short_name'].unique().tolist() if 'team_short_name' in avail_df.columns else []
+avail_pl    = avail_df['Play Pos'].dropna().unique().tolist() if 'Play Pos' in df.columns else []
 
 # --- ЗБІР УСІХ НЕАКТИВНИХ ОПЦІЙ ДЛЯ JS ---
 all_inactive = []
@@ -496,17 +510,21 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
 
 # --- 1-YEAR PERCENTAGES ---
 with st.sidebar.expander("1-Year Percentages", expanded=True):
-    f_g1y  = st.slider("G 1y %",  GB['f_g1y_form'][0],  GB['f_g1y_form'][1],  step=0.5, format="%.1f%%", key="f_g1y_form")
-    f_xg1y = st.slider("xG 1y %", GB['f_xg1y_form'][0], GB['f_xg1y_form'][1], step=0.5, format="%.1f%%", key="f_xg1y_form")
-    f_a1y  = st.slider("A 1y %",  GB['f_a1y_form'][0],  GB['f_a1y_form'][1],  step=0.5, format="%.1f%%", key="f_a1y_form")
-    f_xa1y = st.slider("xA 1y %", GB['f_xa1y_form'][0], GB['f_xa1y_form'][1], step=0.5, format="%.1f%%", key="f_xa1y_form")
+    f_g1y     = st.slider("G 1y %",     GB['f_g1y_form'][0],     GB['f_g1y_form'][1],     step=0.5, format="%.1f%%", key="f_g1y_form")
+    f_xg1y    = st.slider("xG 1y %",    GB['f_xg1y_form'][0],    GB['f_xg1y_form'][1],    step=0.5, format="%.1f%%", key="f_xg1y_form")
+    f_a1y     = st.slider("A 1y %",     GB['f_a1y_form'][0],     GB['f_a1y_form'][1],     step=0.5, format="%.1f%%", key="f_a1y_form")
+    f_xa1y    = st.slider("xA 1y %",    GB['f_xa1y_form'][0],    GB['f_xa1y_form'][1],    step=0.5, format="%.1f%%", key="f_xa1y_form")
+    f_avail1y = st.slider("Avail 1y %", GB['f_avail1y_form'][0], GB['f_avail1y_form'][1], step=0.5, format="%.1f%%", key="f_avail1y_form")
+    f_bcc1y   = st.slider("BCC 1y %",   GB['f_bcc1y_form'][0],   GB['f_bcc1y_form'][1],   step=0.5, format="%.1f%%", key="f_bcc1y_form")
 
 # --- 3-YEAR PERCENTAGES ---
 with st.sidebar.expander("3-Year Percentages", expanded=False):
-    f_g3y  = st.slider("G 3y %",  GB['f_g3y_form'][0],  GB['f_g3y_form'][1],  step=0.5, format="%.1f%%", key="f_g3y_form")
-    f_xg3y = st.slider("xG 3y %", GB['f_xg3y_form'][0], GB['f_xg3y_form'][1], step=0.5, format="%.1f%%", key="f_xg3y_form")
-    f_a3y  = st.slider("A 3y %",  GB['f_a3y_form'][0],  GB['f_a3y_form'][1],  step=0.5, format="%.1f%%", key="f_a3y_form")
-    f_xa3y = st.slider("xA 3y %", GB['f_xa3y_form'][0], GB['f_xa3y_form'][1], step=0.5, format="%.1f%%", key="f_xa3y_form")
+    f_g3y     = st.slider("G 3y %",     GB['f_g3y_form'][0],     GB['f_g3y_form'][1],     step=0.5, format="%.1f%%", key="f_g3y_form")
+    f_xg3y    = st.slider("xG 3y %",    GB['f_xg3y_form'][0],    GB['f_xg3y_form'][1],    step=0.5, format="%.1f%%", key="f_xg3y_form")
+    f_a3y     = st.slider("A 3y %",     GB['f_a3y_form'][0],     GB['f_a3y_form'][1],     step=0.5, format="%.1f%%", key="f_a3y_form")
+    f_xa3y    = st.slider("xA 3y %",    GB['f_xa3y_form'][0],    GB['f_xa3y_form'][1],    step=0.5, format="%.1f%%", key="f_xa3y_form")
+    f_avail3y = st.slider("Avail 3y %", GB['f_avail3y_form'][0], GB['f_avail3y_form'][1], step=0.5, format="%.1f%%", key="f_avail3y_form")
+    f_bcc3y   = st.slider("BCC 3y %",   GB['f_bcc3y_form'][0],   GB['f_bcc3y_form'][1],   step=0.5, format="%.1f%%", key="f_bcc3y_form")
 
 # ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
@@ -532,10 +550,14 @@ filter_vars = [
     ('pct_xg_1y',             f_xg1y,     GB['f_xg1y_form']),
     ('pct_assists_1y',        f_a1y,      GB['f_a1y_form']),
     ('pct_xa_1y',             f_xa1y,     GB['f_xa1y_form']),
+    ('pct_mins_avail_1y',     f_avail1y,  GB['f_avail1y_form']),
+    ('pct_bcc_1y',            f_bcc1y,    GB['f_bcc1y_form']),
     ('pct_goals_3y',          f_g3y,      GB['f_g3y_form']),
     ('pct_xg_3y',             f_xg3y,     GB['f_xg3y_form']),
     ('pct_assists_3y',        f_a3y,      GB['f_a3y_form']),
     ('pct_xa_3y',             f_xa3y,     GB['f_xa3y_form']),
+    ('pct_mins_avail_3y',     f_avail3y,  GB['f_avail3y_form']),
+    ('pct_bcc_3y',            f_bcc3y,    GB['f_bcc3y_form']),
 ]
 
 for col_name, val, limit in filter_vars:
