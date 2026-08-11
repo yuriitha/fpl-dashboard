@@ -475,18 +475,20 @@ avail_pl = set(get_available('pills_pl_form')['Play Pos'].dropna().unique()) if 
 filter_header("Playing Position", all_pl_pos, "pl_pos_form")
 selected_pl_pos = []
 
-for i, line in enumerate(pl_lines):
-    avail_in_line = [p for p in line if p in actual_pl_pos]
-    if avail_in_line:
-        sel_line = st.sidebar.pills(
-            f"Лінія {i+1}",
-            options=avail_in_line,
-            default=st.session_state.get(f'pills_pl_line_form_{i}', avail_in_line),
-            selection_mode="multi",
-            key=f'pills_pl_line_form_{i}'
-        )
-        if sel_line:
-            selected_pl_pos.extend(sel_line)
+for idx, line in enumerate(pl_lines):
+    available_in_line = [p for p in line if p in actual_pl_pos]
+    if not available_in_line:
+        continue
+    line_key = f"pills_pl_line_form_{idx}"
+    if line_key not in st.session_state:
+        st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos_form if p in available_in_line]
+
+    line_res = st.sidebar.pills(
+        label=f"pl_line_{idx}", options=available_in_line, key=line_key,
+        selection_mode="multi", label_visibility="collapsed"
+    )
+    if line_res:
+        selected_pl_pos.extend(line_res)
 
 avail_df    = get_available(exclude_key=None)
 avail_pos   = avail_df['element_type'].unique().tolist()   if 'element_type' in avail_df.columns   else []
