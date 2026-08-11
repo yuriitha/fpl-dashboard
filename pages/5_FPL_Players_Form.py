@@ -431,10 +431,14 @@ auto_update_slider('f_g1y_form',      'pct_goals_1y',        float)
 auto_update_slider('f_xg1y_form',     'pct_xg_1y',           float)
 auto_update_slider('f_a1y_form',      'pct_assists_1y',      float)
 auto_update_slider('f_xa1y_form',     'pct_xa_1y',           float)
+auto_update_slider('f_avail1y_form',  'pct_mins_avail_1y',   float)
+auto_update_slider('f_bcc1y_form',    'pct_bcc_1y',          float)
 auto_update_slider('f_g3y_form',      'pct_goals_3y',        float)
 auto_update_slider('f_xg3y_form',     'pct_xg_3y',           float)
 auto_update_slider('f_a3y_form',      'pct_assists_3y',      float)
 auto_update_slider('f_xa3y_form',     'pct_xa_3y',           float)
+auto_update_slider('f_avail3y_form',  'pct_mins_avail_3y',   float)
+auto_update_slider('f_bcc3y_form',    'pct_bcc_3y',          float)
 
 # ========================== САЙДБАР ==========================
 if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
@@ -505,6 +509,7 @@ with st.sidebar.expander("Performance Stats", expanded=False):
 
 # --- MARKET & POPULARITY ---
 with st.sidebar.expander("Market & Popularity", expanded=False):
+    f_cost     = st.slider("Price",             GB['f_cost_form'][0],     GB['f_cost_form'][1],     step=0.1, key="f_cost_form")
     f_selected = st.slider("Selected %",        GB['f_selected_form'][0], GB['f_selected_form'][1], step=0.1, key="f_selected_form")
     f_activity = st.slider("Transfer Activity", GB['f_activity_form'][0], GB['f_activity_form'][1], step=1.0, format="%d%%", key="f_activity_form")
 
