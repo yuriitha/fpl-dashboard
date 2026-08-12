@@ -53,7 +53,7 @@ st.markdown("""
 
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://localhost:8000/fpl_players"
+    url = "http://198.244.151.163:8000/fpl_players"
     df = pd.read_parquet(url)
     if 'av_rating_alt' in df.columns:
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
@@ -348,59 +348,59 @@ def filter_header(label, options, key_prefix):
 def inject_sidebar_layout(inactive_all: list):
     js = f"""
     <script>
-    (function() {
+    (function() {{
         var inactiveList = {json.dumps(inactive_all)};
-        function forceLayout() {
-            try {
+        function forceLayout() {{
+            try {{
                 var doc = window.parent.document;
                 var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                 if (!sidebar) return;
                 var btns = sidebar.querySelectorAll('button');
                 var plHeader = null;
                 var ps = sidebar.querySelectorAll('p');
-                ps.forEach(function(p) {
-                    if (p.innerText.trim() === 'Playing Position') {  plHeader = p; }
-                } );
+                ps.forEach(function(p) {{
+                    if (p.innerText.trim() === 'Playing Position') {{  plHeader = p; }}
+                }} );
                 var headerBottom = plHeader ? plHeader.getBoundingClientRect().bottom : 99999;
-                btns.forEach(function(b) {
+                btns.forEach(function(b) {{
                     var txt = b.innerText.trim();
                     if (!txt) return;
                     if (txt === "Reset All Filters" || txt === "All" || txt === "None") return;
                     var p = b.parentElement;
-                    for (var i = 0; i < 3; i++) {
-                        if (p && p.tagName === 'DIV') {
+                    for (var i = 0; i < 3; i++) {{
+                        if (p && p.tagName === 'DIV') {{
                             p.style.setProperty('display', 'flex', 'important');
                             p.style.setProperty('justify-content', 'center', 'important');
                             p.style.setProperty('flex-wrap', 'wrap', 'important');
                             p.style.setProperty('width', '100%', 'important');
                             p = p.parentElement;
-                        }
-                    }
-                    if (b.getBoundingClientRect().top > headerBottom) {
+                        }}
+                    }}
+                    if (b.getBoundingClientRect().top > headerBottom) {{
                         b.style.setProperty('width', '48px', 'important');
                         b.style.setProperty('min-width', '48px', 'important');
                         b.style.setProperty('max-width', '48px', 'important');
                         var stPills = b.closest('[data-testid="stPills"]');
-                        if (stPills) {
+                        if (stPills) {{
                             var wrapper = stPills.closest('.stElementContainer') || stPills.closest('[data-testid="stElementContainer"]');
-                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {
+                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {{
                                 wrapper.classList.add('playing-pos-wrapper');
-                            }
-                        }
-                    }  else {
+                            }}
+                        }}
+                    }}  else {{
                         b.style.setProperty('width', '60px', 'important');
                         b.style.setProperty('min-width', '60px', 'important');
                         b.style.setProperty('max-width', '60px', 'important');
-                    }
+                    }}
                     var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
-                    if (b.style.opacity !== expectedOpacity) {
+                    if (b.style.opacity !== expectedOpacity) {{
                         b.style.opacity = expectedOpacity;
-                    }
-                } );
-            }  catch(e) { }
-        }
+                    }}
+                }} );
+            }}  catch(e) {{ }}
+        }}
         setInterval(forceLayout, 300);
-    } )();
+    }} )();
     </script>
     """
     st.components.v1.html(js, height=0, scrolling=False)

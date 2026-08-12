@@ -38,7 +38,7 @@ st.markdown("""
 
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://localhost:8000/ucl_players"
+    url = "http://198.244.151.163:8000/ucl_players"
     df = pd.read_parquet(url)
     sort_cols = [c for c in ['Price', 'TM Value'] if c in df.columns]
     if sort_cols:

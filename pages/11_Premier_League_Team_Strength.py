@@ -51,12 +51,12 @@ import requests
 
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://localhost:8000/team_strength_model"
+    url = "http://198.244.151.163:8000/team_strength_model"
     df = pd.read_parquet(url)
 
     last_update_str = ""
     try:
-        meta_url = "http://localhost:8000/team_strength_metadata"
+        meta_url = "http://198.244.151.163:8000/team_strength_metadata"
         meta_resp = requests.get(meta_url, timeout=3)
         if meta_resp.status_code == 200:
             meta_json = meta_resp.json()
@@ -157,26 +157,26 @@ if search_name:
 inactive_teams = [t for t in all_teams if t not in final_teams]
 js = f"""
 <script>
-(function() {
+(function() {{
     var inactiveList = {json.dumps(inactive_teams)};
-    function forceLayout() {
-        try {
+    function forceLayout() {{
+        try {{
             var doc = window.parent.document;
             var sidebar = doc.querySelector('[data-testid="stSidebar"]');
             if (!sidebar) return;
             var btns = sidebar.querySelectorAll('button');
-            btns.forEach(function(b) {
+            btns.forEach(function(b) {{
                 var txt = b.innerText.trim();
                 if (!txt || txt === "Reset All Filters" || txt === "All" || txt === "None") return;
                 var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
-                if (b.style.opacity !== expectedOpacity) {
+                if (b.style.opacity !== expectedOpacity) {{
                     b.style.opacity = expectedOpacity;
-                }
-            } );
-        }  catch(e) { }
-    }
+                }}
+            }} );
+        }}  catch(e) {{ }}
+    }}
     setInterval(forceLayout, 300);
-} )();
+}} )();
 </script>
 """
 st.components.v1.html(js, height=0, scrolling=False)

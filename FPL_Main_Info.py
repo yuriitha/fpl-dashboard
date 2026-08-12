@@ -43,7 +43,7 @@ st.markdown("""
 
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://localhost:8000/fpl_players"
+    url = "http://198.244.151.163:8000/fpl_players"
     df = pd.read_parquet(url)
     if 'av_rating_alt' in df.columns:
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
@@ -306,11 +306,11 @@ def inject_sidebar_layout(inactive_all: list):
     """
     js = f"""
     <script>
-    (function() {
+    (function() {{
         var inactiveList = {json.dumps(inactive_all)};
 
-        function forceLayout() {
-            try {
+        function forceLayout() {{
+            try {{
                 var doc = window.parent.document;
                 var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                 if (!sidebar) return;
@@ -320,12 +320,12 @@ def inject_sidebar_layout(inactive_all: list):
                 // 1. Знаходимо заголовок Playing Position для орієнтації
                 var plHeader = null;
                 var ps = sidebar.querySelectorAll('p');
-                ps.forEach(function(p) {
-                    if (p.innerText.trim() === 'Playing Position') {  plHeader = p; }
-                } );
+                ps.forEach(function(p) {{
+                    if (p.innerText.trim() === 'Playing Position') {{  plHeader = p; }}
+                }} );
                 var headerBottom = plHeader ? plHeader.getBoundingClientRect().bottom : 99999;
 
-                btns.forEach(function(b) {
+                btns.forEach(function(b) {{
                     var txt = b.innerText.trim();
                     if (!txt) return;
 
@@ -335,49 +335,49 @@ def inject_sidebar_layout(inactive_all: list):
                     // --- Відцентровуємо контейнери ---
                     // Піднімаємось на 3 рівні вгору і робим всі обгортки flex + center
                     var p = b.parentElement;
-                    for (var i = 0; i < 3; i++) {
-                        if (p && p.tagName === 'DIV') {
+                    for (var i = 0; i < 3; i++) {{
+                        if (p && p.tagName === 'DIV') {{
                             p.style.setProperty('display', 'flex', 'important');
                             p.style.setProperty('justify-content', 'center', 'important');
                             p.style.setProperty('flex-wrap', 'wrap', 'important');
                             p.style.setProperty('width', '100%', 'important');
                             p = p.parentElement;
-                        }
-                    }
+                        }}
+                    }}
 
                     // --- Зменшуємо розмір Playing Position ---
-                    if (b.getBoundingClientRect().top > headerBottom) {
+                    if (b.getBoundingClientRect().top > headerBottom) {{
                         b.style.setProperty('width', '48px', 'important');
                         b.style.setProperty('min-width', '48px', 'important');
                         b.style.setProperty('max-width', '48px', 'important');
 
                         // Додаємо стабільний клас для батьківського контейнера, щоб уникнути мерехтіння
                         var stPills = b.closest('[data-testid="stPills"]');
-                        if (stPills) {
+                        if (stPills) {{
                             var wrapper = stPills.closest('.stElementContainer') || stPills.closest('[data-testid="stElementContainer"]');
-                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {
+                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {{
                                 wrapper.classList.add('playing-pos-wrapper');
-                            }
-                        }
-                    }  else {
+                            }}
+                        }}
+                    }}  else {{
                         // Гарантуємо 60px для інших
                         b.style.setProperty('width', '60px', 'important');
                         b.style.setProperty('min-width', '60px', 'important');
                         b.style.setProperty('max-width', '60px', 'important');
-                    }
+                    }}
 
                     // --- Затемнення ---
                     var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
-                    if (b.style.opacity !== expectedOpacity) {
+                    if (b.style.opacity !== expectedOpacity) {{
                         b.style.opacity = expectedOpacity;
-                    }
-                } );
-            }  catch(e) { }
-        }
+                    }}
+                }} );
+            }}  catch(e) {{ }}
+        }}
 
         // Використовуємо setInterval для постійного насаджування стилів, перебиваючи React
         setInterval(forceLayout, 300);
-    } )();
+    }} )();
     </script>
     """
     st.components.v1.html(js, height=0, scrolling=False)
