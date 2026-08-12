@@ -131,7 +131,7 @@ m_min = 0 if pd.isna(df['Mins'].min()) else int(df['Mins'].min())
 m_max = 1 if pd.isna(df['Mins'].max()) else int(df['Mins'].max())
 if m_min >= m_max:
     m_max = m_min + 1
-f_mins = st.sidebar.slider("Minutes played", m_min, m_max, (min(1, m_max), m_max))
+f_mins = st.sidebar.slider("Minutes played", m_min, m_max, (m_min, m_max))
 
 s_min, s_max = _slider_bounds(df['Selected'].min(), df['Selected'].max(), 1.0)
 f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
