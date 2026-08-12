@@ -117,16 +117,26 @@ for idx, line in enumerate(pl_lines):
             selected_pl_pos.extend(line_res)
 
 
-c_min, c_max = float(df['Price'].min()), float(df['Price'].max())
+def _slider_bounds(min_val, max_val, default_span=1.0):
+    mn = 0.0 if pd.isna(min_val) else float(min_val)
+    mx = 0.0 if pd.isna(max_val) else float(max_val)
+    if mn >= mx:
+        mx = mn + default_span
+    return (mn, mx)
+
+c_min, c_max = _slider_bounds(df['Price'].min(), df['Price'].max(), 1.0)
 f_cost = st.sidebar.slider("UCL Price", c_min, c_max, (c_min, c_max), 0.1)
 
-m_min, m_max = int(df['Mins'].min()), int(df['Mins'].max())
-f_mins = st.sidebar.slider("Minutes played", m_min, m_max, (1, m_max))
+m_min = 0 if pd.isna(df['Mins'].min()) else int(df['Mins'].min())
+m_max = 1 if pd.isna(df['Mins'].max()) else int(df['Mins'].max())
+if m_min >= m_max:
+    m_max = m_min + 1
+f_mins = st.sidebar.slider("Minutes played", m_min, m_max, (min(1, m_max), m_max))
 
-s_min, s_max = float(df['Selected'].min()), float(df['Selected'].max())
+s_min, s_max = _slider_bounds(df['Selected'].min(), df['Selected'].max(), 1.0)
 f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
 
-ppm_min, ppm_max = float(df['PPM'].min()), float(df['PPM'].max())
+ppm_min, ppm_max = _slider_bounds(df['PPM'].min(), df['PPM'].max(), 1.0)
 f_ppm = st.sidebar.slider("PPM (Points Per Match)", ppm_min, ppm_max, (ppm_min, ppm_max), 0.1)
 
 
