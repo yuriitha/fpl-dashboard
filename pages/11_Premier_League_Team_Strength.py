@@ -461,7 +461,7 @@ if not df_hist.empty:
                 name=t_code,
                 line=dict(color=color, width=2),
                 customdata=customdata,
-                hovertemplate=f"<b>{t_code}</b> (%{ customdata[0]} )<br>Rating: %{ y:.3f} <extra>%{ customdata[2]} </extra>",
+                hovertemplate=f"<b>{t_code}</b> (%{{customdata[0]}})<br>Rating: %{{y:.3f}} <extra>%{{customdata[2]}}</extra>",
                 showlegend=False
             ))
 
