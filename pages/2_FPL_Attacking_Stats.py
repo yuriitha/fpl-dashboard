@@ -4,14 +4,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-# Налаштування сторінки
+
 st.set_page_config(
     page_title="FPL Attacking Stats",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# CSS для відцентрування заголовків та даних і стилізації сайдбару
+
 st.markdown("""
     <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
@@ -52,18 +52,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
+
 import json
 
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://194.99.22.193:8000/fpl_players"
+    url = "http://localhost:8000/fpl_players"
     df = pd.read_parquet(url)
-    
-    # Сортування за xGI_norm для стартового вигляду
+
+
     if 'xGI_norm' in df.columns:
         df = df.sort_values(by="xGI_norm", ascending=False)
-        
+
     if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
         df['transfer_activity'] = df['transfers_in_24'] + df['transfers_out_24']
         log_act = np.log1p(df['transfer_activity'])
@@ -83,7 +83,7 @@ except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
 
-# ========================== ПІДГОТОВКА ==========================
+
 all_teams = sorted(df['team_short_name'].unique().tolist())
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
@@ -118,7 +118,7 @@ rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna() if 'av_rat
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
-# Глобальні межі шкали (незмінні)
+
 GB = {
     'f_cost_as':     _slider_bounds(_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
     'f_matches_as':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 38)), int(_get_min('matches_played', 0)) + 1)),
@@ -136,7 +136,7 @@ GB = {
     'f_tchs_as':     _slider_bounds(0.0, _get_max_sane('Touches_90')),
     'f_pass_as':     _slider_bounds(0.0, _get_max('Pass_pct', 100.0)),
 }
-# Дефолтні значення повзунків
+
 DEFAULTS = {
     'f_cost_as':     GB['f_cost_as'],
     'f_matches_as':  (max(GB['f_matches_as'][0], 5), GB['f_matches_as'][1]),
@@ -155,12 +155,12 @@ DEFAULTS = {
     'f_pass_as':     GB['f_pass_as'],
 }
 
-# ========================== SESSION STATE ==========================
+
 if 'pills_teams_as'  not in st.session_state: st.session_state.pills_teams_as  = all_teams
 if 'pills_pos_as'    not in st.session_state: st.session_state.pills_pos_as    = [p for p in sorted_positions if p != 'GK']
 if 'pills_pl_pos_as' not in st.session_state: st.session_state.pills_pl_pos_as = all_pl_pos
 
-# ========================== ХЕЛПЕРИ ==========================
+
 def _pills_snapshot():
     snap = {
         'pos':    tuple(sorted(st.session_state.get('pills_pos_as',   [p for p in sorted_positions if p != 'GK']) or [])),
@@ -251,7 +251,7 @@ def get_base_df(exclude_key=None):
         else:
             mask &= df['Play Pos'].isin(cv_pl_pos)
 
-    # Застосовуємо DEFAULTS інших слайдерів (не поточні значення!)
+
     _slider_cols = {
         'f_matches_as':  ('matches_played',        DEFAULTS['f_matches_as']),
         'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
@@ -329,64 +329,64 @@ def filter_header(label, options, key_prefix):
 def inject_sidebar_layout(inactive_all: list):
     js = f"""
     <script>
-    (function() {{
+    (function() {
         var inactiveList = {json.dumps(inactive_all)};
-        function forceLayout() {{
-            try {{
+        function forceLayout() {
+            try {
                 var doc = window.parent.document;
                 var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                 if (!sidebar) return;
                 var btns = sidebar.querySelectorAll('button');
                 var plHeader = null;
                 var ps = sidebar.querySelectorAll('p');
-                ps.forEach(function(p) {{
-                    if (p.innerText.trim() === 'Playing Position') {{ plHeader = p; }}
-                }});
+                ps.forEach(function(p) {
+                    if (p.innerText.trim() === 'Playing Position') {  plHeader = p; }
+                } );
                 var headerBottom = plHeader ? plHeader.getBoundingClientRect().bottom : 99999;
-                btns.forEach(function(b) {{
+                btns.forEach(function(b) {
                     var txt = b.innerText.trim();
                     if (!txt) return;
                     if (txt === "Reset All Filters" || txt === "All" || txt === "None") return;
                     var p = b.parentElement;
-                    for (var i = 0; i < 3; i++) {{
-                        if (p && p.tagName === 'DIV') {{
+                    for (var i = 0; i < 3; i++) {
+                        if (p && p.tagName === 'DIV') {
                             p.style.setProperty('display', 'flex', 'important');
                             p.style.setProperty('justify-content', 'center', 'important');
                             p.style.setProperty('flex-wrap', 'wrap', 'important');
                             p.style.setProperty('width', '100%', 'important');
                             p = p.parentElement;
-                        }}
-                    }}
-                    if (b.getBoundingClientRect().top > headerBottom) {{
+                        }
+                    }
+                    if (b.getBoundingClientRect().top > headerBottom) {
                         b.style.setProperty('width', '48px', 'important');
                         b.style.setProperty('min-width', '48px', 'important');
                         b.style.setProperty('max-width', '48px', 'important');
                         var stPills = b.closest('[data-testid="stPills"]');
-                        if (stPills) {{
+                        if (stPills) {
                             var wrapper = stPills.closest('.stElementContainer') || stPills.closest('[data-testid="stElementContainer"]');
-                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {{
+                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {
                                 wrapper.classList.add('playing-pos-wrapper');
-                            }}
-                        }}
-                    }} else {{
+                            }
+                        }
+                    }  else {
                         b.style.setProperty('width', '60px', 'important');
                         b.style.setProperty('min-width', '60px', 'important');
                         b.style.setProperty('max-width', '60px', 'important');
-                    }}
+                    }
                     var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
-                    if (b.style.opacity !== expectedOpacity) {{
+                    if (b.style.opacity !== expectedOpacity) {
                         b.style.opacity = expectedOpacity;
-                    }}
-                }});
-            }} catch(e) {{}}
-        }}
+                    }
+                } );
+            }  catch(e) { }
+        }
         setInterval(forceLayout, 300);
-    }})();
+    } )();
     </script>
     """
     st.components.v1.html(js, height=0, scrolling=False)
 
-# ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
+
 auto_update_slider('f_cost_as',     'now_cost',            float)
 auto_update_slider('f_matches_as',  'matches_played',      int)
 auto_update_slider('f_rating_as',   'av_rating_alt',       float, only_positive=True)
@@ -403,7 +403,7 @@ auto_update_slider('f_shot_as',     'ShoT_90',             float)
 auto_update_slider('f_tchs_as',     'Touches_90',          float)
 auto_update_slider('f_pass_as',     'Pass_pct',            float)
 
-# ========================== САЙДБАР ==========================
+
 if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if '_as' in k]
     for key in keys_to_delete:
@@ -412,7 +412,7 @@ if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
 
 search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", key="search_name_as")
 
-# --- 1. FPL POSITION ---
+
 avail_pos = set(get_available('pills_pos_as')['element_type'].unique())
 filter_header("FPL Position", sorted_positions, "pos_as")
 selected_positions = st.sidebar.pills(
@@ -420,12 +420,12 @@ selected_positions = st.sidebar.pills(
     selection_mode="multi", label_visibility="collapsed"
 )
 
-# --- 2. FPL PRICE ---
+
 f_cost = st.sidebar.slider(
     "FPL Price", GB['f_cost_as'][0], GB['f_cost_as'][1], step=0.1, format="%.1f", key="f_cost_as"
 )
 
-# --- 3. TEAM ---
+
 avail_teams = set(get_available('pills_teams_as')['team_short_name'].unique())
 filter_header("Team", all_teams, "teams_as")
 selected_teams = st.sidebar.pills(
@@ -433,7 +433,7 @@ selected_teams = st.sidebar.pills(
     selection_mode="multi", label_visibility="collapsed"
 )
 
-# --- 4. PLAYING POSITION ---
+
 avail_pl = set(get_available('pills_pl_as')['Play Pos'].dropna().unique()) if 'Play Pos' in df.columns else set()
 filter_header("Playing Position", all_pl_pos, "pl_pos_as")
 selected_pl_pos = []
@@ -453,7 +453,7 @@ for idx, line in enumerate(pl_lines):
     if line_res:
         selected_pl_pos.extend(line_res)
 
-# --- ЗБІР УСІХ НЕАКТИВНИХ ОПЦІЙ ДЛЯ JS ---
+
 all_inactive = []
 all_inactive.extend([p for p in sorted_positions if p not in avail_pos])
 all_inactive.extend([t for t in all_teams if t not in avail_teams])
@@ -461,20 +461,20 @@ all_inactive.extend([p for p in all_pl_pos if p not in avail_pl])
 
 inject_sidebar_layout(all_inactive)
 
-# --- PERFORMANCE STATS ---
+
 with st.sidebar.expander("Performance Stats", expanded=False):
     f_matches  = st.slider("Matches",      GB['f_matches_as'][0],  GB['f_matches_as'][1],  step=1,    key="f_matches_as")
     f_rating   = st.slider("Rating",       GB['f_rating_as'][0],   GB['f_rating_as'][1],   step=0.05, format="%.2f", key="f_rating_as")
     f_avg_mins = st.slider("Average Mins", GB['f_avg_mins_as'][0], GB['f_avg_mins_as'][1], step=1.0,  key="f_avg_mins_as")
     f_60min    = st.slider("60 Min %",     GB['f_60min_as'][0],    GB['f_60min_as'][1],    step=0.5,  key="f_60min_as")
 
-# --- MARKET & POPULARITY ---
+
 with st.sidebar.expander("Market & Popularity", expanded=False):
     f_selected = st.slider("Selected %",        GB['f_selected_as'][0], GB['f_selected_as'][1], step=0.1, key="f_selected_as")
     f_top100k  = st.slider("Top 100k %",        GB['f_top100k_as'][0],  GB['f_top100k_as'][1],  step=0.1, key="f_top100k_as")
     f_activity = st.slider("Transfer Activity", GB['f_activity_as'][0], GB['f_activity_as'][1], step=1.0, format="%d%%", key="f_activity_as")
 
-# --- ATTACKING STATS ---
+
 with st.sidebar.expander("Attacking Stats", expanded=True):
     f_xgot = st.slider("xGoT/90",   GB['f_xgot_as'][0], GB['f_xgot_as'][1], step=0.05, key="f_xgot_as")
     f_xa   = st.slider("xA/90",     GB['f_xa_as'][0],   GB['f_xa_as'][1],   step=0.05, key="f_xa_as")
@@ -484,7 +484,7 @@ with st.sidebar.expander("Attacking Stats", expanded=True):
     f_tchs = st.slider("Touches/90", GB['f_tchs_as'][0], GB['f_tchs_as'][1], step=0.5,  key="f_tchs_as")
     f_pass = st.slider("Pass%",     GB['f_pass_as'][0], GB['f_pass_as'][1], step=1.0,  key="f_pass_as")
 
-# ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
+
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
     play_pos_mask = df['Play Pos'].isin(selected_pl_pos) | df['Play Pos'].isna()
 else:
@@ -526,16 +526,16 @@ sort_cols = [c for c in ['now_cost', 'M Price'] if c in filtered_df.columns]
 if sort_cols:
     filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
-# ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
+
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
-    "selected_by_percent", "min_played", "matches_played", "matches_started", 
-    "avg_mins", "60_min", "av_rating_alt", 
+    "selected_by_percent", "min_played", "matches_played", "matches_started",
+    "avg_mins", "60_min", "av_rating_alt",
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm",
     "Sh_90", "ShoT_90", "KP_90", "Cross_90", "Touches_90", "Pass_pct", "BC_90", "PBC_90", "Contest_pct"
 ]
 
-# Перевірка наявності колонок
+
 existing_cols = [c for c in display_columns if c in filtered_df.columns]
 
 def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None):
@@ -546,10 +546,10 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None):
         s_max = min(s_max, max_cap)
     if pd.isna(s_min) or pd.isna(s_max) or s_min >= s_max:
         return ['' for _ in s]
-    
+
     cmap = plt.get_cmap(cmap_name)
     norm = mcolors.Normalize(vmin=s_min, vmax=s_max)
-    
+
     styles = []
     for val in s:
         if pd.isna(val):
@@ -560,12 +560,8 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None):
             styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
     return styles
 
-# Створення стилізованого DataFrame
-styled_df = filtered_df[existing_cols].style \
-    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, max_cap=0.90, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90', 'A_90', 'xA_90', 'xGI_norm'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Cross_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90', 'Contest_pct'] if c in existing_cols]) \
-    .format(precision=2)
+
+styled_df = filtered_df[existing_cols].style    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, max_cap=0.90, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90', 'A_90', 'xA_90', 'xGI_norm'] if c in existing_cols])    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Cross_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90', 'Contest_pct'] if c in existing_cols])    .format(precision=2)
 
 st.subheader(f"Attacking Stats: {len(filtered_df)} players", anchor=False)
 

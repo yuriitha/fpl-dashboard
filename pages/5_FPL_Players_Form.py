@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для відцентрування заголовків та даних, стилізації сайдбару та компактності
+
 st.markdown("""
     <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
@@ -53,7 +53,7 @@ st.markdown("""
 
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://194.99.22.193:8000/fpl_players"
+    url = "http://localhost:8000/fpl_players"
     df = pd.read_parquet(url)
 
     pct_cols = [
@@ -85,7 +85,7 @@ def load_data():
     sort_cols = [c for c in ['now_cost'] if c in df.columns]
     if sort_cols:
         df = df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
-    
+
     if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
         df['transfer_activity'] = df['transfers_in_24'] + df['transfers_out_24']
         log_act = np.log1p(df['transfer_activity'])
@@ -96,7 +96,7 @@ def load_data():
             df['transfer_activity_pct'] = 0.0
     else:
         df['transfer_activity_pct'] = 0.0
-        
+
     return df
 
 try:
@@ -105,7 +105,7 @@ except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
 
-# ========================== ПІДГОТОВКА ==========================
+
 all_teams = sorted(df['team_short_name'].unique().tolist())
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['element_type'].unique().tolist()
@@ -143,7 +143,7 @@ rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna() if 'av_rat
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
-# Глобальні межі шкали (незмінні)
+
 GB = {
     'f_cost_form':     _slider_bounds(_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
     'f_matches_form':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 38)), int(_get_min('matches_played', 0)) + 1)),
@@ -166,7 +166,7 @@ GB = {
     'f_bcc3y_form':    _slider_bounds(0.0, _get_max_sane('pct_bcc_3y')),
 }
 
-# Дефолтні значення повзунків
+
 DEFAULTS = {
     'f_cost_form':     GB['f_cost_form'],
     'f_matches_form':  GB['f_matches_form'],
@@ -190,12 +190,12 @@ DEFAULTS = {
     'f_xa3y_form':     GB['f_xa3y_form'],
 }
 
-# ========================== SESSION STATE ==========================
+
 if 'pills_teams_form'  not in st.session_state: st.session_state.pills_teams_form  = all_teams
 if 'pills_pos_form'    not in st.session_state: st.session_state.pills_pos_form    = [p for p in sorted_positions if p != 'GK']
 if 'pills_pl_pos_form' not in st.session_state: st.session_state.pills_pl_pos_form = all_pl_pos
 
-# ========================== ХЕЛПЕРИ ==========================
+
 def _pills_snapshot():
     snap = {
         'pos':    tuple(sorted(st.session_state.get('pills_pos_form',   [p for p in sorted_positions if p != 'GK']) or [])),
@@ -362,64 +362,64 @@ def filter_header(label, options, key_prefix):
 def inject_sidebar_layout(inactive_all: list):
     js = f"""
     <script>
-    (function() {{
+    (function() {
         var inactiveList = {json.dumps(inactive_all)};
-        function forceLayout() {{
-            try {{
+        function forceLayout() {
+            try {
                 var doc = window.parent.document;
                 var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                 if (!sidebar) return;
                 var btns = sidebar.querySelectorAll('button');
                 var plHeader = null;
                 var ps = sidebar.querySelectorAll('p');
-                ps.forEach(function(p) {{
-                    if (p.innerText.trim() === 'Playing Position') {{ plHeader = p; }}
-                }});
+                ps.forEach(function(p) {
+                    if (p.innerText.trim() === 'Playing Position') {  plHeader = p; }
+                } );
                 var headerBottom = plHeader ? plHeader.getBoundingClientRect().bottom : 99999;
-                btns.forEach(function(b) {{
+                btns.forEach(function(b) {
                     var txt = b.innerText.trim();
                     if (!txt) return;
                     if (txt === "Reset All Filters" || txt === "All" || txt === "None") return;
                     var p = b.parentElement;
-                    for (var i = 0; i < 3; i++) {{
-                        if (p && p.tagName === 'DIV') {{
+                    for (var i = 0; i < 3; i++) {
+                        if (p && p.tagName === 'DIV') {
                             p.style.setProperty('display', 'flex', 'important');
                             p.style.setProperty('justify-content', 'center', 'important');
                             p.style.setProperty('flex-wrap', 'wrap', 'important');
                             p.style.setProperty('width', '100%', 'important');
                             p = p.parentElement;
-                        }}
-                    }}
-                    if (b.getBoundingClientRect().top > headerBottom) {{
+                        }
+                    }
+                    if (b.getBoundingClientRect().top > headerBottom) {
                         b.style.setProperty('width', '48px', 'important');
                         b.style.setProperty('min-width', '48px', 'important');
                         b.style.setProperty('max-width', '48px', 'important');
                         var stPills = b.closest('[data-testid="stPills"]');
-                        if (stPills) {{
+                        if (stPills) {
                             var wrapper = stPills.closest('.stElementContainer') || stPills.closest('[data-testid="stElementContainer"]');
-                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {{
+                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {
                                 wrapper.classList.add('playing-pos-wrapper');
-                            }}
-                        }}
-                    }} else {{
+                            }
+                        }
+                    }  else {
                         b.style.setProperty('width', '60px', 'important');
                         b.style.setProperty('min-width', '60px', 'important');
                         b.style.setProperty('max-width', '60px', 'important');
-                    }}
+                    }
                     var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
-                    if (b.style.opacity !== expectedOpacity) {{
+                    if (b.style.opacity !== expectedOpacity) {
                         b.style.opacity = expectedOpacity;
-                    }}
-                }});
-            }} catch(e) {{}}
-        }}
+                    }
+                } );
+            }  catch(e) { }
+        }
         setInterval(forceLayout, 300);
-    }})();
+    } )();
     </script>
     """
     st.components.v1.html(js, height=0, scrolling=False)
 
-# ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
+
 auto_update_slider('f_cost_form',     'now_cost',            float)
 auto_update_slider('f_matches_form',  'matches_played',      int)
 auto_update_slider('f_rating_form',   'av_rating_alt',       float, only_positive=True)
@@ -440,7 +440,7 @@ auto_update_slider('f_xa3y_form',     'pct_xa_3y',           float)
 auto_update_slider('f_avail3y_form',  'pct_mins_avail_3y',   float)
 auto_update_slider('f_bcc3y_form',    'pct_bcc_3y',          float)
 
-# ========================== САЙДБАР ==========================
+
 if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if '_form' in k]
     for key in keys_to_delete:
@@ -449,7 +449,7 @@ if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
 
 search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", key="search_name_form")
 
-# --- 1. FPL POSITION ---
+
 avail_pos = set(get_available('pills_pos_form')['element_type'].unique())
 filter_header("FPL Position", sorted_positions, "pos_form")
 selected_positions = st.sidebar.pills(
@@ -457,12 +457,12 @@ selected_positions = st.sidebar.pills(
     selection_mode="multi", label_visibility="collapsed"
 )
 
-# --- 2. FPL PRICE ---
+
 f_cost = st.sidebar.slider(
     "FPL Price", GB['f_cost_form'][0], GB['f_cost_form'][1], step=0.1, format="%.1f", key="f_cost_form"
 )
 
-# --- 3. TEAM ---
+
 avail_teams = set(get_available('pills_teams_form')['team_short_name'].unique())
 filter_header("Team", all_teams, "teams_form")
 selected_teams = st.sidebar.pills(
@@ -470,7 +470,7 @@ selected_teams = st.sidebar.pills(
     selection_mode="multi", label_visibility="collapsed"
 )
 
-# --- 4. PLAYING POSITION ---
+
 avail_pl = set(get_available('pills_pl_form')['Play Pos'].dropna().unique()) if 'Play Pos' in df.columns else set()
 filter_header("Playing Position", all_pl_pos, "pl_pos_form")
 selected_pl_pos = []
@@ -495,7 +495,7 @@ avail_pos   = avail_df['element_type'].unique().tolist()   if 'element_type' in 
 avail_teams = avail_df['team_short_name'].unique().tolist() if 'team_short_name' in avail_df.columns else []
 avail_pl    = avail_df['Play Pos'].dropna().unique().tolist() if 'Play Pos' in df.columns else []
 
-# --- ЗБІР УСІХ НЕАКТИВНИХ ОПЦІЙ ДЛЯ JS ---
+
 all_inactive = []
 all_inactive.extend([p for p in sorted_positions if p not in avail_pos])
 all_inactive.extend([t for t in all_teams if t not in avail_teams])
@@ -503,18 +503,18 @@ all_inactive.extend([p for p in all_pl_pos if p not in avail_pl])
 
 inject_sidebar_layout(all_inactive)
 
-# --- PERFORMANCE STATS ---
+
 with st.sidebar.expander("Performance Stats", expanded=False):
     f_matches = st.slider("Matches", GB['f_matches_form'][0], GB['f_matches_form'][1], step=1, key="f_matches_form")
     f_mins1y  = st.slider("Mins 1y",  GB['f_mins1y_form'][0],  GB['f_mins1y_form'][1],  step=50.0, key="f_mins1y_form")
     f_mins3y  = st.slider("Mins 3y",  GB['f_mins3y_form'][0],  GB['f_mins3y_form'][1],  step=100.0, key="f_mins3y_form")
 
-# --- MARKET & POPULARITY ---
+
 with st.sidebar.expander("Market & Popularity", expanded=False):
     f_selected = st.slider("Selected %",        GB['f_selected_form'][0], GB['f_selected_form'][1], step=0.1, key="f_selected_form")
     f_activity = st.slider("Transfer Activity", GB['f_activity_form'][0], GB['f_activity_form'][1], step=1.0, format="%d%%", key="f_activity_form")
 
-# --- 1-YEAR PERCENTAGES ---
+
 with st.sidebar.expander("1-Year Percentages", expanded=True):
     f_g1y     = st.slider("G 1y %",     GB['f_g1y_form'][0],     GB['f_g1y_form'][1],     step=0.5, format="%.1f%%", key="f_g1y_form")
     f_xg1y    = st.slider("xG 1y %",    GB['f_xg1y_form'][0],    GB['f_xg1y_form'][1],    step=0.5, format="%.1f%%", key="f_xg1y_form")
@@ -523,7 +523,7 @@ with st.sidebar.expander("1-Year Percentages", expanded=True):
     f_avail1y = st.slider("Avail 1y %", GB['f_avail1y_form'][0], GB['f_avail1y_form'][1], step=0.5, format="%.1f%%", key="f_avail1y_form")
     f_bcc1y   = st.slider("BCC 1y %",   GB['f_bcc1y_form'][0],   GB['f_bcc1y_form'][1],   step=0.5, format="%.1f%%", key="f_bcc1y_form")
 
-# --- 3-YEAR PERCENTAGES ---
+
 with st.sidebar.expander("3-Year Percentages", expanded=False):
     f_g3y     = st.slider("G 3y %",     GB['f_g3y_form'][0],     GB['f_g3y_form'][1],     step=0.5, format="%.1f%%", key="f_g3y_form")
     f_xg3y    = st.slider("xG 3y %",    GB['f_xg3y_form'][0],    GB['f_xg3y_form'][1],    step=0.5, format="%.1f%%", key="f_xg3y_form")
@@ -532,7 +532,7 @@ with st.sidebar.expander("3-Year Percentages", expanded=False):
     f_avail3y = st.slider("Avail 3y %", GB['f_avail3y_form'][0], GB['f_avail3y_form'][1], step=0.5, format="%.1f%%", key="f_avail3y_form")
     f_bcc3y   = st.slider("BCC 3y %",   GB['f_bcc3y_form'][0],   GB['f_bcc3y_form'][1],   step=0.5, format="%.1f%%", key="f_bcc3y_form")
 
-# ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
+
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
     play_pos_mask = df['Play Pos'].isin(selected_pl_pos) | df['Play Pos'].isna()
 else:
@@ -578,7 +578,7 @@ sort_cols = [c for c in ['now_cost'] if c in filtered_df.columns]
 if sort_cols:
     filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
-# ========================== СТИЛІЗАЦІЯ ТА ВІДОБРАЖЕННЯ ==========================
+
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "selected_by_percent",
     "min_played_1y", "pct_mins_avail_1y", "pct_goals_1y", "pct_xg_1y", "pct_xgot_1y", "pct_assists_1y", "pct_xa_1y", "pct_shots_1y", "pct_bcc_1y",
@@ -597,10 +597,10 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
         s_max = min(s_max, max_cap)
     if pd.isna(s_min) or pd.isna(s_max) or s_min >= s_max:
         return ['' for _ in s]
-    
+
     cmap = plt.get_cmap(cmap_name)
     norm = mcolors.Normalize(vmin=s_min, vmax=s_max)
-    
+
     styles = []
     for val in s:
         if pd.isna(val):
@@ -614,9 +614,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
             styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
     return styles
 
-styled_df = filtered_df[existing_cols].style \
-    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['pct_mins_avail_1y', 'pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_mins_avail_3y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols]) \
-    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['pct_shots_1y', 'pct_bcc_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_shots_3y', 'pct_bcc_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols])
+styled_df = filtered_df[existing_cols].style    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['pct_mins_avail_1y', 'pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_mins_avail_3y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols])    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['pct_shots_1y', 'pct_bcc_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_shots_3y', 'pct_bcc_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols])
 
 st.subheader(f"FPL Players Form: {len(filtered_df)} players", anchor=False)
 

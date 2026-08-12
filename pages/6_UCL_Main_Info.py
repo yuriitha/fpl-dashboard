@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-# Налаштування сторінки
+
 st.set_page_config(
     page_title="UCL Players Stats",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# CSS для максимальної компактності та відцентрування
+
 st.markdown("""
     <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stDataFrame"] {
@@ -24,7 +24,7 @@ st.markdown("""
         }
         [data-testid="stTable"] th, [data-testid="stDataFrame"] th { text-align: center !important; }
         [data-testid="stDataFrame"] td { text-align: center !important; }
-        
+
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
             gap: 0.4rem !important;
         }
@@ -35,10 +35,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
+
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://194.99.22.193:8000/ucl_players"
+    url = "http://localhost:8000/ucl_players"
     df = pd.read_parquet(url)
     sort_cols = [c for c in ['Price', 'TM Value'] if c in df.columns]
     if sort_cols:
@@ -51,44 +51,44 @@ except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
 
-# ========================== ПІДГОТОВКА СПИСКУ КОЛОНОК ==========================
+
 display_columns = [
-    "Player", "Age", "Pos", "Pl Pos", "Team", "Team Name", "Price", "Foot", 
-    "TM Value", "Selected", "Mins", "G", "A", 
+    "Player", "Age", "Pos", "Pl Pos", "Team", "Team Name", "Price", "Foot",
+    "TM Value", "Selected", "Mins", "G", "A",
     "POTM", "PPM", "Value", "In", "Out", "In 24", "Out 24"
 ]
 
-# ========================== ФІЛЬТРИ В САЙДБАРІ ==========================
-st.sidebar.header("UCL Main Info") 
 
-# --- 1. TEAM ---
+st.sidebar.header("UCL Main Info")
+
+
 all_teams = sorted(df['Team'].unique())
 selected_teams = []
 for i in range(0, len(all_teams), 4):
     batch = all_teams[i:i+4]
     res = st.sidebar.pills(
-        label="Team" if i == 0 else f"team_group_{i}", 
-        options=batch, 
-        default=batch, 
+        label="Team" if i == 0 else f"team_group_{i}",
+        options=batch,
+        default=batch,
         selection_mode="multi",
         label_visibility="visible" if i == 0 else "collapsed"
     )
     if res:
         selected_teams.extend(res)
 
-# --- 2. UCL POSITION ---
+
 pos_order = ['GK', 'DEF', 'MID', 'FW']
 actual_pos = df['Pos'].unique().tolist()
 sorted_positions = [p for p in pos_order if p in actual_pos] + sorted([p for p in actual_pos if p not in pos_order])
 
 selected_positions = st.sidebar.pills(
-    "UCL Position", 
-    options=sorted_positions, 
-    default=sorted_positions, 
+    "UCL Position",
+    options=sorted_positions,
+    default=sorted_positions,
     selection_mode="multi"
 )
 
-# --- 3. PLAYING POSITION ---
+
 pl_lines = [
     ['GK'],
     ['RB', 'CB', 'LB'],
@@ -116,7 +116,7 @@ for idx, line in enumerate(pl_lines):
         if line_res:
             selected_pl_pos.extend(line_res)
 
-# --- СЛАЙДЕРИ UCL ---
+
 c_min, c_max = float(df['Price'].min()), float(df['Price'].max())
 f_cost = st.sidebar.slider("UCL Price", c_min, c_max, (c_min, c_max), 0.1)
 
@@ -129,7 +129,7 @@ f_selected = st.sidebar.slider("Selected %", s_min, s_max, (s_min, s_max), 0.1)
 ppm_min, ppm_max = float(df['PPM'].min()), float(df['PPM'].max())
 f_ppm = st.sidebar.slider("PPM (Points Per Match)", ppm_min, ppm_max, (ppm_min, ppm_max), 0.1)
 
-# ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
+
 mask = (
     df['Pos'].isin(selected_positions if selected_positions else []) &
     df['Team'].isin(selected_teams if selected_teams else []) &
@@ -144,7 +144,7 @@ sort_cols = [c for c in ['Price', 'TM Value'] if c in filtered_df.columns]
 if sort_cols:
     filtered_df = filtered_df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
-# ========================== ВІДОБРАЖЕННЯ ТАБЛИЦІ ==========================
+
 st.subheader(f"UCL Players filtered: {len(filtered_df)}", anchor=False)
 
 existing_display_cols = [c for c in display_columns if c in filtered_df.columns]

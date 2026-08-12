@@ -51,12 +51,12 @@ import requests
 
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://194.99.22.193:8000/team_strength_model"
+    url = "http://localhost:8000/team_strength_model"
     df = pd.read_parquet(url)
 
     last_update_str = ""
     try:
-        meta_url = "http://194.99.22.193:8000/team_strength_metadata"
+        meta_url = "http://localhost:8000/team_strength_metadata"
         meta_resp = requests.get(meta_url, timeout=3)
         if meta_resp.status_code == 200:
             meta_json = meta_resp.json()
@@ -80,24 +80,24 @@ except Exception as e:
     st.error(f"Помилка завантаження: {e}")
     st.stop()
 
-# Get teams and colors
+
 team_colors = {}
 team_code_to_name = {}
 
-# Populate team_colors by team name to avoid collisions where different teams share the same code
+
 for _, row in df[['home_team', 'home_color']].dropna().drop_duplicates().iterrows():
     if row['home_team'] not in team_colors: team_colors[row['home_team']] = row['home_color']
 for _, row in df[['away_team', 'away_color']].dropna().drop_duplicates().iterrows():
     if row['away_team'] not in team_colors: team_colors[row['away_team']] = row['away_color']
 
-# For team_code_to_name, we prioritize League One teams to ensure codes resolve to the expected League One team
+
 l1_teams_all = df[df['league'] == 'League One']
 for _, row in l1_teams_all[['home_team_code', 'home_team']].dropna().drop_duplicates().iterrows():
     team_code_to_name[row['home_team_code']] = row['home_team']
 for _, row in l1_teams_all[['away_team_code', 'away_team']].dropna().drop_duplicates().iterrows():
     team_code_to_name[row['away_team_code']] = row['away_team']
 
-# Fallback for teams not in League One (using first occurrence)
+
 for _, row in df[['home_team_code', 'home_team']].dropna().drop_duplicates().iterrows():
     if row['home_team_code'] not in team_code_to_name: team_code_to_name[row['home_team_code']] = row['home_team']
 for _, row in df[['away_team_code', 'away_team']].dropna().drop_duplicates().iterrows():
@@ -105,14 +105,14 @@ for _, row in df[['away_team_code', 'away_team']].dropna().drop_duplicates().ite
 
 all_seasons = sorted([s for s in df['season'].dropna().unique() if s != "2009/10"])
 
-# Sidebar
+
 if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if k.startswith('ts_')]
     for key in keys_to_delete:
         del st.session_state[key]
     st.rerun()
 
-# Seasons Filter
+
 season_range = st.sidebar.select_slider(
     "Seasons",
     options=all_seasons,
@@ -124,14 +124,14 @@ s_start, s_end = season_range
 l1_df_filtered = df[(df['league'] == 'League One') & (df['season'] >= s_start) & (df['season'] <= s_end)]
 all_teams = sorted([t for t in set(l1_df_filtered['home_team_code'].dropna()).union(set(l1_df_filtered['away_team_code'].dropna())) if t and str(t).strip()])
 
-# Session state
+
 if 'ts_l1_pills_teams' not in st.session_state or st.session_state.get('ts_l1_prev_all_teams') != all_teams:
     st.session_state.ts_l1_pills_teams = all_teams
     st.session_state.ts_l1_prev_all_teams = all_teams
 
 search_name = st.sidebar.text_input("Search Team", placeholder="Enter team name...", key="ts_l1_search_name")
 
-# Filter Header Helper
+
 def filter_header(label, options, key_prefix):
     cols = st.sidebar.columns([1.4, 0.8, 0.8])
     cols[0].markdown(f"<p style='font-size:0.875rem;margin-bottom:0'>{label}</p>", unsafe_allow_html=True)
@@ -148,35 +148,35 @@ selected_teams = st.sidebar.pills(
     selection_mode="multi", label_visibility="collapsed"
 )
 
-# Apply team search filter
+
 final_teams = selected_teams if selected_teams else []
 if search_name:
     final_teams = [t for t in final_teams if search_name.lower() in t.lower() or search_name.lower() in team_code_to_name.get(t, "").lower()]
 
-# JS Injection for sidebar layout to gray out unselected
+
 inactive_teams = [t for t in all_teams if t not in final_teams]
 js = f"""
 <script>
-(function() {{
+(function() {
     var inactiveList = {json.dumps(inactive_teams)};
-    function forceLayout() {{
-        try {{
+    function forceLayout() {
+        try {
             var doc = window.parent.document;
             var sidebar = doc.querySelector('[data-testid="stSidebar"]');
             if (!sidebar) return;
             var btns = sidebar.querySelectorAll('button');
-            btns.forEach(function(b) {{
+            btns.forEach(function(b) {
                 var txt = b.innerText.trim();
                 if (!txt || txt === "Reset All Filters" || txt === "All" || txt === "None") return;
                 var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
-                if (b.style.opacity !== expectedOpacity) {{
+                if (b.style.opacity !== expectedOpacity) {
                     b.style.opacity = expectedOpacity;
-                }}
-            }});
-        }} catch(e) {{}}
-    }}
+                }
+            } );
+        }  catch(e) { }
+    }
     setInterval(forceLayout, 300);
-}}).call(this);
+} ).call(this);
 </script>
 """
 st.components.v1.html(js, height=0, scrolling=False)
@@ -188,14 +188,14 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
     s_max = fixed_max if fixed_max is not None else s.max()
     if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
         return ['' for _ in s]
-    
+
     if isinstance(cmap_name, str):
         cmap = plt.get_cmap(cmap_name)
     else:
         cmap = cmap_name
-        
+
     norm = mcolors.Normalize(vmin=s_min, vmax=s_max)
-    
+
     styles = []
     for val in s:
         if pd.isna(val):
@@ -204,7 +204,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
             clamped = max(min(val, s_max), s_min)
             norm_val = norm(clamped)
             r, g, b, _ = cmap(norm_val)
-            
+
             if transparent_at == 'min':
                 intensity = norm_val
             elif transparent_at == 'max':
@@ -213,10 +213,10 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
                 intensity = abs(norm_val - 0.5) * 2
             else:
                 intensity = 1.0
-                
-            # Apply power transformation to make differences more expressive near the transparency point
+
+
             intensity = intensity ** power
-            
+
             dynamic_alpha = intensity * alpha
             styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {dynamic_alpha:.3f})')
     return styles
@@ -224,34 +224,34 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
 light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff", "#00BFFF"])
 orange_blue = mcolors.LinearSegmentedColormap.from_list("OrangeBlue", ["#ff8c00", "#ffffff", "#00BFFF"])
 
-# === MAIN CONTENT ===
+
 col1, col2 = st.columns([0.35, 0.65])
 
-# Current Ratings Table
+
 with col1:
     st.subheader("Current Team Ratings", anchor=False)
-    
+
     current_season = all_seasons[-1]
     curr_season_df = df[(df['league'] == 'League One') & (df['season'] == current_season)]
     current_season_teams = sorted(list(set(curr_season_df['home_team_code'].dropna()).union(set(curr_season_df['away_team_code'].dropna()))))
-    
+
     df_played = df.dropna(subset=['match_result'])
     latest_home = df_played.sort_values('match_date').groupby('home_team_code').last()[['match_date', 'home_rating_att_post', 'home_rating_def_post']]
     latest_away = df_played.sort_values('match_date').groupby('away_team_code').last()[['match_date', 'away_rating_att_post', 'away_rating_def_post']]
-    
+
     df_unplayed = df[df['match_result'].isna()]
     first_unplayed_home = df_unplayed.sort_values('match_date').groupby('home_team_code').first()[['match_date', 'home_rating_att', 'home_rating_def']]
     first_unplayed_away = df_unplayed.sort_values('match_date').groupby('away_team_code').first()[['match_date', 'away_rating_att', 'away_rating_def']]
-    
+
     current_ratings = []
     for t_code in current_season_teams:
-        
+
         uh = first_unplayed_home.loc[t_code] if t_code in first_unplayed_home.index else None
         ua = first_unplayed_away.loc[t_code] if t_code in first_unplayed_away.index else None
-        
+
         att, def_rating = None, None
-        
-        # 1. Try to get pre-match ratings from the FIRST unplayed match
+
+
         if uh is not None and ua is not None:
             if uh['match_date'] < ua['match_date']:
                 att, def_rating = uh['home_rating_att'], uh['home_rating_def']
@@ -261,12 +261,12 @@ with col1:
             att, def_rating = uh['home_rating_att'], uh['home_rating_def']
         elif ua is not None:
             att, def_rating = ua['away_rating_att'], ua['away_rating_def']
-            
-        # 2. If no unplayed matches, fallback to post-match ratings of the LAST played match
+
+
         if pd.isna(att) or pd.isna(def_rating):
             h = latest_home.loc[t_code] if t_code in latest_home.index else None
             a = latest_away.loc[t_code] if t_code in latest_away.index else None
-            
+
             if h is not None and a is not None:
                 if h['match_date'] > a['match_date']:
                     att, def_rating = h['home_rating_att_post'], h['home_rating_def_post']
@@ -276,7 +276,7 @@ with col1:
                 att, def_rating = h['home_rating_att_post'], h['home_rating_def_post']
             elif a is not None:
                 att, def_rating = a['away_rating_att_post'], a['away_rating_def_post']
-            
+
         if pd.notna(att) and pd.notna(def_rating):
             current_ratings.append({
                 'Team': team_code_to_name.get(t_code, t_code),
@@ -284,24 +284,20 @@ with col1:
                 'Defense Rating': def_rating,
                 'Overall Rating': att - def_rating
             })
-            
+
     if current_ratings:
         df_ratings = pd.DataFrame(current_ratings).sort_values('Overall Rating', ascending=False).reset_index(drop=True)
         df_ratings.index = df_ratings.index + 1
         df_ratings.reset_index(inplace=True)
         df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
 
-        df_ratings_styled = df_ratings.style \
-            .apply(soft_gradient, cmap_name='YlGn', alpha=0.6, transparent_at='min', power=0.6, subset=['Attack']) \
-            .apply(soft_gradient, cmap_name='YlGn_r', alpha=0.6, transparent_at='max', power=0.6, subset=['Defense']) \
-            .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.6, transparent_at='mid', power=0.6, subset=['Overall']) \
-            .format(precision=3)
-        
+        df_ratings_styled = df_ratings.style            .apply(soft_gradient, cmap_name='YlGn', alpha=0.6, transparent_at='min', power=0.6, subset=['Attack'])            .apply(soft_gradient, cmap_name='YlGn_r', alpha=0.6, transparent_at='max', power=0.6, subset=['Defense'])            .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.6, transparent_at='mid', power=0.6, subset=['Overall'])            .format(precision=3)
+
         st.dataframe(
             df_ratings_styled,
             hide_index=True,
             width="stretch",
-            height=878, # League One also has 24 teams
+            height=878,
             column_config={
                 'Pos': st.column_config.NumberColumn("Pos", width=30),
                 'Team': st.column_config.TextColumn("Team"),
@@ -313,7 +309,7 @@ with col1:
     else:
         st.info("No teams selected.")
 
-# Upcoming Matches Table
+
 with col2:
     head_col1, head_col2 = st.columns([0.5, 0.5])
     with head_col1:
@@ -325,18 +321,15 @@ with col2:
     if not df_future.empty:
         cols = ['match_date', 'home_team', 'away_team', 'home_team_code', 'away_team_code', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
         df_future = df_future[cols].sort_values('match_date')
-        
+
         df_future = df_future.drop(columns=['home_team_code', 'away_team_code'])
-            
+
         xg_cols = ['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']
         xg_min = df_future[xg_cols].min().min()
         xg_max = df_future[xg_cols].max().max()
 
-        df_future_styled = df_future.style \
-            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', power=0.6, subset=xg_cols) \
-            .apply(soft_gradient, cmap_name=orange_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta']) \
-            .format(precision=2)
-            
+        df_future_styled = df_future.style            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', power=0.6, subset=xg_cols)            .apply(soft_gradient, cmap_name=orange_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta'])            .format(precision=2)
+
         st.dataframe(
             df_future_styled,
             hide_index=True,
@@ -357,10 +350,10 @@ with col2:
     else:
         st.info("No upcoming matches found.")
 
-# Charts
+
 st.subheader("Historical Ratings", anchor=False)
 
-# Prepare historical data
+
 hist_home = df_played[['match_date', 'season', 'league', 'home_team', 'home_team_code', 'home_rating_att_post', 'home_rating_def_post']].rename(
     columns={'match_date':'date', 'season':'season', 'league':'league', 'home_team':'team_name', 'home_team_code':'team_code', 'home_rating_att_post':'att', 'home_rating_def_post':'def'}
 )
@@ -369,8 +362,8 @@ hist_away = df_played[['match_date', 'season', 'league', 'away_team', 'away_team
 )
 
 df_hist = pd.concat([hist_home, hist_away]).sort_values('date')
-df_hist = df_hist[df_hist['season'] != "2009/10"] # Exclude first season
-df_hist = df_hist[df_hist['league'] == 'League One'] # Only League One matches
+df_hist = df_hist[df_hist['season'] != "2009/10"]
+df_hist = df_hist[df_hist['league'] == 'League One']
 
 if season_range:
     s_start, s_end = season_range
@@ -382,7 +375,7 @@ if final_teams:
 if not df_hist.empty:
     df_hist['total'] = df_hist['att'] - df_hist['def']
 
-    # Compute global X indices per season so all teams in the same season align on X-axis
+
     selected_seasons = sorted(df_hist['season'].unique())
     season_offsets = {}
     curr_offset = 0
@@ -397,12 +390,12 @@ if not df_hist.empty:
         start_x = curr_offset + 0.5
         end_x = curr_offset + max_m + 0.5
         mid_x = (start_x + end_x) / 2
-        
+
         season_start_boundaries.append(start_x)
         season_boundaries.append(end_x)
         tick_vals.append(mid_x)
         tick_text.append(s)
-        
+
         season_offsets[s] = (curr_offset, max_m)
         curr_offset += max_m
 
@@ -415,7 +408,7 @@ if not df_hist.empty:
         fig = go.Figure()
         all_annotations = []
 
-        # Sort teams by their latest rating so hover entries appear in descending order of strength
+
         is_defense = (title == "Defense Rating")
         latest_ratings = {}
         for t in df['team_name'].unique():
@@ -430,20 +423,20 @@ if not df_hist.empty:
         for t_name in sorted_teams:
             tdf = df[df['team_name'] == t_name].sort_values('x_pos').copy()
             tdf_clean = tdf.dropna(subset=[y_col])
-            
+
             if tdf_clean.empty:
                 continue
 
-            # Знаходимо кінці відрізків для підписів назв команд (лише виліт / кінець вибірки)
+
             next_x = tdf['x_pos'].shift(-1)
             is_end = (next_x - tdf['x_pos'] > 1.5) | next_x.isna()
             endpoints = tdf[is_end]
-            
-            # Вставляємо NaN між сезонами (на початку кожного нового сезону) або проміжками (понад 1.5 туру), щоб розірвати графік саме в міжсезоння
+
+
             season_changed = (tdf['season'] != tdf['season'].shift(1)) & tdf['season'].shift(1).notna()
             gap_occurred = (tdf['x_pos'].diff() > 1.5)
             break_lines = season_changed | gap_occurred
-            
+
             if break_lines.any():
                 insertions = []
                 for idx, row in tdf[break_lines].iterrows():
@@ -453,10 +446,10 @@ if not df_hist.empty:
                     insertions.append(nan_row)
                 if insertions:
                     tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('x_pos')
-            
+
             color = team_colors.get(t_name, '#888888')
             t_code = tdf['team_code'].dropna().iloc[0] if not tdf['team_code'].dropna().empty else t_name
-            
+
             date_str = tdf['date'].dt.strftime('%d/%m/%Y').fillna('')
             season_str = tdf['season'].fillna('')
             gw_str = "GW " + tdf['match_in_season'].astype(int).astype(str)
@@ -468,11 +461,11 @@ if not df_hist.empty:
                 name=t_code,
                 line=dict(color=color, width=2),
                 customdata=customdata,
-                hovertemplate=f"<b>{t_code}</b> (%{{customdata[0]}})<br>Rating: %{{y:.3f}}<extra>%{{customdata[2]}}</extra>",
+                hovertemplate=f"<b>{t_code}</b> (%{ customdata[0]} )<br>Rating: %{ y:.3f} <extra>%{ customdata[2]} </extra>",
                 showlegend=False
             ))
-            
-            # Збираємо підписи назв команд для подальшого уникання накладання
+
+
             for _, ep in endpoints.iterrows():
                 if pd.notna(ep[y_col]):
                     all_annotations.append({
@@ -482,14 +475,14 @@ if not df_hist.empty:
                         'color': color
                     })
 
-        # Запобігаємо наплаванню підписів команд при однакових X координатах (Adaptive Y-Displacement)
+
         if all_annotations:
             ann_df = pd.DataFrame(all_annotations)
             y_min = df[y_col].min()
             y_max = df[y_col].max()
             y_span = (y_max - y_min) if (pd.notna(y_max) and pd.notna(y_min) and y_max > y_min) else 1.0
-            
-            # Адаптивний мінімальний зазор залежно від масштабу Y (бл. 2% від діапазону)
+
+
             min_gap = max(0.015, y_span * 0.020)
             max_shift = min_gap * 2.5
             is_reversed = (title == "Defense Rating")
@@ -508,9 +501,9 @@ if not df_hist.empty:
                         y_sorted = group.sort_values('y', ascending=True)
                     else:
                         y_sorted = group.sort_values('y', ascending=False)
-                        
+
                     y_vals = y_sorted['y'].values.copy()
-                    
+
                     if is_reversed:
                         for i in range(1, len(y_vals)):
                             if y_vals[i] - y_vals[i-1] < min_gap:
@@ -519,15 +512,15 @@ if not df_hist.empty:
                         for i in range(1, len(y_vals)):
                             if y_vals[i-1] - y_vals[i] < min_gap:
                                 y_vals[i] = y_vals[i-1] - min_gap
-                                
+
                     shift_center = y_vals.mean() - y_sorted['y'].values.mean()
                     y_vals -= shift_center
-                    
-                    # Обмежуємо максимальний зсув, щоб підписи залишалися максимально близькими до кінців ліній
+
+
                     shifts = y_vals - y_sorted['y'].values
                     shifts_clamped = np.clip(shifts, -max_shift, max_shift)
                     final_y = y_sorted['y'].values + shifts_clamped
-                    
+
                     for idx, (_, r) in enumerate(y_sorted.iterrows()):
                         adj_y = final_y[idx]
                         fig.add_annotation(
@@ -537,7 +530,7 @@ if not df_hist.empty:
                             xanchor='left', xshift=5
                         )
 
-        # Вертикальні лінії для початку та кінця сезонів
+
         for sb in season_start_boundaries:
             fig.add_vline(x=sb, line_dash="dash", line_color="rgba(150, 150, 150, 0.5)", line_width=1)
         if season_boundaries:
@@ -598,7 +591,7 @@ if not df_hist.empty:
                         var mVal = txt.match(/Rating:\s*([0-9.-]+)/);
                         var tr = t.getAttribute('transform') || '';
                         var mY = tr.match(/translate\(([^,]+),\s*([0-9.-]+)\)/);
-                        
+
                         if (mVal && mY) {
                             var yVal = parseFloat(mY[2]);
                             var rVal = parseFloat(mVal[1]);

@@ -5,7 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 import json
 
-# Налаштування сторінки
+
 st.set_page_config(
     page_title="FPL Rating Graph",
     layout="wide",
@@ -58,10 +58,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ========================== ЗАВАНТАЖЕННЯ ДАНИХ ==========================
 @st.cache_data(ttl=300)
 def load_data():
-    url = "http://194.99.22.193:8000/fpl_players"
+    url = "http://localhost:8000/fpl_players"
     df = pd.read_parquet(url)
     if 'av_rating_alt' in df.columns:
         df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
@@ -73,8 +72,8 @@ def load_data():
         if h2_col not in df.columns:
             base_col = h2_col.replace('_h2', '')
             df[h2_col] = df[base_col] if base_col in df.columns else 0.0
-    
-    # Calculate Transfer Activity (Logarithmic Scale)
+
+
     if 'transfers_in_24' in df.columns and 'transfers_out_24' in df.columns:
         df['transfer_activity'] = df['transfers_in_24'] + df['transfers_out_24']
         log_act = np.log1p(df['transfer_activity'])
@@ -85,7 +84,7 @@ def load_data():
             df['transfer_activity_pct'] = 0.0
     else:
         df['transfer_activity_pct'] = 0.0
-        
+
     return df
 
 try:
@@ -95,7 +94,6 @@ except Exception as e:
     st.stop()
 
 
-# ========================== ПІДГОТОВКА ==========================
 all_teams = sorted(df['team_short_name'].unique().tolist())
 default_teams = all_teams
 pos_order = ['GK', 'DEF', 'MID', 'FW']
@@ -120,7 +118,7 @@ def _slider_bounds(min_val, max_val, default_span=1.0):
         mx = mn + default_span
     return (mn, mx)
 
-# Глобальні межі шкали (незмінні)
+
 GB = {
     'f_cost':     _slider_bounds(df['now_cost'].min(),            df['now_cost'].max(), 1.0),
     'f_matches':  (int(df['matches_played'].min()),        max(int(df['matches_played'].max()), int(df['matches_played'].min()) + 1)),
@@ -130,7 +128,7 @@ GB = {
     'f_selected': _slider_bounds(df['selected_by_percent'].min(), df['selected_by_percent'].max(), 1.0),
     'f_activity': _slider_bounds(df['transfer_activity_pct'].min(), df['transfer_activity_pct'].max(), 100.0),
 }
-# Дефолтні значення повзунків (нижня межа захищена)
+
 DEFAULTS = {
     'f_cost':     GB['f_cost'],
     'f_matches':  (6,    GB['f_matches'][1]),
@@ -141,13 +139,12 @@ DEFAULTS = {
     'f_activity': GB['f_activity'],
 }
 
-# ========================== SESSION STATE ==========================
+
 if 'pills_teams_gr'  not in st.session_state: st.session_state.pills_teams_gr  = default_teams
 if 'pills_pos_gr'    not in st.session_state: st.session_state.pills_pos_gr    = [p for p in sorted_positions if p != 'GK']
 if 'pills_pl_pos_gr' not in st.session_state: st.session_state.pills_pl_pos_gr = all_pl_pos
 
 
-# ========================== ХЕЛПЕРИ ==========================
 def _pills_snapshot():
     snap = {
         'pos':    tuple(sorted(st.session_state.get('pills_pos_gr',   [p for p in sorted_positions if p != 'GK']) or [])),
@@ -299,30 +296,30 @@ def filter_header(label, options, key_prefix):
 def inject_sidebar_layout(inactive_all: list):
     js = f"""
     <script>
-    (function() {{
+    (function() {
         var inactiveList = {json.dumps(inactive_all)};
-        
-        function forceLayout() {{
-            try {{
+
+        function forceLayout() {
+            try {
                 var doc = window.parent.document;
                 var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                 if (!sidebar) return;
-                
+
                 var btns = sidebar.querySelectorAll('button');
-                
+
                 var plHeader = null;
                 var ps = sidebar.querySelectorAll('p');
-                ps.forEach(function(p) {{
-                    if (p.innerText.trim() === 'Playing Position') {{ plHeader = p; }}
-                }});
+                ps.forEach(function(p) {
+                    if (p.innerText.trim() === 'Playing Position') {  plHeader = p; }
+                } );
                 var headerBottom = plHeader ? plHeader.getBoundingClientRect().bottom : 99999;
-                
-                btns.forEach(function(b) {{
+
+                btns.forEach(function(b) {
                     var txt = b.innerText.trim();
                     if (!txt) return;
-                    
+
                     if (txt === "Reset All Filters" || txt === "None") return;
-                    if ((b.closest && b.closest('.league-origin-wrapper')) || txt === "Premier League" || txt === "Other Leagues") {{
+                    if ((b.closest && b.closest('.league-origin-wrapper')) || txt === "Premier League" || txt === "Other Leagues") {
                         b.style.setProperty('width', '100%', 'important');
                         b.style.setProperty('min-width', '0px', 'important');
                         b.style.setProperty('max-width', 'none', 'important');
@@ -330,61 +327,61 @@ def inject_sidebar_layout(inactive_all: list):
                         b.style.setProperty('text-align', 'center', 'important');
                         b.style.setProperty('padding', '0px 2px', 'important');
                         b.style.setProperty('font-size', '0.7rem', 'important');
-                        
+
                         var pCont = b.closest('[data-testid="stPills"]');
-                        if (pCont) {{
+                        if (pCont) {
                             pCont.style.setProperty('display', 'grid', 'important');
                             pCont.style.setProperty('grid-template-columns', '1fr 1fr 1fr', 'important');
                             pCont.style.setProperty('gap', '4px', 'important');
                             pCont.style.setProperty('width', '100%', 'important');
-                        }}
+                        }
                         return;
-                    }}
-                    
+                    }
+
                     var p = b.parentElement;
-                    for (var i = 0; i < 3; i++) {{
-                        if (p && p.tagName === 'DIV') {{
+                    for (var i = 0; i < 3; i++) {
+                        if (p && p.tagName === 'DIV') {
                             p.style.setProperty('display', 'flex', 'important');
                             p.style.setProperty('justify-content', 'center', 'important');
                             p.style.setProperty('flex-wrap', 'wrap', 'important');
                             p.style.setProperty('width', '100%', 'important');
                             p = p.parentElement;
-                        }}
-                    }}
-                    
-                    if (b.getBoundingClientRect().top > headerBottom) {{
+                        }
+                    }
+
+                    if (b.getBoundingClientRect().top > headerBottom) {
                         b.style.setProperty('width', '48px', 'important');
                         b.style.setProperty('min-width', '48px', 'important');
                         b.style.setProperty('max-width', '48px', 'important');
-                        
+
                         var stPills = b.closest('[data-testid="stPills"]');
-                        if (stPills) {{
+                        if (stPills) {
                             var wrapper = stPills.closest('.stElementContainer') || stPills.closest('[data-testid="stElementContainer"]');
-                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {{
+                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {
                                 wrapper.classList.add('playing-pos-wrapper');
-                            }}
-                        }}
-                    }} else {{
+                            }
+                        }
+                    }  else {
                         b.style.setProperty('width', '60px', 'important');
                         b.style.setProperty('min-width', '60px', 'important');
                         b.style.setProperty('max-width', '60px', 'important');
-                    }}
-                    
+                    }
+
                     var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
-                    if (b.style.opacity !== expectedOpacity) {{
+                    if (b.style.opacity !== expectedOpacity) {
                         b.style.opacity = expectedOpacity;
-                    }}
-                }});
-            }} catch(e) {{}}
-        }}
-        
+                    }
+                } );
+            }  catch(e) { }
+        }
+
         setInterval(forceLayout, 300);
-    }})();
+    } )();
     </script>
     """
     st.components.v1.html(js, height=0, scrolling=False)
 
-# ========================== АВТОоновлення СЛАЙДЕРІВ ==========================
+
 auto_update_slider('f_cost_gr',     'f_cost',     'now_cost',            float)
 auto_update_slider('f_matches_gr',  'f_matches',  'matches_played',      int)
 auto_update_slider('f_rating_gr',   'f_rating',   'av_rating_alt',       float)
@@ -393,7 +390,7 @@ auto_update_slider('f_60min_gr',    'f_60min',    '60_min',              float)
 auto_update_slider('f_selected_gr', 'f_selected', 'selected_by_percent', float)
 auto_update_slider('f_activity_gr', 'f_activity', 'transfer_activity_pct', float)
 
-# ========================== САЙДБАР ==========================
+
 if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if '_gr' in k]
     for key in keys_to_delete:
@@ -402,7 +399,7 @@ if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
 
 search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", key="search_name_gr")
 
-# --- 1. FPL POSITION ---
+
 avail_pos = set(get_available('pills_pos_gr')['element_type'].unique())
 filter_header("FPL Position", sorted_positions, "pos_gr")
 selected_positions = st.sidebar.pills(
@@ -410,12 +407,12 @@ selected_positions = st.sidebar.pills(
     selection_mode="multi", label_visibility="collapsed"
 )
 
-# --- 2. FPL PRICE ---
+
 f_cost = st.sidebar.slider(
     "FPL Price", GB['f_cost'][0], GB['f_cost'][1], step=0.1, format="%.1f", key="f_cost_gr"
 )
 
-# --- 3. TEAM ---
+
 avail_teams = set(get_available('pills_teams_gr')['team_short_name'].unique())
 filter_header("Team", all_teams, "teams_gr")
 selected_teams = st.sidebar.pills(
@@ -423,7 +420,7 @@ selected_teams = st.sidebar.pills(
     selection_mode="multi", label_visibility="collapsed"
 )
 
-# --- 4. PLAYING POSITION ---
+
 avail_pl = set(get_available('pills_pl_gr')['Play Pos'].dropna().unique())
 filter_header("Playing Position", all_pl_pos, "pl_pos_gr")
 selected_pl_pos = []
@@ -443,7 +440,7 @@ for idx, line in enumerate(pl_lines):
     if line_res:
         selected_pl_pos.extend(line_res)
 
-# --- ЗБІР УСІХ НЕАКТИВНИХ ОПЦІЙ ДЛЯ JS ---
+
 all_inactive = []
 all_inactive.extend([p for p in sorted_positions if p not in avail_pos])
 all_inactive.extend([t for t in all_teams if t not in avail_teams])
@@ -451,14 +448,14 @@ all_inactive.extend([p for p in all_pl_pos if p not in avail_pl])
 
 inject_sidebar_layout(all_inactive)
 
-# --- PERFORMANCE STATS ---
+
 with st.sidebar.expander("Performance Stats", expanded=False):
     f_matches  = st.slider("Matches",      GB['f_matches'][0],  GB['f_matches'][1],  step=1,    key="f_matches_gr")
     f_rating   = st.slider("Rating",       GB['f_rating'][0],   GB['f_rating'][1],   step=0.05, format="%.2f", key="f_rating_gr")
     f_avg_mins = st.slider("Average Mins", GB['f_avg_mins'][0], GB['f_avg_mins'][1], step=1.0,  key="f_avg_mins_gr")
     f_60min    = st.slider("60 Min %",     GB['f_60min'][0],    GB['f_60min'][1],    step=0.5,  key="f_60min_gr")
 
-# --- MARKET & POPULARITY ---
+
 with st.sidebar.expander("Market & Popularity", expanded=False):
     f_selected = st.slider("Selected %",  GB['f_selected'][0], GB['f_selected'][1], step=0.1, key="f_selected_gr")
     f_activity = st.slider("Transfer Activity", GB['f_activity'][0], GB['f_activity'][1], step=1.0, format="%d%%", key="f_activity_gr")
@@ -473,7 +470,7 @@ selected_league_origin = st.sidebar.pills(
 )
 st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-# ========================== ЗАСТОСУВАННЯ ФІЛЬТРІВ ==========================
+
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
     play_pos_mask = df['Play Pos'].isin(selected_pl_pos) | df['Play Pos'].isna()
 else:
@@ -503,16 +500,16 @@ mask = (
 )
 plot_df = df[mask].copy()
 
-# ========================== ЛОГІКА РОЗМІРУ (ПРОЦЕНТИЛІ) ==========================
+
 if not plot_df.empty:
     plot_df['p_selected'] = plot_df['selected_by_percent'].rank(pct=True)
     plot_df['p_avgmins'] = plot_df['avg_mins'].rank(pct=True)
-    
+
     plot_df['combined_rank'] = (plot_df['p_selected'] + plot_df['p_avgmins']) / 2
-    # Підносимо до квадрату, щоб створити експоненційну різницю між мінімумом і максимумом
+
     plot_df['size_for_plot'] = (plot_df['combined_rank'] ** 2) * 100 + 10
 
-    # Використовуємо квадратний корінь замість логарифма для більш помірного розтягування (вдвічі слабшого)
+
     plot_df['rating_sqrt'] = plot_df['av_rating_alt'] ** 0.5
     plot_df['xGI_sqrt'] = plot_df['xGI_norm'] ** 0.5
 
@@ -523,7 +520,7 @@ if not plot_df.empty:
         ""
     )
 
-    # ========================== ВІЗУАЛІЗАЦІЯ — ПОВНИЙ СЕЗОН ==========================
+
     st.subheader(f"xGI vs Rating - Full Season (Players: {len(plot_df)})", anchor=False)
 
     fig = px.scatter(
@@ -575,7 +572,7 @@ if not plot_df.empty:
         marker=dict(opacity=0.75, line=dict(width=0.8, color='white'))
     )
 
-    # Динамічні сітки для перетворених шкал (кожні 0.1)
+
     r_min, r_max = plot_df['av_rating_alt'].min(), plot_df['av_rating_alt'].max()
     if pd.isna(r_max) or r_max < 6.5:
         r_max = 10.0
@@ -583,7 +580,7 @@ if not plot_df.empty:
     r_end = np.ceil(r_max * 10) / 10
     if r_end < r_start: r_end = r_start + 0.5
     r_ticks = np.arange(r_start, r_end + 0.05, 0.1).round(1)
-            
+
     x_min, x_max = plot_df['xGI_norm'].min(), plot_df['xGI_norm'].max()
     if pd.isna(x_min) or pd.isna(x_max):
         x_min, x_max = 0.0, 1.2
@@ -611,7 +608,7 @@ if not plot_df.empty:
             ticktext=x_ticks,
             range=[x_start ** 0.5, (x_end + 0.02) ** 0.5]
         ),
-        legend_title_text='', 
+        legend_title_text='',
         legend=dict(
             yanchor="top",
             y=0.99,
@@ -623,8 +620,7 @@ if not plot_df.empty:
 
     st.plotly_chart(fig, width="stretch")
 
-    # ========================== ГРАФІК 2: ДРУГА ЧАСТИНА СЕЗОНУ (ВІД 03.01.2026) ==========================
-    # Використовуємо маску основних фільтрів гравця, перевіряючи наявність оцінки у 2-й частині сезону
+
     has_h2_rating = (df['av_rating_alt_h2'] > 0) if 'av_rating_alt_h2' in df.columns else (df['av_rating_alt'] > 0)
     mask_h2 = mask & has_h2_rating
     plot_df_h2 = df[mask_h2].copy()
