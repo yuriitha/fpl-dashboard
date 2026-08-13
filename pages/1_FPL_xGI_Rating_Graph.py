@@ -521,7 +521,7 @@ if not plot_df.empty:
     )
 
 
-    st.subheader(f"xGI vs Rating - Full Season (Players: {len(plot_df)})", anchor=False)
+    st.subheader(f"xGI vs Rating — 1 Year (Players: {len(plot_df)})", anchor=False)
 
     fig = px.scatter(
         plot_df,
@@ -641,7 +641,7 @@ if not plot_df.empty:
         )
 
         st.markdown("<br><hr>", unsafe_allow_html=True)
-        st.subheader(f"xGI vs Rating - 2nd Half of Season (From Jan 3, 2026) (Players: {len(plot_df_h2)})", anchor=False)
+        st.subheader(f"xGI vs Rating — 6 Months (Players: {len(plot_df_h2)})", anchor=False)
 
         fig_h2 = px.scatter(
             plot_df_h2,
@@ -671,15 +671,15 @@ if not plot_df.empty:
             },
             text="label_text",
             labels={
-                "rating_sqrt": "Average Rating (H2)",
-                "xGI_sqrt": "Expected Goal Involvement (H2)",
+                "rating_sqrt": "Average Rating (6M)",
+                "xGI_sqrt": "Expected Goal Involvement (6M)",
                 "element_type": "Position",
                 "team_short_name": "Team",
                 "league_status": "League Origin",
                 "now_cost": "Price",
-                "av_rating_alt_h2": "Rating (H2)",
-                "xGI_norm_h2": "xGI (H2)",
-                "avg_mins_h2": "Avg Mins (H2)",
+                "av_rating_alt_h2": "Rating (6M)",
+                "xGI_norm_h2": "xGI (6M)",
+                "avg_mins_h2": "AvMins (6M)",
                 "top_100k": "Top 100K %"
             },
             template="plotly_dark",
@@ -712,7 +712,7 @@ if not plot_df.empty:
             height=800,
             margin=dict(l=0, r=0, t=40, b=0),
             xaxis=dict(
-                title="Average Rating (2nd Half of Season)",
+                title="Average Rating (6 Months)",
                 gridcolor='rgba(255,255,255,0.1)',
                 tickmode='array',
                 tickvals=r_ticks2 ** 0.5,
@@ -720,7 +720,7 @@ if not plot_df.empty:
                 range=[r_start2 ** 0.5, (r_end2 + 0.02) ** 0.5]
             ),
             yaxis=dict(
-                title="Expected Goal Involvement (2nd Half of Season)",
+                title="Expected Goal Involvement (6 Months)",
                 gridcolor='rgba(255,255,255,0.1)',
                 tickmode='array',
                 tickvals=x_ticks2 ** 0.5,
