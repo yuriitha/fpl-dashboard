@@ -509,10 +509,10 @@ POSITION_COLOR_MAP = {
 }
 
 
-def get_smart_labels(dataframe, x_col='rating_sqrt', y_col='xGI_sqrt', size_col='size_for_plot', name_col='web_name', dist_threshold=0.032):
+def get_smart_labels(dataframe, x_col='rating_sqrt', y_col='xGI_sqrt', size_col='size_for_plot', name_col='web_name', dist_threshold=0.040):
     """
     Гібридна система смарт-підписів:
-    1. Гравці з найбільшими кружечками (розмір >= 40, тобто топ за вибором та хвилинами) підписуються ЗАВЖДИ.
+    1. Гравці з найбільшими кружечками (розмір >= 45, тобто топ за вибором та хвилинами) підписуються ЗАВЖДИ.
     2. Інші гравці підписуються, якщо вони не розташовані у надто щільному скупченні біля вже підписаного більшого кружечка.
     3. Дозволяється легке/помірне накладання, але усуваються сильні нагромадження тексту.
     """
@@ -537,7 +537,7 @@ def get_smart_labels(dataframe, x_col='rating_sqrt', y_col='xGI_sqrt', size_col=
         size = row[size_col]
         name = str(row[name_col]) if pd.notna(row[name_col]) else ""
 
-        if size >= 40:
+        if size >= 45:
             label_results[idx] = name
             labeled_points.append((nx, ny, size))
             continue
@@ -569,7 +569,7 @@ if not plot_df.empty:
     plot_df['rating_sqrt'] = plot_df['av_rating_alt'] ** 0.5
     plot_df['xGI_sqrt'] = plot_df['xGI_norm'] ** 0.5
 
-    plot_df['label_text'] = get_smart_labels(plot_df, 'rating_sqrt', 'xGI_sqrt', 'size_for_plot', 'web_name', 0.032)
+    plot_df['label_text'] = get_smart_labels(plot_df, 'rating_sqrt', 'xGI_sqrt', 'size_for_plot', 'web_name', 0.040)
 
 
     st.subheader(f"xGI vs Rating — 12-Month Performance (Players: {len(plot_df)})", anchor=False)
@@ -686,7 +686,7 @@ if not plot_df.empty:
         plot_df_h2['rating_sqrt'] = plot_df_h2['av_rating_alt_h2'] ** 0.5
         plot_df_h2['xGI_sqrt'] = plot_df_h2['xGI_norm_h2'] ** 0.5
 
-        plot_df_h2['label_text'] = get_smart_labels(plot_df_h2, 'rating_sqrt', 'xGI_sqrt', 'size_for_plot', 'web_name', 0.032)
+        plot_df_h2['label_text'] = get_smart_labels(plot_df_h2, 'rating_sqrt', 'xGI_sqrt', 'size_for_plot', 'web_name', 0.040)
 
         st.markdown("<br><hr>", unsafe_allow_html=True)
         st.subheader(f"xGI vs Rating — 6-Month Performance (Players: {len(plot_df_h2)})", anchor=False)
