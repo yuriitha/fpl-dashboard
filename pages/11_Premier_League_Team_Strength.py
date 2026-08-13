@@ -220,59 +220,58 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
     return styles
 
 
-def soft_green_gradient(s, min_alpha=0.04, max_alpha=0.65, power=0.7, reverse=False):
-    if s.empty:
+def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.65, reverse=False):
+    if s.empty or s.nunique() <= 1:
         return ['' for _ in s]
-    s_min, s_max = s.min(), s.max()
-    if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
+
+    ranks = s.rank(ascending=not reverse, method='min')
+    r_min, r_max = ranks.min(), ranks.max()
+    if r_min == r_max:
         return ['' for _ in s]
+
+    norm_ranks = (ranks - r_min) / (r_max - r_min)
 
     styles = []
-    for val in s:
-        if pd.isna(val):
+    for r_val in norm_ranks:
+        if pd.isna(r_val):
             styles.append('')
         else:
-            norm_val = (val - s_min) / (s_max - s_min)
-            if reverse:
-                norm_val = 1.0 - norm_val
-
-            intensity = norm_val ** power
-
-            r = int(45  + intensity * (10  - 45))
-            g = int(185 + intensity * (225 - 185))
-            b = int(65  + intensity * (45  - 65))
-            alpha = min_alpha + intensity * (max_alpha - min_alpha)
+            r = int(45  + r_val * (10  - 45))
+            g = int(185 + r_val * (225 - 185))
+            b = int(65  + r_val * (45  - 65))
+            alpha = min_alpha + r_val * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
 
 
-def soft_overall_gradient(s, min_alpha=0.04, max_alpha=0.65, power=0.7):
-    if s.empty:
-        return ['' for _ in s]
-    s_min, s_max = s.min(), s.max()
-    if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
+def soft_overall_gradient(s, min_alpha=0.04, max_alpha=0.65):
+    if s.empty or s.nunique() <= 1:
         return ['' for _ in s]
 
+    ranks = s.rank(ascending=True, method='min')
+    r_min, r_max = ranks.min(), ranks.max()
+    if r_min == r_max:
+        return ['' for _ in s]
+
+    norm_ranks = (ranks - r_min) / (r_max - r_min)
+
     styles = []
-    for val in s:
-        if pd.isna(val):
+    for norm_val in norm_ranks:
+        if pd.isna(norm_val):
             styles.append('')
         else:
-            norm_val = (val - s_min) / (s_max - s_min)
             if norm_val >= 0.5:
                 t = (norm_val - 0.5) * 2.0
-                t_scaled = t ** power
-                r = int(245 + t_scaled * (10  - 245))
-                g = int(245 + t_scaled * (225 - 245))
-                b = int(245 + t_scaled * (45  - 245))
-                alpha = min_alpha + t_scaled * (max_alpha - min_alpha)
+                r = int(245 + t * (10  - 245))
+                g = int(245 + t * (225 - 245))
+                b = int(245 + t * (45  - 245))
+                alpha = min_alpha + t * (max_alpha - min_alpha)
             else:
                 t = (0.5 - norm_val) * 2.0
-                t_scaled = t ** power
-                r = int(245 + t_scaled * (240 - 245))
-                g = int(245 + t_scaled * (70  - 245))
-                b = int(245 + t_scaled * (70  - 245))
-                alpha = min_alpha + t_scaled * (max_alpha - min_alpha)
+                r = int(245 + t * (240 - 245))
+                g = int(245 + t * (70  - 245))
+                b = int(245 + t * (70  - 245))
+                alpha = min_alpha + t * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
 
