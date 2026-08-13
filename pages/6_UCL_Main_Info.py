@@ -159,6 +159,27 @@ st.subheader(f"UCL Players filtered: {len(filtered_df)}", anchor=False)
 
 existing_display_cols = [c for c in display_columns if c in filtered_df.columns]
 
+base_widths = {}
+for col in existing_display_cols:
+    if not filtered_df.empty and col in filtered_df.columns:
+        val_series = filtered_df[col].dropna().astype(str)
+        max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
+    else:
+        max_val_len = 1
+
+    bw = max_val_len * 7
+    if col == "Player":
+        bw = min(bw, 140)
+    elif col == "Team Name":
+        bw = min(bw, 110)
+    else:
+        bw = min(bw, 50)
+    base_widths[col] = max(bw, 12)
+
+inv_weights = {col: 1.0 / (w ** 0.5) for col, w in base_widths.items()}
+sum_inv_weights = sum(inv_weights.values())
+TOTAL_PADDING_BUDGET = 550
+
 smart_column_config = {}
 format_map = {
     "Price": ("NumberColumn", "%.1f", "Price"),
@@ -184,15 +205,16 @@ format_map = {
 }
 
 for col in existing_display_cols:
-    if not filtered_df.empty and col in filtered_df.columns:
-        val_series = filtered_df[col].dropna().astype(str)
-        max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
-    else:
-        max_val_len = 1
+    bw = base_widths[col]
+    bonus = (inv_weights[col] / sum_inv_weights) * TOTAL_PADDING_BUDGET
+    calc_w = int(round(bw + bonus))
 
-    calc_w = max(max_val_len * 11, 45)
     if col == "Player":
-        calc_w = max(calc_w, 130)
+        calc_w = max(calc_w, 140)
+    elif col == "Team Name":
+        calc_w = max(calc_w, 120)
+    else:
+        calc_w = max(calc_w, 52)
 
     col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
 
