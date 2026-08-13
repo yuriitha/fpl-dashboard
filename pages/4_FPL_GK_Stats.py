@@ -582,7 +582,10 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
 def warm_honey_gradient(s, min_alpha=0.0, max_alpha=0.55, power=2.5, max_cap=None):
     if s.empty:
         return ['' for _ in s]
-    s_min, s_max = s.min(), s.max()
+    s_valid = s[(s >= 5.0) & (s > 0)] if (s >= 5.0).any() else s[s > 0]
+    if s_valid.empty:
+        return ['' for _ in s]
+    s_min, s_max = s_valid.min(), s_valid.max()
     if max_cap is not None and not pd.isna(s_max):
         s_max = min(s_max, max_cap)
     if pd.isna(s_min) or pd.isna(s_max) or s_min >= s_max:
@@ -590,7 +593,7 @@ def warm_honey_gradient(s, min_alpha=0.0, max_alpha=0.55, power=2.5, max_cap=Non
 
     styles = []
     for val in s:
-        if pd.isna(val) or val == 0:
+        if pd.isna(val) or val == 0 or val < 5.0:
             styles.append('')
         else:
             val_clamped = min(val, s_max)
