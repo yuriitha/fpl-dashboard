@@ -166,7 +166,7 @@ GB = {
 
 DEFAULTS = {
     'f_cost_gks':     GB['f_cost_gks'],
-    'f_matches_gks':  GB['f_matches_gks'],
+    'f_matches_gks':  (min(1, GB['f_matches_gks'][1]), GB['f_matches_gks'][1]),
     'f_rating_gks':   GB['f_rating_gks'],
     'f_avg_mins_gks': GB['f_avg_mins_gks'],
     'f_60min_gks':    GB['f_60min_gks'],

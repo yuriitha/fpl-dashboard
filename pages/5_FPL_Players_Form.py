@@ -169,9 +169,9 @@ GB = {
 
 DEFAULTS = {
     'f_cost_form':     GB['f_cost_form'],
-    'f_matches_form':  GB['f_matches_form'],
+    'f_matches_form':  (min(3, GB['f_matches_form'][1]), GB['f_matches_form'][1]),
     'f_rating_form':   GB['f_rating_form'],
-    'f_mins1y_form':   GB['f_mins1y_form'],
+    'f_mins1y_form':   (min(180.0, GB['f_mins1y_form'][1]), GB['f_mins1y_form'][1]),
     'f_mins3y_form':   GB['f_mins3y_form'],
     'f_selected_form': GB['f_selected_form'],
     'f_activity_form': GB['f_activity_form'],
