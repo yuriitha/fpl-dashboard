@@ -639,8 +639,32 @@ def soft_blue_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
     return styles
 
 
+def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
+    if s.empty:
+        return ['' for _ in s]
+    s_min, s_max = s.min(), s.max()
+    if max_cap is not None and not pd.isna(s_max):
+        s_max = min(s_max, max_cap)
+    if pd.isna(s_min) or pd.isna(s_max) or s_min >= s_max:
+        return ['' for _ in s]
+
+    styles = []
+    for val in s:
+        if pd.isna(val):
+            styles.append('')
+        else:
+            val_clamped = min(val, s_max)
+            norm_val = (val_clamped - s_min) / (s_max - s_min)
+            r = int(40  + norm_val * (0   - 40))
+            g = int(180 + norm_val * (200 - 180))
+            b = int(110 + norm_val * (100 - 110))
+            alpha = min_alpha + norm_val * (max_alpha - min_alpha)
+            styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
+    return styles
+
+
 styled_df = filtered_df[existing_cols].style\
-    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['pct_mins_avail_1y', 'pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_mins_avail_3y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols])\
+    .apply(soft_green_gradient, subset=[c for c in ['pct_mins_avail_1y', 'pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_mins_avail_3y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['pct_shots_1y', 'pct_bcc_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_shots_3y', 'pct_bcc_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols])
 
 st.subheader(f"FPL Players Form: {len(filtered_df)} players", anchor=False)
