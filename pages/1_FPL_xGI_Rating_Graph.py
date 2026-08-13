@@ -501,6 +501,14 @@ mask = (
 plot_df = df[mask].copy()
 
 
+POSITION_COLOR_MAP = {
+    "GK":  "#39FF14",  # Neon Lime
+    "DEF": "#00BFFF",  # Deep Sky Blue
+    "MID": "#FF9900",  # Vibrant Orange
+    "FW":  "#FF007F"   # Hot Fuchsia
+}
+
+
 if not plot_df.empty:
     plot_df['p_selected'] = plot_df['selected_by_percent'].rank(pct=True)
     plot_df['p_avgmins'] = plot_df['avg_mins'].rank(pct=True)
@@ -528,6 +536,7 @@ if not plot_df.empty:
         x="rating_sqrt",
         y="xGI_sqrt",
         color="element_type",
+        color_discrete_map=POSITION_COLOR_MAP,
         symbol="league_status",
         symbol_map={"Premier League": "circle", "Other Leagues": "diamond"},
         size="size_for_plot",
@@ -648,6 +657,7 @@ if not plot_df.empty:
             x="rating_sqrt",
             y="xGI_sqrt",
             color="element_type",
+            color_discrete_map=POSITION_COLOR_MAP,
             symbol="league_status",
             symbol_map={"Premier League": "circle", "Other Leagues": "diamond"},
             size="size_for_plot",
