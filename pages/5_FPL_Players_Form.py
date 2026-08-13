@@ -618,46 +618,97 @@ styled_df = filtered_df[existing_cols].style    .apply(soft_gradient, cmap_name=
 
 st.subheader(f"FPL Players Form: {len(filtered_df)} players", anchor=False)
 
+base_widths = {}
+for col in existing_cols:
+    if not filtered_df.empty and col in filtered_df.columns:
+        val_series = filtered_df[col].dropna().astype(str)
+        max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
+    else:
+        max_val_len = 1
+
+    bw = max_val_len * 7
+    if col == "full_name":
+        bw = min(bw, 140)
+    elif col == "team_short_name":
+        bw = min(bw, 110)
+    else:
+        bw = min(bw, 48)
+    base_widths[col] = max(bw, 12)
+
+inv_weights = {col: 1.0 / (w ** 0.5) for col, w in base_widths.items()}
+sum_inv_weights = sum(inv_weights.values())
+TOTAL_PADDING_BUDGET = 650
+
+smart_column_config = {}
+format_map = {
+    "full_name":            ("TextColumn", None, "Player"),
+    "Age":                  ("NumberColumn", "%d", "Age"),
+    "element_type":         ("TextColumn", None, "Pos"),
+    "Play Pos":             ("TextColumn", None, "Pl Pos"),
+    "team_short_name":      ("TextColumn", None, "Team"),
+    "now_cost":             ("NumberColumn", "%.1f", "Price"),
+    "selected_by_percent":  ("NumberColumn", "%.1f%%", "Sel %"),
+    "min_played_1y":        ("NumberColumn", "%d", "Mins 1y"),
+    "pct_mins_avail_1y":    ("NumberColumn", "%.1f", "Avail 1y"),
+    "pct_goals_1y":         ("NumberColumn", "%.1f", "G 1y"),
+    "pct_xg_1y":            ("NumberColumn", "%.1f", "xG 1y"),
+    "pct_xgot_1y":          ("NumberColumn", "%.1f", "xGOT 1y"),
+    "pct_assists_1y":       ("NumberColumn", "%.1f", "A 1y"),
+    "pct_xa_1y":            ("NumberColumn", "%.1f", "xA 1y"),
+    "pct_shots_1y":         ("NumberColumn", "%.1f", "Sh 1y"),
+    "pct_bcc_1y":           ("NumberColumn", "%.1f", "BCC 1y"),
+    "pct_clearances_1y":    ("NumberColumn", "%.1f", "Clr 1y"),
+    "pct_blocks_1y":        ("NumberColumn", "%.1f", "Blk 1y"),
+    "pct_interceptions_1y": ("NumberColumn", "%.1f", "Int 1y"),
+    "pct_tackles_1y":       ("NumberColumn", "%.1f", "Tck 1y"),
+    "pct_recoveries_1y":    ("NumberColumn", "%.1f", "Rec 1y"),
+    "min_played_3y":        ("NumberColumn", "%d", "Mins 3y"),
+    "pct_mins_avail_3y":    ("NumberColumn", "%.1f", "Avail 3y"),
+    "pct_goals_3y":         ("NumberColumn", "%.1f", "G 3y"),
+    "pct_xg_3y":            ("NumberColumn", "%.1f", "xG 3y"),
+    "pct_xgot_3y":          ("NumberColumn", "%.1f", "xGOT 3y"),
+    "pct_assists_3y":       ("NumberColumn", "%.1f", "A 3y"),
+    "pct_xa_3y":            ("NumberColumn", "%.1f", "xA 3y"),
+    "pct_shots_3y":         ("NumberColumn", "%.1f", "Sh 3y"),
+    "pct_bcc_3y":           ("NumberColumn", "%.1f", "BCC 3y"),
+    "pct_clearances_3y":    ("NumberColumn", "%.1f", "Clr 3y"),
+    "pct_blocks_3y":        ("NumberColumn", "%.1f", "Blk 3y"),
+    "pct_interceptions_3y": ("NumberColumn", "%.1f", "Int 3y"),
+    "pct_tackles_3y":       ("NumberColumn", "%.1f", "Tck 3y"),
+    "pct_recoveries_3y":    ("NumberColumn", "%.1f", "Rec 3y"),
+}
+
+for col in existing_cols:
+    bw = base_widths[col]
+    bonus = (inv_weights[col] / sum_inv_weights) * TOTAL_PADDING_BUDGET
+    calc_w = int(round(bw + bonus))
+
+    if col == "full_name":
+        calc_w = max(calc_w, 140)
+    elif col == "team_short_name":
+        calc_w = max(calc_w, 110)
+    else:
+        calc_w = max(calc_w, 48)
+
+    col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
+
+    kwargs = {"label": col_label, "width": calc_w}
+    if col == "full_name":
+        kwargs["pinned"] = True
+    if col_fmt:
+        kwargs["format"] = col_fmt
+
+    if col_type == "NumberColumn":
+        smart_column_config[col] = st.column_config.NumberColumn(**kwargs)
+    elif col_type == "TextColumn":
+        smart_column_config[col] = st.column_config.TextColumn(**kwargs)
+    else:
+        smart_column_config[col] = st.column_config.Column(**kwargs)
+
 st.dataframe(
     styled_df,
     width="stretch",
     hide_index=True,
     height=800,
-    column_config={
-        "full_name":            st.column_config.TextColumn("Player",        width="medium", pinned=True),
-        "Age":                  st.column_config.NumberColumn("Age",         width=35,  format="%d"),
-        "element_type":         st.column_config.TextColumn("Pos",           width=40),
-        "Play Pos":             st.column_config.TextColumn("Pl Pos",        width=40),
-        "team_short_name":      st.column_config.TextColumn("Team",          width=40),
-        "now_cost":             st.column_config.NumberColumn("Price",       width=40,  format="%.1f"),
-        "selected_by_percent":  st.column_config.NumberColumn("Sel %",      width=55,  format="%.1f%%"),
-        "min_played_1y":        st.column_config.NumberColumn("Mins 1y",     width=45,  format="%d"),
-        "pct_mins_avail_1y":    st.column_config.NumberColumn("Avail 1y",    width=48,  format="%.1f"),
-        "pct_goals_1y":         st.column_config.NumberColumn("G 1y",        width=40,  format="%.1f"),
-        "pct_xg_1y":            st.column_config.NumberColumn("xG 1y",       width=40,  format="%.1f"),
-        "pct_xgot_1y":          st.column_config.NumberColumn("xGOT 1y",     width=48,  format="%.1f"),
-        "pct_assists_1y":       st.column_config.NumberColumn("A 1y",        width=40,  format="%.1f"),
-        "pct_xa_1y":            st.column_config.NumberColumn("xA 1y",       width=40,  format="%.1f"),
-        "pct_shots_1y":         st.column_config.NumberColumn("Sh 1y",       width=40,  format="%.1f"),
-        "pct_bcc_1y":           st.column_config.NumberColumn("BCC 1y",      width=42,  format="%.1f"),
-        "pct_clearances_1y":    st.column_config.NumberColumn("Clr 1y",      width=40,  format="%.1f"),
-        "pct_blocks_1y":        st.column_config.NumberColumn("Blk 1y",      width=40,  format="%.1f"),
-        "pct_interceptions_1y": st.column_config.NumberColumn("Int 1y",      width=40,  format="%.1f"),
-        "pct_tackles_1y":       st.column_config.NumberColumn("Tck 1y",      width=40,  format="%.1f"),
-        "pct_recoveries_1y":    st.column_config.NumberColumn("Rec 1y",      width=40,  format="%.1f"),
-        "min_played_3y":        st.column_config.NumberColumn("Mins 3y",     width=45,  format="%d"),
-        "pct_mins_avail_3y":    st.column_config.NumberColumn("Avail 3y",    width=48,  format="%.1f"),
-        "pct_goals_3y":         st.column_config.NumberColumn("G 3y",        width=40,  format="%.1f"),
-        "pct_xg_3y":            st.column_config.NumberColumn("xG 3y",       width=40,  format="%.1f"),
-        "pct_xgot_3y":          st.column_config.NumberColumn("xGOT 3y",     width=48,  format="%.1f"),
-        "pct_assists_3y":       st.column_config.NumberColumn("A 3y",        width=40,  format="%.1f"),
-        "pct_xa_3y":            st.column_config.NumberColumn("xA 3y",       width=40,  format="%.1f"),
-        "pct_shots_3y":         st.column_config.NumberColumn("Sh 3y",       width=40,  format="%.1f"),
-        "pct_bcc_3y":           st.column_config.NumberColumn("BCC 3y",      width=42,  format="%.1f"),
-        "pct_clearances_3y":    st.column_config.NumberColumn("Clr 3y",      width=40,  format="%.1f"),
-        "pct_blocks_3y":        st.column_config.NumberColumn("Blk 3y",      width=40,  format="%.1f"),
-        "pct_interceptions_3y": st.column_config.NumberColumn("Int 3y",      width=40,  format="%.1f"),
-        "pct_tackles_3y":       st.column_config.NumberColumn("Tck 3y",      width=40,  format="%.1f"),
-        "pct_recoveries_3y":    st.column_config.NumberColumn("Rec 3y",      width=40,  format="%.1f"),
-    }
+    column_config=smart_column_config
 )

@@ -565,40 +565,91 @@ styled_df = filtered_df[existing_cols].style    .apply(soft_gradient, cmap_name=
 
 st.subheader(f"Attacking Stats: {len(filtered_df)} players", anchor=False)
 
+base_widths = {}
+for col in existing_cols:
+    if not filtered_df.empty and col in filtered_df.columns:
+        val_series = filtered_df[col].dropna().astype(str)
+        max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
+    else:
+        max_val_len = 1
+
+    bw = max_val_len * 7
+    if col == "full_name":
+        bw = min(bw, 140)
+    elif col == "team_short_name":
+        bw = min(bw, 110)
+    else:
+        bw = min(bw, 48)
+    base_widths[col] = max(bw, 12)
+
+inv_weights = {col: 1.0 / (w ** 0.5) for col, w in base_widths.items()}
+sum_inv_weights = sum(inv_weights.values())
+TOTAL_PADDING_BUDGET = 650
+
+smart_column_config = {}
+format_map = {
+    "full_name":           ("TextColumn", None, "Player"),
+    "Age":                 ("NumberColumn", "%d", "Age"),
+    "element_type":        ("TextColumn", None, "Pos"),
+    "Play Pos":            ("TextColumn", None, "Pl Pos"),
+    "team_short_name":     ("TextColumn", None, "Team"),
+    "now_cost":            ("NumberColumn", "%.1f", "Price"),
+    "M Price":             ("NumberColumn", "%.1f", "TM Price"),
+    "selected_by_percent": ("NumberColumn", "%.1f%%", "Sel %"),
+    "min_played":          ("NumberColumn", None, "Mins"),
+    "matches_played":      ("NumberColumn", None, "MP"),
+    "matches_started":     ("NumberColumn", None, "GS"),
+    "avg_mins":            ("NumberColumn", "%d", "AvMins"),
+    "60_min":              ("NumberColumn", "%.1f", "60m %"),
+    "av_rating_alt":       ("NumberColumn", "%.2f", "RatA"),
+    "G_90":                ("NumberColumn", None, "G/90"),
+    "xG_90":               ("NumberColumn", None, "xG/90"),
+    "xGoT_90":             ("NumberColumn", None, "xGoT/90"),
+    "A_90":                ("NumberColumn", None, "A/90"),
+    "xA_90":               ("NumberColumn", None, "xA/90"),
+    "xGI_norm":            ("NumberColumn", None, "xGI/90"),
+    "Sh_90":               ("NumberColumn", None, "Sh/90"),
+    "ShoT_90":             ("NumberColumn", None, "ShoT/90"),
+    "KP_90":               ("NumberColumn", None, "KP/90"),
+    "Cross_90":            ("NumberColumn", "%.2f", "Crs/90"),
+    "Touches_90":          ("NumberColumn", None, "Tchs/90"),
+    "Pass_pct":            ("NumberColumn", None, "Pass%"),
+    "BC_90":               ("NumberColumn", None, "BC/90"),
+    "PBC_90":              ("NumberColumn", None, "PBC/90"),
+    "Contest_pct":         ("NumberColumn", "%.1f", "Drib%"),
+}
+
+for col in existing_cols:
+    bw = base_widths[col]
+    bonus = (inv_weights[col] / sum_inv_weights) * TOTAL_PADDING_BUDGET
+    calc_w = int(round(bw + bonus))
+
+    if col == "full_name":
+        calc_w = max(calc_w, 140)
+    elif col == "team_short_name":
+        calc_w = max(calc_w, 110)
+    else:
+        calc_w = max(calc_w, 48)
+
+    col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
+
+    kwargs = {"label": col_label, "width": calc_w}
+    if col == "full_name":
+        kwargs["pinned"] = True
+    if col_fmt:
+        kwargs["format"] = col_fmt
+
+    if col_type == "NumberColumn":
+        smart_column_config[col] = st.column_config.NumberColumn(**kwargs)
+    elif col_type == "TextColumn":
+        smart_column_config[col] = st.column_config.TextColumn(**kwargs)
+    else:
+        smart_column_config[col] = st.column_config.Column(**kwargs)
+
 st.dataframe(
     styled_df,
     width="stretch",
     hide_index=True,
     height=800,
-    column_config={
-        "full_name":           st.column_config.TextColumn("Player",    width="medium", pinned=True),
-        "Age":                 st.column_config.NumberColumn("Age",     width=40,  format="%d"),
-        "element_type":        st.column_config.TextColumn("Pos",       width=45),
-        "Play Pos":            st.column_config.TextColumn("Pl Pos",    width=45),
-        "team_short_name":     st.column_config.TextColumn("Team",      width=45),
-        "now_cost":            st.column_config.NumberColumn("Price",   width=40,  format="%.1f"),
-        "M Price":             st.column_config.NumberColumn("TM Price",width=55,  format="%.1f"),
-        "selected_by_percent": st.column_config.NumberColumn("Sel %",  width=55,  format="%.1f%%"),
-        "min_played":          st.column_config.NumberColumn("Mins",    width=45),
-        "matches_played":      st.column_config.NumberColumn("MP",      width=35),
-        "matches_started":     st.column_config.NumberColumn("GS",      width=35),
-        "avg_mins":            st.column_config.NumberColumn("AvMins",  width=40,  format="%d"),
-        "60_min":              st.column_config.NumberColumn("60m %",   width=50,  format="%.1f"),
-        "av_rating_alt":       st.column_config.NumberColumn("RatA",    width=40,  format="%.2f"),
-        "G_90":                st.column_config.NumberColumn("G/90",    width=40),
-        "xG_90":               st.column_config.NumberColumn("xG/90",   width=40),
-        "xGoT_90":             st.column_config.NumberColumn("xGoT/90", width=40),
-        "A_90":                st.column_config.NumberColumn("A/90",    width=40),
-        "xA_90":               st.column_config.NumberColumn("xA/90",   width=40),
-        "xGI_norm":            st.column_config.NumberColumn("xGI/90",  width=50),
-        "Sh_90":               st.column_config.NumberColumn("Sh/90",   width=40),
-        "ShoT_90":             st.column_config.NumberColumn("ShoT/90", width=40),
-        "KP_90":               st.column_config.NumberColumn("KP/90",   width=40),
-        "Cross_90":            st.column_config.NumberColumn("Crs/90",  width=40, format="%.2f"),
-        "Touches_90":          st.column_config.NumberColumn("Tchs/90", width=50),
-        "Pass_pct":            st.column_config.NumberColumn("Pass%",   width=45),
-        "BC_90":               st.column_config.NumberColumn("BC/90",   width=40),
-        "PBC_90":              st.column_config.NumberColumn("PBC/90",  width=40),
-        "Contest_pct":         st.column_config.NumberColumn("Drib%",   width=40, format="%.1f"),
-    }
+    column_config=smart_column_config
 )

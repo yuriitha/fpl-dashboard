@@ -581,35 +581,86 @@ styled_df = filtered_df[existing_cols].style    .apply(soft_gradient, cmap_name=
 
 st.subheader(f"Goalkeeper Stats: {len(filtered_df)} players", anchor=False)
 
+base_widths = {}
+for col in existing_cols:
+    if not filtered_df.empty and col in filtered_df.columns:
+        val_series = filtered_df[col].dropna().astype(str)
+        max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
+    else:
+        max_val_len = 1
+
+    bw = max_val_len * 7
+    if col == "full_name":
+        bw = min(bw, 140)
+    elif col == "team_short_name":
+        bw = min(bw, 110)
+    else:
+        bw = min(bw, 48)
+    base_widths[col] = max(bw, 12)
+
+inv_weights = {col: 1.0 / (w ** 0.5) for col, w in base_widths.items()}
+sum_inv_weights = sum(inv_weights.values())
+TOTAL_PADDING_BUDGET = 650
+
+smart_column_config = {}
+format_map = {
+    "full_name":           ("TextColumn", None, "Player"),
+    "Age":                 ("NumberColumn", "%d", "Age"),
+    "element_type":        ("TextColumn", None, "Pos"),
+    "Play Pos":            ("TextColumn", None, "Pl Pos"),
+    "team_short_name":     ("TextColumn", None, "Team"),
+    "now_cost":            ("NumberColumn", "%.1f", "Price"),
+    "M Price":             ("NumberColumn", "%.1f", "TM Price"),
+    "selected_by_percent": ("NumberColumn", "%.1f%%", "Sel %"),
+    "min_played":          ("NumberColumn", None, "Mins"),
+    "matches_played":      ("NumberColumn", None, "MP"),
+    "avg_mins":            ("NumberColumn", "%d", "AvMins"),
+    "60_min":              ("NumberColumn", "%.1f", "60m %"),
+    "av_rating_alt":       ("NumberColumn", "%.2f", "RatA"),
+    "CS_90":               ("NumberColumn", "%.2f", "CS/90"),
+    "xGC_90":              ("NumberColumn", "%.2f", "xGC/90"),
+    "xGP_90":              ("NumberColumn", "%.2f", "xGP/90"),
+    "Svs_90":              ("NumberColumn", "%.2f", "Svs/90"),
+    "penalties_saved":     ("NumberColumn", "%d", "PS"),
+    "Touches_90":          ("NumberColumn", "%.2f", "Tchs/90"),
+    "Pass_pct":            ("NumberColumn", "%.1f", "Pass%"),
+    "yellow_cards":        ("NumberColumn", "%d", "YC"),
+    "YC_90":               ("NumberColumn", "%.2f", "YC/90"),
+    "red_cards":           ("NumberColumn", "%d", "RC"),
+    "RC_90":               ("NumberColumn", "%.2f", "RC/90"),
+}
+
+for col in existing_cols:
+    bw = base_widths[col]
+    bonus = (inv_weights[col] / sum_inv_weights) * TOTAL_PADDING_BUDGET
+    calc_w = int(round(bw + bonus))
+
+    if col == "full_name":
+        calc_w = max(calc_w, 140)
+    elif col == "team_short_name":
+        calc_w = max(calc_w, 110)
+    else:
+        calc_w = max(calc_w, 48)
+
+    col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
+
+    kwargs = {"label": col_label, "width": calc_w}
+    if col == "full_name":
+        kwargs["pinned"] = True
+    if col_fmt:
+        kwargs["format"] = col_fmt
+
+    if col_type == "NumberColumn":
+        smart_column_config[col] = st.column_config.NumberColumn(**kwargs)
+    elif col_type == "TextColumn":
+        smart_column_config[col] = st.column_config.TextColumn(**kwargs)
+    else:
+        smart_column_config[col] = st.column_config.Column(**kwargs)
+
 st.dataframe(
     styled_df,
     width="stretch",
     hide_index=True,
     height=800,
-    column_config={
-        "full_name":           st.column_config.TextColumn("Player",        width="medium", pinned=True),
-        "Age":                 st.column_config.NumberColumn("Age",         width=40,  format="%d"),
-        "element_type":        st.column_config.TextColumn("Pos",           width=45),
-        "Play Pos":            st.column_config.TextColumn("Pl Pos",        width=45),
-        "team_short_name":     st.column_config.TextColumn("Team",          width=45),
-        "now_cost":            st.column_config.NumberColumn("Price",       width=40,  format="%.1f"),
-        "M Price":             st.column_config.NumberColumn("TM Price",    width=55,  format="%.1f"),
-        "selected_by_percent": st.column_config.NumberColumn("Sel %",       width=55,  format="%.1f%%"),
-        "min_played":          st.column_config.NumberColumn("Mins",        width=45),
-        "matches_played":      st.column_config.NumberColumn("MP",          width=35),
-        "avg_mins":            st.column_config.NumberColumn("AvMins",      width=40,  format="%d"),
-        "60_min":              st.column_config.NumberColumn("60m %",       width=50,  format="%.1f"),
-        "av_rating_alt":       st.column_config.NumberColumn("RatA",        width=40,  format="%.2f"),
-        "CS_90":               st.column_config.NumberColumn("CS/90",       width=40,  format="%.2f"),
-        "xGC_90":              st.column_config.NumberColumn("xGC/90",      width=45,  format="%.2f"),
-        "xGP_90":              st.column_config.NumberColumn("xGP/90",      width=45,  format="%.2f"),
-        "Svs_90":              st.column_config.NumberColumn("Svs/90",      width=45,  format="%.2f"),
-        "penalties_saved":     st.column_config.NumberColumn("PS",          width=35,  format="%d"),
-        "Touches_90":          st.column_config.NumberColumn("Tchs/90",     width=50,  format="%.2f"),
-        "Pass_pct":            st.column_config.NumberColumn("Pass%",       width=45,  format="%.1f"),
-        "yellow_cards":        st.column_config.NumberColumn("YC",          width=35,  format="%d"),
-        "YC_90":               st.column_config.NumberColumn("YC/90",       width=40,  format="%.2f"),
-        "red_cards":           st.column_config.NumberColumn("RC",          width=35,  format="%d"),
-        "RC_90":               st.column_config.NumberColumn("RC/90",       width=40,  format="%.2f"),
-    }
+    column_config=smart_column_config
 )
