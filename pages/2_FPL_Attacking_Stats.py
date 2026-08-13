@@ -81,6 +81,9 @@ def load_data():
         else:
             df['Pass_90'] = 0.0
 
+    if 'goals_scored' not in df.columns and 'goals' in df.columns:
+        df['goals_scored'] = df['goals']
+
     return df
 
 try:
@@ -543,6 +546,7 @@ if sort_cols:
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
     "selected_by_percent", "min_played", "matches_played", "matches_started",
+    "goals_scored", "assists",
     "avg_mins", "60_min", "av_rating_alt",
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm",
     "Sh_90", "ShoT_90", "KP_90", "Cross_90", "Pass_90", "Pass_pct"
@@ -691,6 +695,8 @@ format_map = {
     "min_played":          ("NumberColumn", None, "Mins"),
     "matches_played":      ("NumberColumn", None, "MP"),
     "matches_started":     ("NumberColumn", None, "GS"),
+    "goals_scored":        ("NumberColumn", "%d", "G"),
+    "assists":             ("NumberColumn", "%d", "A"),
     "avg_mins":            ("NumberColumn", "%d", "AvMins"),
     "60_min":              ("NumberColumn", "%.1f", "60m %"),
     "av_rating_alt":       ("NumberColumn", "%.2f", "RatA"),
