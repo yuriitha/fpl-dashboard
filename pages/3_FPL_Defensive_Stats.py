@@ -682,7 +682,8 @@ styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90', 'Aerial_pct', 'Duel_pct'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['Pass_90', 'Pass_pct'] if c in existing_cols])\
-    .format(precision=2)
+    .format(precision=2)\
+    .format(precision=1, subset=[c for c in ['Pass_pct'] if c in existing_cols])
 
 st.subheader(f"Defensive Stats: {len(filtered_df)} players", anchor=False)
 

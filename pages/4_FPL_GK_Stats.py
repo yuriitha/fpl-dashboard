@@ -676,7 +676,8 @@ styled_df = filtered_df[existing_cols].style\
     .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'Svs_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])\
     .apply(soft_green_gradient, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['Pass_90', 'Pass_pct'] if c in existing_cols])\
-    .format(precision=2)
+    .format(precision=2)\
+    .format(precision=1, subset=[c for c in ['Pass_pct'] if c in existing_cols])
 
 st.subheader(f"Goalkeeper Stats: {len(filtered_df)} players", anchor=False)
 

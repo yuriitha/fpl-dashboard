@@ -654,7 +654,8 @@ styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_green_gradient, max_cap=0.90, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90', 'A_90', 'xA_90', 'xGI_norm'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Cross_90', 'Pass_90', 'Pass_pct'] if c in existing_cols])\
-    .format(precision=2)
+    .format(precision=2)\
+    .format(precision=1, subset=[c for c in ['Pass_pct'] if c in existing_cols])
 
 st.subheader(f"Attacking Stats: {len(filtered_df)} players", anchor=False)
 
@@ -704,7 +705,7 @@ format_map = {
     "KP_90":               ("NumberColumn", None, "KP/90"),
     "Cross_90":            ("NumberColumn", "%.2f", "Crs/90"),
     "Pass_90":             ("NumberColumn", "%.2f", "Pass/90"),
-    "Pass_pct":            ("NumberColumn", None, "Pass%"),
+    "Pass_pct":            ("NumberColumn", "%.1f", "Pass%"),
 }
 
 for col in existing_cols:
