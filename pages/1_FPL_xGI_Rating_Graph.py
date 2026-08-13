@@ -638,16 +638,17 @@ if not plot_df.empty:
         x_min, x_max = 0.0, 1.05
 
     mins_col = 'min_played' if 'min_played' in plot_df.columns else ('min_played_1y' if 'min_played_1y' in plot_df.columns else 'avg_mins')
-    has_high_xgi_player = not plot_df[(plot_df[mins_col] > 200) & (plot_df['xGI_norm'] > 1.05)].empty
+    df_200 = plot_df[plot_df[mins_col] > 200]
+    max_xgi_200 = df_200['xGI_norm'].max() if not df_200.empty else x_max
 
-    if has_high_xgi_player:
-        x_cap = np.ceil(x_max * 10) / 10
+    if not pd.isna(max_xgi_200) and max_xgi_200 > 1.05:
+        x_cap = np.ceil(max_xgi_200 * 10) / 10
     else:
-        x_cap = 1.05
+        x_cap = min(1.05, max(0.2, np.ceil(x_max * 10) / 10))
 
     x_start = max(0.0, np.floor(x_min * 10) / 10)
     x_end = x_cap
-    if x_end < x_start: x_end = 1.05
+    if x_end < x_start: x_end = x_start + 0.1
     x_ticks = np.arange(x_start, x_end + 0.05, 0.1).round(1)
 
     fig.update_layout(
@@ -763,16 +764,17 @@ if not plot_df.empty:
             x_min2, x_max2 = 0.0, 1.05
 
         mins_col2 = 'min_played_h2' if 'min_played_h2' in plot_df_h2.columns else ('min_played' if 'min_played' in plot_df_h2.columns else 'avg_mins_h2')
-        has_high_xgi_player2 = not plot_df_h2[(plot_df_h2[mins_col2] > 200) & (plot_df_h2['xGI_norm_h2'] > 1.05)].empty
+        df_200_2 = plot_df_h2[plot_df_h2[mins_col2] > 200]
+        max_xgi_200_2 = df_200_2['xGI_norm_h2'].max() if not df_200_2.empty else x_max2
 
-        if has_high_xgi_player2:
-            x_cap2 = np.ceil(x_max2 * 10) / 10
+        if not pd.isna(max_xgi_200_2) and max_xgi_200_2 > 1.05:
+            x_cap2 = np.ceil(max_xgi_200_2 * 10) / 10
         else:
-            x_cap2 = 1.05
+            x_cap2 = min(1.05, max(0.2, np.ceil(x_max2 * 10) / 10))
 
         x_start2 = max(0.0, np.floor(x_min2 * 10) / 10)
         x_end2 = x_cap2
-        if x_end2 < x_start2: x_end2 = 1.05
+        if x_end2 < x_start2: x_end2 = x_start2 + 0.1
         x_ticks2 = np.arange(x_start2, x_end2 + 0.05, 0.1).round(1)
 
         fig_h2.update_layout(
