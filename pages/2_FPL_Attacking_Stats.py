@@ -561,7 +561,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None):
     return styles
 
 
-def warm_honey_gradient(s, min_alpha=0.04, max_alpha=0.18, max_cap=None):
+def warm_honey_gradient(s, min_alpha=0.06, max_alpha=0.28, max_cap=None):
     if s.empty:
         return ['' for _ in s]
     s_min, s_max = s.min(), s.max()
@@ -577,9 +577,9 @@ def warm_honey_gradient(s, min_alpha=0.04, max_alpha=0.18, max_cap=None):
         else:
             val_clamped = min(val, s_max)
             norm_val = (val_clamped - s_min) / (s_max - s_min)
-            r = int(215 + norm_val * (235 - 215))
+            r = int(215 + norm_val * (240 - 215))
             g = int(180 + norm_val * (145 - 180))
-            b = int(90  + norm_val * (40  - 90))
+            b = int(90  + norm_val * (35  - 90))
             alpha = min_alpha + norm_val * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
