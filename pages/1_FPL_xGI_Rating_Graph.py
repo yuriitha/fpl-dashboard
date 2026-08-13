@@ -509,6 +509,55 @@ POSITION_COLOR_MAP = {
 }
 
 
+def get_smart_labels(dataframe, x_col='rating_sqrt', y_col='xGI_sqrt', size_col='size_for_plot', name_col='web_name', dist_threshold=0.032):
+    """
+    Гібридна система смарт-підписів:
+    1. Гравці з найбільшими кружечками (розмір >= 40, тобто топ за вибором та хвилинами) підписуються ЗАВЖДИ.
+    2. Інші гравці підписуються, якщо вони не розташовані у надто щільному скупченні біля вже підписаного більшого кружечка.
+    3. Дозволяється легке/помірне накладання, але усуваються сильні нагромадження тексту.
+    """
+    if dataframe.empty:
+        return []
+
+    temp_df = dataframe[[x_col, y_col, size_col, name_col]].copy()
+
+    x_range = temp_df[x_col].max() - temp_df[x_col].min()
+    y_range = temp_df[y_col].max() - temp_df[y_col].min()
+    if x_range == 0: x_range = 1.0
+    if y_range == 0: y_range = 1.0
+
+    sorted_df = temp_df.sort_values(by=size_col, ascending=False)
+
+    labeled_points = []
+    label_results = {}
+
+    for idx, row in sorted_df.iterrows():
+        nx = row[x_col] / x_range
+        ny = row[y_col] / y_range
+        size = row[size_col]
+        name = str(row[name_col]) if pd.notna(row[name_col]) else ""
+
+        if size >= 40:
+            label_results[idx] = name
+            labeled_points.append((nx, ny, size))
+            continue
+
+        is_crowded = False
+        for lx, ly, lsize in labeled_points:
+            dist = ((nx - lx)**2 + (ny - ly)**2) ** 0.5
+            if dist < dist_threshold:
+                is_crowded = True
+                break
+
+        if not is_crowded:
+            label_results[idx] = name
+            labeled_points.append((nx, ny, size))
+        else:
+            label_results[idx] = ""
+
+    return [label_results.get(i, "") for i in dataframe.index]
+
+
 if not plot_df.empty:
     plot_df['p_selected'] = plot_df['selected_by_percent'].rank(pct=True)
     plot_df['p_avgmins'] = plot_df['avg_mins'].rank(pct=True)
@@ -517,16 +566,10 @@ if not plot_df.empty:
 
     plot_df['size_for_plot'] = (plot_df['combined_rank'] ** 2) * 100 + 10
 
-
     plot_df['rating_sqrt'] = plot_df['av_rating_alt'] ** 0.5
     plot_df['xGI_sqrt'] = plot_df['xGI_norm'] ** 0.5
 
-    min_mins_for_label = 60
-    plot_df['label_text'] = np.where(
-        (plot_df['avg_mins'] >= min_mins_for_label) | (plot_df['selected_by_percent'] > 10.0),
-        plot_df['web_name'],
-        ""
-    )
+    plot_df['label_text'] = get_smart_labels(plot_df, 'rating_sqrt', 'xGI_sqrt', 'size_for_plot', 'web_name', 0.032)
 
 
     st.subheader(f"xGI vs Rating — 12-Month Performance (Players: {len(plot_df)})", anchor=False)
@@ -643,11 +686,7 @@ if not plot_df.empty:
         plot_df_h2['rating_sqrt'] = plot_df_h2['av_rating_alt_h2'] ** 0.5
         plot_df_h2['xGI_sqrt'] = plot_df_h2['xGI_norm_h2'] ** 0.5
 
-        plot_df_h2['label_text'] = np.where(
-            (plot_df_h2['avg_mins'] >= 20) | (plot_df_h2['selected_by_percent'] > 10.0),
-            plot_df_h2['web_name'],
-            ""
-        )
+        plot_df_h2['label_text'] = get_smart_labels(plot_df_h2, 'rating_sqrt', 'xGI_sqrt', 'size_for_plot', 'web_name', 0.032)
 
         st.markdown("<br><hr>", unsafe_allow_html=True)
         st.subheader(f"xGI vs Rating — 6-Month Performance (Players: {len(plot_df_h2)})", anchor=False)
