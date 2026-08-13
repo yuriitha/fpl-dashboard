@@ -159,30 +159,60 @@ st.subheader(f"UCL Players filtered: {len(filtered_df)}", anchor=False)
 
 existing_display_cols = [c for c in display_columns if c in filtered_df.columns]
 
+smart_column_config = {}
+format_map = {
+    "Price": ("NumberColumn", "%.1f", "Price"),
+    "TM Value": ("NumberColumn", "%.1f", "TM Value"),
+    "Selected": ("NumberColumn", "%.1f", "Sel %"),
+    "PPM": ("NumberColumn", "%.1f", "PPM"),
+    "Value": ("NumberColumn", "%.1f", "Value"),
+    "Age": ("NumberColumn", None, "Age"),
+    "Mins": ("NumberColumn", None, "Mins"),
+    "G": ("NumberColumn", None, "G"),
+    "A": ("NumberColumn", None, "A"),
+    "POTM": ("NumberColumn", None, "POTM"),
+    "In": ("NumberColumn", None, "In"),
+    "Out": ("NumberColumn", None, "Out"),
+    "In 24": ("NumberColumn", None, "In 24"),
+    "Out 24": ("NumberColumn", None, "Out 24"),
+    "Player": ("TextColumn", None, "Player"),
+    "Pos": ("TextColumn", None, "Pos"),
+    "Pl Pos": ("TextColumn", None, "Pl Pos"),
+    "Team": ("TextColumn", None, "Team"),
+    "Team Name": ("TextColumn", None, "Team Name"),
+    "Foot": ("TextColumn", None, "Foot"),
+}
+
+for col in existing_display_cols:
+    if not filtered_df.empty and col in filtered_df.columns:
+        val_series = filtered_df[col].dropna().astype(str)
+        max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
+    else:
+        max_val_len = 1
+
+    calc_w = max(max_val_len * 11, 45)
+    if col == "Player":
+        calc_w = max(calc_w, 130)
+
+    col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
+
+    kwargs = {"label": col_label, "width": calc_w}
+    if col == "Player":
+        kwargs["pinned"] = True
+    if col_fmt:
+        kwargs["format"] = col_fmt
+
+    if col_type == "NumberColumn":
+        smart_column_config[col] = st.column_config.NumberColumn(**kwargs)
+    elif col_type == "TextColumn":
+        smart_column_config[col] = st.column_config.TextColumn(**kwargs)
+    else:
+        smart_column_config[col] = st.column_config.Column(**kwargs)
+
 st.dataframe(
     filtered_df[existing_display_cols],
     width="stretch",
     hide_index=True,
     height=800,
-    column_config={
-        "Player": st.column_config.TextColumn("Player", width="medium", pinned=True),
-        "Age": st.column_config.NumberColumn("Age", width=35),
-        "Pos": st.column_config.TextColumn("Pos", width=45),
-        "Pl Pos": st.column_config.TextColumn("Pl Pos", width=45),
-        "Team": st.column_config.TextColumn("Team", width=45),
-        "Team Name": st.column_config.TextColumn("Team Name", width=100),
-        "Price": st.column_config.NumberColumn("Price", width=40, format="%.1f"),
-        "TM Value": st.column_config.NumberColumn("TM Value", width=50, format="%.1f"),
-        "Selected": st.column_config.NumberColumn("Sel %", width=45, format="%.1f"),
-        "Mins": st.column_config.NumberColumn("Mins", width=40),
-        "G": st.column_config.NumberColumn("G", width=35),
-        "A": st.column_config.NumberColumn("A", width=35),
-        "POTM": st.column_config.NumberColumn("POTM", width=40),
-        "PPM": st.column_config.NumberColumn("PPM", width=40, format="%.1f"),
-        "Value": st.column_config.NumberColumn("Value", width=40, format="%.1f"),
-        "In": st.column_config.NumberColumn("In", width=60),
-        "Out": st.column_config.NumberColumn("Out", width=60),
-        "In 24": st.column_config.NumberColumn("In 24", width=50),
-        "Out 24": st.column_config.NumberColumn("Out 24", width=50),
-    }
+    column_config=smart_column_config
 )
