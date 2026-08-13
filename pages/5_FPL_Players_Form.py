@@ -655,9 +655,9 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
         else:
             val_clamped = min(val, s_max)
             norm_val = (val_clamped - s_min) / (s_max - s_min)
-            r = int(40  + norm_val * (0   - 40))
-            g = int(180 + norm_val * (200 - 180))
-            b = int(110 + norm_val * (100 - 110))
+            r = int(45  + norm_val * (15  - 45))
+            g = int(185 + norm_val * (215 - 185))
+            b = int(65  + norm_val * (55  - 65))
             alpha = min_alpha + norm_val * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
