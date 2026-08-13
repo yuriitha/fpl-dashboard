@@ -98,8 +98,8 @@ def load_data():
     if 'Pass_90' not in df.columns:
         if 'totalPass' in df.columns and 'min_played' in df.columns:
             df['Pass_90'] = np.where(df['min_played'] > 0, np.round((df['totalPass'] / df['min_played']) * 90, 2), 0.0)
-        elif 'Touches_90' in df.columns:
-            df['Pass_90'] = df['Touches_90']
+        else:
+            df['Pass_90'] = 0.0
 
     return df
 
