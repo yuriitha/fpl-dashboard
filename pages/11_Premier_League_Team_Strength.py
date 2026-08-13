@@ -349,7 +349,7 @@ with col1:
             .apply(soft_green_gradient, subset=['Attack'])\
             .apply(soft_green_gradient, reverse=True, subset=['Defense'])\
             .apply(soft_overall_gradient, subset=['Overall'])\
-            .format(precision=3)
+            .format(precision=2)
 
         st.dataframe(
             df_ratings_styled,
@@ -359,9 +359,9 @@ with col1:
             column_config={
                 'Pos': st.column_config.NumberColumn("Pos", width=30),
                 'Team': st.column_config.TextColumn("Team"),
-                'Attack': st.column_config.NumberColumn("Attack", format="%.3f", width=65),
-                'Defense': st.column_config.NumberColumn("Defense", format="%.3f", width=65),
-                'Overall': st.column_config.NumberColumn("Overall", format="%.3f", width=65),
+                'Attack': st.column_config.NumberColumn("Attack", format="%.2f", width=65),
+                'Defense': st.column_config.NumberColumn("Defense", format="%.2f", width=65),
+                'Overall': st.column_config.NumberColumn("Overall", format="%.2f", width=65),
             }
         )
     else:
