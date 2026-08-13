@@ -139,10 +139,10 @@ GB = {
 
 DEFAULTS = {
     'f_cost_as':     GB['f_cost_as'],
-    'f_matches_as':  (max(GB['f_matches_as'][0], 5), GB['f_matches_as'][1]),
+    'f_matches_as':  GB['f_matches_as'],
     'f_rating_as':   GB['f_rating_as'],
     'f_avg_mins_as': GB['f_avg_mins_as'],
-    'f_60min_as':    (max(GB['f_60min_as'][0], 40.5), GB['f_60min_as'][1]),
+    'f_60min_as':    GB['f_60min_as'],
     'f_selected_as': GB['f_selected_as'],
     'f_top100k_as':  GB['f_top100k_as'],
     'f_activity_as': GB['f_activity_as'],
@@ -253,25 +253,26 @@ def get_base_df(exclude_key=None):
 
 
     _slider_cols = {
-        'f_matches_as':  ('matches_played',        DEFAULTS['f_matches_as']),
-        'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
-        'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
-        'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
-        'f_rating_as':   ('av_rating_alt',         DEFAULTS['f_rating_as']),
-        'f_selected_as': ('selected_by_percent',   DEFAULTS['f_selected_as']),
-        'f_top100k_as':  ('top_100k',              DEFAULTS['f_top100k_as']),
-        'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity_as']),
-        'f_xgot_as':     ('xGoT_90',               DEFAULTS['f_xgot_as']),
-        'f_xa_as':       ('xA_90',                 DEFAULTS['f_xa_as']),
-        'f_xgi_as':      ('xGI_norm',              DEFAULTS['f_xgi_as']),
-        'f_sh_as':       ('Sh_90',                 DEFAULTS['f_sh_as']),
-        'f_shot_as':     ('ShoT_90',               DEFAULTS['f_shot_as']),
-        'f_tchs_as':     ('Touches_90',            DEFAULTS['f_tchs_as']),
-        'f_pass_as':     ('Pass_pct',              DEFAULTS['f_pass_as']),
+        'f_matches_as':  ('matches_played',        GB['f_matches_as']),
+        'f_60min_as':    ('60_min',                GB['f_60min_as']),
+        'f_cost_as':     ('now_cost',              GB['f_cost_as']),
+        'f_avg_mins_as': ('avg_mins',              GB['f_avg_mins_as']),
+        'f_rating_as':   ('av_rating_alt',         GB['f_rating_as']),
+        'f_selected_as': ('selected_by_percent',   GB['f_selected_as']),
+        'f_top100k_as':  ('top_100k',              GB['f_top100k_as']),
+        'f_activity_as': ('transfer_activity_pct', GB['f_activity_as']),
+        'f_xgot_as':     ('xGoT_90',               GB['f_xgot_as']),
+        'f_xa_as':       ('xA_90',                 GB['f_xa_as']),
+        'f_xgi_as':      ('xGI_norm',              GB['f_xgi_as']),
+        'f_sh_as':       ('Sh_90',                 GB['f_sh_as']),
+        'f_shot_as':     ('ShoT_90',               GB['f_shot_as']),
+        'f_tchs_as':     ('Touches_90',            GB['f_tchs_as']),
+        'f_pass_as':     ('Pass_pct',              GB['f_pass_as']),
     }
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key and col_name in df.columns:
-            mask &= (df[col_name] >= d[0]) & (df[col_name] <= d[1])
+            val = _safe_range(k, d)
+            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
 
     return df[mask]
 
@@ -297,14 +298,14 @@ def auto_update_slider(key, col, cast=float, only_positive=False):
 
     avail_min = cast(series.min())
     avail_max = cast(series.max())
-    def_lower = cast(DEFAULTS[key][0])
+    gb_lower  = cast(GB[key][0])
     gb_upper  = cast(GB[key][1])
 
-    new_lower = max(def_lower, avail_min)
+    new_lower = max(gb_lower, avail_min)
     new_upper = min(gb_upper, avail_max)
 
     if new_lower > new_upper:
-        new_lower = def_lower
+        new_lower = gb_lower
         new_upper = gb_upper
 
     st.session_state[key] = (new_lower, new_upper)

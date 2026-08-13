@@ -286,25 +286,26 @@ def get_base_df(exclude_key=None):
             mask &= df['Play Pos'].isin(cv_pl_pos)
 
     _slider_cols = {
-        'f_matches_form':  ('matches_played',        DEFAULTS['f_matches_form']),
-        'f_mins1y_form':   ('min_played_1y',         DEFAULTS['f_mins1y_form']),
-        'f_mins3y_form':   ('min_played_3y',         DEFAULTS['f_mins3y_form']),
-        'f_cost_form':     ('now_cost',              DEFAULTS['f_cost_form']),
-        'f_rating_form':   ('av_rating_alt',         DEFAULTS['f_rating_form']),
-        'f_selected_form': ('selected_by_percent',   DEFAULTS['f_selected_form']),
-        'f_activity_form': ('transfer_activity_pct', DEFAULTS['f_activity_form']),
-        'f_g1y_form':      ('pct_goals_1y',          DEFAULTS['f_g1y_form']),
-        'f_xg1y_form':     ('pct_xg_1y',             DEFAULTS['f_xg1y_form']),
-        'f_a1y_form':      ('pct_assists_1y',        DEFAULTS['f_a1y_form']),
-        'f_xa1y_form':     ('pct_xa_1y',             DEFAULTS['f_xa1y_form']),
-        'f_g3y_form':      ('pct_goals_3y',          DEFAULTS['f_g3y_form']),
-        'f_xg3y_form':     ('pct_xg_3y',             DEFAULTS['f_xg3y_form']),
-        'f_a3y_form':      ('pct_assists_3y',        DEFAULTS['f_a3y_form']),
-        'f_xa3y_form':     ('pct_xa_3y',             DEFAULTS['f_xa3y_form']),
+        'f_matches_form':  ('matches_played',        GB['f_matches_form']),
+        'f_mins1y_form':   ('min_played_1y',         GB['f_mins1y_form']),
+        'f_mins3y_form':   ('min_played_3y',         GB['f_mins3y_form']),
+        'f_cost_form':     ('now_cost',              GB['f_cost_form']),
+        'f_rating_form':   ('av_rating_alt',         GB['f_rating_form']),
+        'f_selected_form': ('selected_by_percent',   GB['f_selected_form']),
+        'f_activity_form': ('transfer_activity_pct', GB['f_activity_form']),
+        'f_g1y_form':      ('pct_goals_1y',          GB['f_g1y_form']),
+        'f_xg1y_form':     ('pct_xg_1y',             GB['f_xg1y_form']),
+        'f_a1y_form':      ('pct_assists_1y',        GB['f_a1y_form']),
+        'f_xa1y_form':     ('pct_xa_1y',             GB['f_xa1y_form']),
+        'f_g3y_form':      ('pct_goals_3y',          GB['f_g3y_form']),
+        'f_xg3y_form':     ('pct_xg_3y',             GB['f_xg3y_form']),
+        'f_a3y_form':      ('pct_assists_3y',        GB['f_a3y_form']),
+        'f_xa3y_form':     ('pct_xa_3y',             GB['f_xa3y_form']),
     }
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key and col_name in df.columns:
-            mask &= (df[col_name] >= d[0]) & (df[col_name] <= d[1])
+            val = _safe_range(k, d)
+            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
 
     return df[mask]
 
@@ -330,14 +331,14 @@ def auto_update_slider(key, col, cast=float, only_positive=False):
 
     avail_min = cast(series.min())
     avail_max = cast(series.max())
-    def_lower = cast(DEFAULTS[key][0])
+    gb_lower  = cast(GB[key][0])
     gb_upper  = cast(GB[key][1])
 
-    new_lower = max(def_lower, avail_min)
+    new_lower = max(gb_lower, avail_min)
     new_upper = min(gb_upper, avail_max)
 
     if new_lower > new_upper:
-        new_lower = def_lower
+        new_lower = gb_lower
         new_upper = gb_upper
 
     st.session_state[key] = (new_lower, new_upper)

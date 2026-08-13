@@ -166,10 +166,10 @@ GB = {
 
 DEFAULTS = {
     'f_cost_gks':     GB['f_cost_gks'],
-    'f_matches_gks':  (max(GB['f_matches_gks'][0], 5), GB['f_matches_gks'][1]),
+    'f_matches_gks':  GB['f_matches_gks'],
     'f_rating_gks':   GB['f_rating_gks'],
     'f_avg_mins_gks': GB['f_avg_mins_gks'],
-    'f_60min_gks':    (max(GB['f_60min_gks'][0], 40.5), GB['f_60min_gks'][1]),
+    'f_60min_gks':    GB['f_60min_gks'],
     'f_selected_gks': GB['f_selected_gks'],
     'f_activity_gks': GB['f_activity_gks'],
     'f_svs_gks':      GB['f_svs_gks'],
@@ -274,23 +274,24 @@ def get_base_df(exclude_key=None):
             mask &= df['Play Pos'].isin(cv_pl_pos)
 
     _slider_cols = {
-        'f_matches_gks':  ('matches_played',        DEFAULTS['f_matches_gks']),
-        'f_60min_gks':    ('60_min',                DEFAULTS['f_60min_gks']),
-        'f_cost_gks':     ('now_cost',              DEFAULTS['f_cost_gks']),
-        'f_avg_mins_gks': ('avg_mins',              DEFAULTS['f_avg_mins_gks']),
-        'f_rating_gks':   ('av_rating_alt',         DEFAULTS['f_rating_gks']),
-        'f_selected_gks': ('selected_by_percent',   DEFAULTS['f_selected_gks']),
-        'f_activity_gks': ('transfer_activity_pct', DEFAULTS['f_activity_gks']),
-        'f_svs_gks':      ('Svs_90',                DEFAULTS['f_svs_gks']),
-        'f_cs_gks':       ('CS_90',                 DEFAULTS['f_cs_gks']),
-        'f_xgc_gks':      ('xGC_90',                DEFAULTS['f_xgc_gks']),
-        'f_xgp_gks':      ('xGP_90',                DEFAULTS['f_xgp_gks']),
-        'f_tchs_gks':     ('Touches_90',            DEFAULTS['f_tchs_gks']),
-        'f_pass_gks':     ('Pass_pct',              DEFAULTS['f_pass_gks']),
+        'f_matches_gks':  ('matches_played',        GB['f_matches_gks']),
+        'f_60min_gks':    ('60_min',                GB['f_60min_gks']),
+        'f_cost_gks':     ('now_cost',              GB['f_cost_gks']),
+        'f_avg_mins_gks': ('avg_mins',              GB['f_avg_mins_gks']),
+        'f_rating_gks':   ('av_rating_alt',         GB['f_rating_gks']),
+        'f_selected_gks': ('selected_by_percent',   GB['f_selected_gks']),
+        'f_activity_gks': ('transfer_activity_pct', GB['f_activity_gks']),
+        'f_svs_gks':      ('Svs_90',                GB['f_svs_gks']),
+        'f_cs_gks':       ('CS_90',                 GB['f_cs_gks']),
+        'f_xgc_gks':      ('xGC_90',                GB['f_xgc_gks']),
+        'f_xgp_gks':      ('xGP_90',                GB['f_xgp_gks']),
+        'f_tchs_gks':     ('Touches_90',            GB['f_tchs_gks']),
+        'f_pass_gks':     ('Pass_pct',              GB['f_pass_gks']),
     }
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key and col_name in df.columns:
-            mask &= (df[col_name] >= d[0]) & (df[col_name] <= d[1])
+            val = _safe_range(k, d)
+            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
 
     return df[mask]
 
@@ -316,14 +317,14 @@ def auto_update_slider(key, col, cast=float, only_positive=False):
 
     avail_min = cast(series.min())
     avail_max = cast(series.max())
-    def_lower = cast(DEFAULTS[key][0])
+    gb_lower  = cast(GB[key][0])
     gb_upper  = cast(GB[key][1])
 
-    new_lower = max(def_lower, avail_min)
+    new_lower = max(gb_lower, avail_min)
     new_upper = min(gb_upper, avail_max)
 
     if new_lower > new_upper:
-        new_lower = def_lower
+        new_lower = gb_lower
         new_upper = gb_upper
 
     st.session_state[key] = (new_lower, new_upper)
