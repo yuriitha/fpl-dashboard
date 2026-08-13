@@ -220,8 +220,6 @@ def get_available(exclude_key=None):
         cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_ds_{i}', avail))
 
     mask = pd.Series([True] * len(df), index=df.index)
-    if 'is_other_league' in df.columns:
-        mask &= (~df['is_other_league'])
     if exclude_key != 'pills_pos_ds':   mask &= df['element_type'].isin(cv_pos)
     if exclude_key != 'pills_teams_ds': mask &= df['team_short_name'].isin(cv_teams)
     if exclude_key != 'pills_pl_ds':
@@ -273,8 +271,6 @@ def get_base_df(exclude_key=None):
         df['team_short_name'].isin(cv_teams) &
         df['full_name'].str.contains(cv_search, case=False, na=False)
     )
-    if 'is_other_league' in df.columns:
-        mask &= (~df['is_other_league'])
 
     if cv_pl_pos:
         if len(cv_pl_pos) == len(all_pl_pos):
@@ -530,8 +526,6 @@ mask = (
     play_pos_mask &
     (df['full_name'].str.contains(search_name, case=False, na=False))
 )
-if 'is_other_league' in df.columns:
-    mask &= (~df['is_other_league'])
 
 filter_vars = [
     ('av_rating_alt',         f_rating,   GB['f_rating_ds']),
