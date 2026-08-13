@@ -559,8 +559,8 @@ if not plot_df.empty:
             "now_cost": "Price",
             "av_rating_alt": "Rating",
             "xGI_norm": "xGI",
-            "avg_mins": "Avg Mins",
-            "selected_by_percent": "Selected %"
+            "avg_mins": "AvMins",
+            "selected_by_percent": "Sel%"
         },
         template="plotly_dark",
         size_max=20
