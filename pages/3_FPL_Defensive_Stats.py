@@ -608,13 +608,34 @@ def warm_honey_gradient(s, min_alpha=0.06, max_alpha=0.28, max_cap=None):
             b = int(90  + norm_val * (35  - 90))
             alpha = min_alpha + norm_val * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
+def soft_blue_gradient(s, min_alpha=0.05, max_alpha=0.28, max_cap=None):
+    if s.empty:
+        return ['' for _ in s]
+    s_min, s_max = s.min(), s.max()
+    if max_cap is not None and not pd.isna(s_max):
+        s_max = min(s_max, max_cap)
+    if pd.isna(s_min) or pd.isna(s_max) or s_min >= s_max:
+        return ['' for _ in s]
+
+    styles = []
+    for val in s:
+        if pd.isna(val):
+            styles.append('')
+        else:
+            val_clamped = min(val, s_max)
+            norm_val = (val_clamped - s_min) / (s_max - s_min)
+            r = int(60  + norm_val * (0   - 60))
+            g = int(130 + norm_val * (165 - 130))
+            b = int(200 + norm_val * (235 - 200))
+            alpha = min_alpha + norm_val * (max_alpha - min_alpha)
+            styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
 
 
 styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90', 'Aerial_pct', 'Duel_pct'] if c in existing_cols])\
-    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols])\
+    .apply(soft_blue_gradient, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)
 
 st.subheader(f"Defensive Stats: {len(filtered_df)} players", anchor=False)
