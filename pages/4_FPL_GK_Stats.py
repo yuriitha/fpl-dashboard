@@ -592,8 +592,6 @@ for col in existing_cols:
     bw = max_val_len * 7
     if col == "full_name":
         bw = min(bw, 140)
-    elif col == "team_short_name":
-        bw = min(bw, 110)
     else:
         bw = min(bw, 48)
     base_widths[col] = max(bw, 12)
@@ -637,8 +635,6 @@ for col in existing_cols:
 
     if col == "full_name":
         calc_w = max(calc_w, 140)
-    elif col == "team_short_name":
-        calc_w = max(calc_w, 110)
     else:
         calc_w = max(calc_w, 48)
 
