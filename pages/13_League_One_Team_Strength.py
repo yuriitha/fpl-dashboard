@@ -217,6 +217,11 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
 
             intensity = intensity ** power
 
+            dynamic_alpha = intensity * alpha
+            styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {dynamic_alpha:.3f})')
+    return styles
+
+
 def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.35, reverse=False):
     if s.empty:
         return ['' for _ in s]
