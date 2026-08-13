@@ -587,7 +587,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
     return styles
 
 styled_df = filtered_df[existing_cols].style\
-    .apply(soft_gradient, cmap_name='YlOrBr', alpha=0.22, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
+    .apply(soft_gradient, cmap_name='Purples', alpha=0.20, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90', 'Aerial_pct', 'Duel_pct'] if c in existing_cols])\
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)
