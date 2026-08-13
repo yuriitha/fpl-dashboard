@@ -221,7 +221,7 @@ def get_available(exclude_key=None):
         'f_xgi_as':      ('xGI_norm',              DEFAULTS['f_xgi_as']),
         'f_sh_as':       ('Sh_90',                 DEFAULTS['f_sh_as']),
         'f_shot_as':     ('ShoT_90',               DEFAULTS['f_shot_as']),
-        'f_tchs_as':     ('Touches_90',            DEFAULTS['f_tchs_as']),
+        'f_pass90_as':   ('Pass_90',               DEFAULTS['f_pass90_as']),
         'f_pass_as':     ('Pass_pct',              DEFAULTS['f_pass_as']),
     }
     for k, (col_name, d) in _slider_cols.items():
@@ -407,7 +407,7 @@ auto_update_slider('f_xa_as',       'xA_90',               float)
 auto_update_slider('f_xgi_as',      'xGI_norm',            float)
 auto_update_slider('f_sh_as',       'Sh_90',               float)
 auto_update_slider('f_shot_as',     'ShoT_90',             float)
-auto_update_slider('f_tchs_as',     'Touches_90',          float)
+auto_update_slider('f_pass90_as',   'Pass_90',             float)
 auto_update_slider('f_pass_as',     'Pass_pct',            float)
 
 

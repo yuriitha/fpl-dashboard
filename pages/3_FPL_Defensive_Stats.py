@@ -245,7 +245,7 @@ def get_available(exclude_key=None):
         'f_int_ds':      ('Int_90',                DEFAULTS['f_int_ds']),
         'f_tck_ds':      ('Tck_90',                DEFAULTS['f_tck_ds']),
         'f_rec_ds':      ('Rec_90',                DEFAULTS['f_rec_ds']),
-        'f_tchs_ds':     ('Touches_90',            DEFAULTS['f_tchs_ds']),
+        'f_pass90_ds':   ('Pass_90',               DEFAULTS['f_pass90_ds']),
         'f_pass_ds':     ('Pass_pct',              DEFAULTS['f_pass_ds']),
     }
     for k, (col_name, d) in _slider_cols.items():
@@ -428,7 +428,7 @@ auto_update_slider('f_blk_ds',      'Blk_90',              float)
 auto_update_slider('f_int_ds',      'Int_90',              float)
 auto_update_slider('f_tck_ds',      'Tck_90',              float)
 auto_update_slider('f_rec_ds',      'Rec_90',              float)
-auto_update_slider('f_tchs_ds',     'Touches_90',          float)
+auto_update_slider('f_pass90_ds',   'Pass_90',             float)
 auto_update_slider('f_pass_ds',     'Pass_pct',            float)
 
 
@@ -673,7 +673,7 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
 styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90', 'Aerial_pct', 'Duel_pct'] if c in existing_cols])\
-    .apply(soft_blue_gradient, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols])\
+    .apply(soft_blue_gradient, subset=[c for c in ['Pass_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)
 
 st.subheader(f"Defensive Stats: {len(filtered_df)} players", anchor=False)

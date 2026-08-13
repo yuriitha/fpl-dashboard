@@ -244,7 +244,7 @@ def get_available(exclude_key=None):
         'f_cs_gks':       ('CS_90',                 DEFAULTS['f_cs_gks']),
         'f_xgc_gks':      ('xGC_90',                DEFAULTS['f_xgc_gks']),
         'f_xgp_gks':      ('xGP_90',                DEFAULTS['f_xgp_gks']),
-        'f_tchs_gks':     ('Touches_90',            DEFAULTS['f_tchs_gks']),
+        'f_pass90_gks':   ('Pass_90',               DEFAULTS['f_pass90_gks']),
         'f_pass_gks':     ('Pass_pct',              DEFAULTS['f_pass_gks']),
     }
     for k, (col_name, d) in _slider_cols.items():
@@ -424,7 +424,7 @@ auto_update_slider('f_svs_gks',      'Svs_90',              float)
 auto_update_slider('f_cs_gks',       'CS_90',               float)
 auto_update_slider('f_xgc_gks',      'xGC_90',              float)
 auto_update_slider('f_xgp_gks',      'xGP_90',              float)
-auto_update_slider('f_tchs_gks',     'Touches_90',          float)
+auto_update_slider('f_pass90_gks',   'Pass_90',             float)
 auto_update_slider('f_pass_gks',     'Pass_pct',            float)
 
 
@@ -665,7 +665,7 @@ styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'Svs_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])\
     .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols])\
-    .apply(soft_blue_gradient, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols])\
+    .apply(soft_blue_gradient, subset=[c for c in ['Pass_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)
 
 st.subheader(f"Goalkeeper Stats: {len(filtered_df)} players", anchor=False)
