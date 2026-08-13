@@ -128,6 +128,7 @@ r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 GB = {
     'f_cost_as':     _slider_bounds(_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
     'f_matches_as':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 38)), int(_get_min('matches_played', 0)) + 1)),
+    'f_started_as':  (int(_get_min('matches_started', 0)), max(int(_get_max('matches_started', 38)), int(_get_min('matches_started', 0)) + 1)),
     'f_rating_as':   _slider_bounds(r_min, r_max),
     'f_avg_mins_as': _slider_bounds(_get_min('avg_mins'), _get_max('avg_mins', 90.0)),
     'f_60min_as':    _slider_bounds(_get_min('60_min'), _get_max('60_min', 100.0)),
@@ -146,6 +147,7 @@ GB = {
 DEFAULTS = {
     'f_cost_as':     GB['f_cost_as'],
     'f_matches_as':  (min(3, GB['f_matches_as'][1]), GB['f_matches_as'][1]),
+    'f_started_as':  (min(1, GB['f_started_as'][1]), GB['f_started_as'][1]),
     'f_rating_as':   GB['f_rating_as'],
     'f_avg_mins_as': GB['f_avg_mins_as'],
     'f_60min_as':    GB['f_60min_as'],
@@ -209,6 +211,7 @@ def get_available(exclude_key=None):
 
     _slider_cols = {
         'f_matches_as':  ('matches_played',        DEFAULTS['f_matches_as']),
+        'f_started_as':  ('matches_started',       DEFAULTS['f_started_as']),
         'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
         'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
         'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
@@ -259,6 +262,7 @@ def get_base_df(exclude_key=None):
 
     _slider_cols = {
         'f_matches_as':  ('matches_played',        DEFAULTS['f_matches_as']),
+        'f_started_as':  ('matches_started',       DEFAULTS['f_started_as']),
         'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
         'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
         'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
@@ -395,6 +399,7 @@ def inject_sidebar_layout(inactive_all: list):
 
 auto_update_slider('f_cost_as',     'now_cost',            float)
 auto_update_slider('f_matches_as',  'matches_played',      int)
+auto_update_slider('f_started_as',  'matches_started',     int)
 auto_update_slider('f_rating_as',   'av_rating_alt',       float, only_positive=True)
 auto_update_slider('f_avg_mins_as', 'avg_mins',            float)
 auto_update_slider('f_60min_as',    '60_min',              float)
@@ -469,10 +474,11 @@ inject_sidebar_layout(all_inactive)
 
 
 with st.sidebar.expander("Performance Stats", expanded=False):
-    f_matches  = st.slider("Matches",      GB['f_matches_as'][0],  GB['f_matches_as'][1],  step=1,    key="f_matches_as")
-    f_rating   = st.slider("Rating",       GB['f_rating_as'][0],   GB['f_rating_as'][1],   step=0.05, format="%.2f", key="f_rating_as")
-    f_avg_mins = st.slider("Average Mins", GB['f_avg_mins_as'][0], GB['f_avg_mins_as'][1], step=1.0,  key="f_avg_mins_as")
-    f_60min    = st.slider("60 Min %",     GB['f_60min_as'][0],    GB['f_60min_as'][1],    step=0.5,  key="f_60min_as")
+    f_matches  = st.slider("Matches",       GB['f_matches_as'][0],  GB['f_matches_as'][1],  step=1,    key="f_matches_as")
+    f_started  = st.slider("Games Started", GB['f_started_as'][0],  GB['f_started_as'][1],  step=1,    key="f_started_as")
+    f_rating   = st.slider("Rating",        GB['f_rating_as'][0],   GB['f_rating_as'][1],   step=0.05, format="%.2f", key="f_rating_as")
+    f_avg_mins = st.slider("Average Mins",  GB['f_avg_mins_as'][0], GB['f_avg_mins_as'][1], step=1.0,  key="f_avg_mins_as")
+    f_60min    = st.slider("60 Min %",      GB['f_60min_as'][0],    GB['f_60min_as'][1],    step=0.5,  key="f_60min_as")
 
 
 with st.sidebar.expander("Market & Popularity", expanded=False):
@@ -506,6 +512,7 @@ mask = (
 filter_vars = [
     ('av_rating_alt',         f_rating,   GB['f_rating_as']),
     ('matches_played',        f_matches,  GB['f_matches_as']),
+    ('matches_started',       f_started,  GB['f_started_as']),
     ('60_min',                f_60min,    GB['f_60min_as']),
     ('now_cost',              f_cost,     GB['f_cost_as']),
     ('selected_by_percent',   f_selected, GB['f_selected_as']),
