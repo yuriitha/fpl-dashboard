@@ -222,7 +222,7 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
     return styles
 
 
-def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.35, reverse=False):
+def soft_green_gradient(s, min_alpha=0.04, max_alpha=0.65, power=0.7, reverse=False):
     if s.empty:
         return ['' for _ in s]
     s_min, s_max = s.min(), s.max()
@@ -237,15 +237,18 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.35, reverse=False):
             norm_val = (val - s_min) / (s_max - s_min)
             if reverse:
                 norm_val = 1.0 - norm_val
-            r = int(45  + norm_val * (15  - 45))
-            g = int(185 + norm_val * (215 - 185))
-            b = int(65  + norm_val * (55  - 65))
-            alpha = min_alpha + norm_val * (max_alpha - min_alpha)
+
+            intensity = norm_val ** power
+
+            r = int(45  + intensity * (10  - 45))
+            g = int(185 + intensity * (225 - 185))
+            b = int(65  + intensity * (45  - 65))
+            alpha = min_alpha + intensity * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
 
 
-def soft_overall_gradient(s, min_alpha=0.05, max_alpha=0.35):
+def soft_overall_gradient(s, min_alpha=0.04, max_alpha=0.65, power=0.7):
     if s.empty:
         return ['' for _ in s]
     s_min, s_max = s.min(), s.max()
@@ -260,16 +263,18 @@ def soft_overall_gradient(s, min_alpha=0.05, max_alpha=0.35):
             norm_val = (val - s_min) / (s_max - s_min)
             if norm_val >= 0.5:
                 t = (norm_val - 0.5) * 2.0
-                r = int(240 + t * (15  - 240))
-                g = int(240 + t * (215 - 240))
-                b = int(240 + t * (55  - 240))
-                alpha = min_alpha + t * (max_alpha - min_alpha)
+                t_scaled = t ** power
+                r = int(245 + t_scaled * (10  - 245))
+                g = int(245 + t_scaled * (225 - 245))
+                b = int(245 + t_scaled * (45  - 245))
+                alpha = min_alpha + t_scaled * (max_alpha - min_alpha)
             else:
                 t = (0.5 - norm_val) * 2.0
-                r = int(240 + t * (235 - 240))
-                g = int(240 + t * (85  - 240))
-                b = int(240 + t * (85  - 240))
-                alpha = min_alpha + t * (max_alpha - min_alpha)
+                t_scaled = t ** power
+                r = int(245 + t_scaled * (240 - 245))
+                g = int(245 + t_scaled * (70  - 245))
+                b = int(245 + t_scaled * (70  - 245))
+                alpha = min_alpha + t_scaled * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
 
@@ -384,7 +389,10 @@ with col2:
         xg_min = df_future[xg_cols].min().min()
         xg_max = df_future[xg_cols].max().max()
 
-        df_future_styled = df_future.style            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', power=0.6, subset=xg_cols)            .apply(soft_gradient, cmap_name=honey_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta'])            .format(precision=2)
+        df_future_styled = df_future.style\
+            .apply(soft_gradient, cmap_name=light_blues, alpha=0.75, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', power=0.6, subset=xg_cols)\
+            .apply(soft_gradient, cmap_name=honey_blue, alpha=0.75, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta'])\
+            .format(precision=2)
 
         st.dataframe(
             df_future_styled,
