@@ -645,7 +645,7 @@ def soft_blue_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
     return styles
 
 
-def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
+def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None, reverse=False):
     if s.empty:
         return ['' for _ in s]
     s_min, s_max = s.min(), s.max()
@@ -661,6 +661,8 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
         else:
             val_clamped = min(val, s_max)
             norm_val = (val_clamped - s_min) / (s_max - s_min)
+            if reverse:
+                norm_val = 1.0 - norm_val
             r = int(45  + norm_val * (15  - 45))
             g = int(185 + norm_val * (215 - 185))
             b = int(65  + norm_val * (55  - 65))
@@ -672,7 +674,7 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
 styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'Svs_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])\
-    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols])\
+    .apply(soft_green_gradient, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['Pass_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)
 
