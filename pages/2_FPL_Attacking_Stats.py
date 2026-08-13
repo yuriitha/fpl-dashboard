@@ -578,7 +578,7 @@ st.dataframe(
         "team_short_name":     st.column_config.TextColumn("Team",      width=45),
         "now_cost":            st.column_config.NumberColumn("Price",   width=40,  format="%.1f"),
         "M Price":             st.column_config.NumberColumn("TM Price",width=55,  format="%.1f"),
-        "selected_by_percent": st.column_config.NumberColumn("Sel%",   width=55,  format="%.1f%%"),
+        "selected_by_percent": st.column_config.NumberColumn("Sel %",  width=55,  format="%.1f%%"),
         "min_played":          st.column_config.NumberColumn("Mins",    width=45),
         "matches_played":      st.column_config.NumberColumn("MP",      width=35),
         "matches_started":     st.column_config.NumberColumn("GS",      width=35),

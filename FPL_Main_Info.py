@@ -521,7 +521,7 @@ format_map = {
     "now_cost":            ("NumberColumn", "%.1f", "Price"),
     "M Price":             ("NumberColumn", "%.1f", "TM Price"),
     "Foot":                ("TextColumn", None, "Foot"),
-    "selected_by_percent": ("NumberColumn", "%.1f%%", "Sel%"),
+    "selected_by_percent": ("NumberColumn", "%.1f%%", "Sel %"),
     "min_played":          ("NumberColumn", None, "Mins"),
     "matches_played":      ("NumberColumn", None, "MP"),
     "matches_started":     ("NumberColumn", None, "GS"),

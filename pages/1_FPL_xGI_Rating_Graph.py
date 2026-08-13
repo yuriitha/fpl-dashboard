@@ -560,7 +560,7 @@ if not plot_df.empty:
             "av_rating_alt": "Rating",
             "xGI_norm": "xGI",
             "avg_mins": "AvMins",
-            "selected_by_percent": "Sel%"
+            "selected_by_percent": "Sel %"
         },
         template="plotly_dark",
         size_max=20

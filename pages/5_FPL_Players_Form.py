@@ -630,7 +630,7 @@ st.dataframe(
         "Play Pos":             st.column_config.TextColumn("Pl Pos",        width=40),
         "team_short_name":      st.column_config.TextColumn("Team",          width=40),
         "now_cost":             st.column_config.NumberColumn("Price",       width=40,  format="%.1f"),
-        "selected_by_percent":  st.column_config.NumberColumn("Sel%",       width=55,  format="%.1f%%"),
+        "selected_by_percent":  st.column_config.NumberColumn("Sel %",      width=55,  format="%.1f%%"),
         "min_played_1y":        st.column_config.NumberColumn("Mins 1y",     width=45,  format="%d"),
         "pct_mins_avail_1y":    st.column_config.NumberColumn("Avail 1y",    width=48,  format="%.1f"),
         "pct_goals_1y":         st.column_config.NumberColumn("G 1y",        width=40,  format="%.1f"),
