@@ -197,6 +197,8 @@ def get_available(exclude_key=None):
         cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_as_{i}', avail))
 
     mask = pd.Series([True] * len(df), index=df.index)
+    if 'is_other_league' in df.columns:
+        mask &= (~df['is_other_league'])
     if exclude_key != 'pills_pos_as':   mask &= df['element_type'].isin(cv_pos)
     if exclude_key != 'pills_teams_as': mask &= df['team_short_name'].isin(cv_teams)
     if exclude_key != 'pills_pl_as':
@@ -235,7 +237,6 @@ def get_base_df(exclude_key=None):
     """
     Базовий набір даних для розрахунку діапазонів слайдерів.
     Застосовує: pills + search + DEFAULTS інших слайдерів (крім exclude_key).
-    Використовує DEFAULTS (не поточні значення) — це уникає циркулярних залежностей між слайдерами.
     """
     cv_pos    = st.session_state.get('pills_pos_as',   [p for p in sorted_positions if p != 'GK']) or []
     cv_teams  = st.session_state.get('pills_teams_as', all_teams) or []
@@ -251,29 +252,31 @@ def get_base_df(exclude_key=None):
         df['team_short_name'].isin(cv_teams) &
         df['full_name'].str.contains(cv_search, case=False, na=False)
     )
+    if 'is_other_league' in df.columns:
+        mask &= (~df['is_other_league'])
+
     if cv_pl_pos:
         if len(cv_pl_pos) == len(all_pl_pos):
             mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
         else:
             mask &= df['Play Pos'].isin(cv_pl_pos)
 
-
     _slider_cols = {
-        'f_matches_as':  ('matches_played',        GB['f_matches_as']),
-        'f_60min_as':    ('60_min',                GB['f_60min_as']),
-        'f_cost_as':     ('now_cost',              GB['f_cost_as']),
-        'f_avg_mins_as': ('avg_mins',              GB['f_avg_mins_as']),
-        'f_rating_as':   ('av_rating_alt',         GB['f_rating_as']),
-        'f_selected_as': ('selected_by_percent',   GB['f_selected_as']),
-        'f_top100k_as':  ('top_100k',              GB['f_top100k_as']),
-        'f_activity_as': ('transfer_activity_pct', GB['f_activity_as']),
-        'f_xgot_as':     ('xGoT_90',               GB['f_xgot_as']),
-        'f_xa_as':       ('xA_90',                 GB['f_xa_as']),
-        'f_xgi_as':      ('xGI_norm',              GB['f_xgi_as']),
-        'f_sh_as':       ('Sh_90',                 GB['f_sh_as']),
-        'f_shot_as':     ('ShoT_90',               GB['f_shot_as']),
-        'f_pass90_as':   ('Pass_90',               GB['f_pass90_as']),
-        'f_pass_as':     ('Pass_pct',              GB['f_pass_as']),
+        'f_matches_as':  ('matches_played',        DEFAULTS['f_matches_as']),
+        'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
+        'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
+        'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
+        'f_rating_as':   ('av_rating_alt',         DEFAULTS['f_rating_as']),
+        'f_selected_as': ('selected_by_percent',   DEFAULTS['f_selected_as']),
+        'f_top100k_as':  ('top_100k',              DEFAULTS['f_top100k_as']),
+        'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity_as']),
+        'f_xgot_as':     ('xGoT_90',               DEFAULTS['f_xgot_as']),
+        'f_xa_as':       ('xA_90',                 DEFAULTS['f_xa_as']),
+        'f_xgi_as':      ('xGI_norm',              DEFAULTS['f_xgi_as']),
+        'f_sh_as':       ('Sh_90',                 DEFAULTS['f_sh_as']),
+        'f_shot_as':     ('ShoT_90',               DEFAULTS['f_shot_as']),
+        'f_pass90_as':   ('Pass_90',               DEFAULTS['f_pass90_as']),
+        'f_pass_as':     ('Pass_pct',              DEFAULTS['f_pass_as']),
     }
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key and col_name in df.columns:
@@ -304,14 +307,14 @@ def auto_update_slider(key, col, cast=float, only_positive=False):
 
     avail_min = cast(series.min())
     avail_max = cast(series.max())
-    gb_lower  = cast(GB[key][0])
+    def_lower = cast(DEFAULTS[key][0])
     gb_upper  = cast(GB[key][1])
 
-    new_lower = max(gb_lower, avail_min)
+    new_lower = max(def_lower, avail_min)
     new_upper = min(gb_upper, avail_max)
 
     if new_lower > new_upper:
-        new_lower = gb_lower
+        new_lower = def_lower
         new_upper = gb_upper
 
     st.session_state[key] = (new_lower, new_upper)
@@ -503,6 +506,8 @@ mask = (
     play_pos_mask &
     (df['full_name'].str.contains(search_name, case=False, na=False))
 )
+if 'is_other_league' in df.columns:
+    mask &= (~df['is_other_league'])
 
 filter_vars = [
     ('av_rating_alt',         f_rating,   GB['f_rating_as']),

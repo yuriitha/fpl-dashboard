@@ -222,6 +222,8 @@ def get_available(exclude_key=None):
         cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_gks_{i}', avail))
 
     mask = pd.Series([True] * len(df), index=df.index)
+    if 'is_other_league' in df.columns:
+        mask &= (~df['is_other_league'])
     if exclude_key != 'pills_pos_gks':   mask &= df['element_type'].isin(cv_pos)
     if exclude_key != 'pills_teams_gks': mask &= df['team_short_name'].isin(cv_teams)
     if exclude_key != 'pills_pl_gks':
@@ -273,6 +275,9 @@ def get_base_df(exclude_key=None):
         df['team_short_name'].isin(cv_teams) &
         df['full_name'].str.contains(cv_search, case=False, na=False)
     )
+    if 'is_other_league' in df.columns:
+        mask &= (~df['is_other_league'])
+
     if cv_pl_pos:
         if len(cv_pl_pos) == len(all_pl_pos):
             mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
@@ -280,19 +285,19 @@ def get_base_df(exclude_key=None):
             mask &= df['Play Pos'].isin(cv_pl_pos)
 
     _slider_cols = {
-        'f_matches_gks':  ('matches_played',        GB['f_matches_gks']),
-        'f_60min_gks':    ('60_min',                GB['f_60min_gks']),
-        'f_cost_gks':     ('now_cost',              GB['f_cost_gks']),
-        'f_avg_mins_gks': ('avg_mins',              GB['f_avg_mins_gks']),
-        'f_rating_gks':   ('av_rating_alt',         GB['f_rating_gks']),
-        'f_selected_gks': ('selected_by_percent',   GB['f_selected_gks']),
-        'f_activity_gks': ('transfer_activity_pct', GB['f_activity_gks']),
-        'f_svs_gks':      ('Svs_90',                GB['f_svs_gks']),
-        'f_cs_gks':       ('CS_90',                 GB['f_cs_gks']),
-        'f_xgc_gks':      ('xGC_90',                GB['f_xgc_gks']),
-        'f_xgp_gks':      ('xGP_90',                GB['f_xgp_gks']),
-        'f_pass90_gks':   ('Pass_90',               GB['f_pass90_gks']),
-        'f_pass_gks':     ('Pass_pct',              GB['f_pass_gks']),
+        'f_matches_gks':  ('matches_played',        DEFAULTS['f_matches_gks']),
+        'f_60min_gks':    ('60_min',                DEFAULTS['f_60min_gks']),
+        'f_cost_gks':     ('now_cost',              DEFAULTS['f_cost_gks']),
+        'f_avg_mins_gks': ('avg_mins',              DEFAULTS['f_avg_mins_gks']),
+        'f_rating_gks':   ('av_rating_alt',         DEFAULTS['f_rating_gks']),
+        'f_selected_gks': ('selected_by_percent',   DEFAULTS['f_selected_gks']),
+        'f_activity_gks': ('transfer_activity_pct', DEFAULTS['f_activity_gks']),
+        'f_svs_gks':      ('Svs_90',                DEFAULTS['f_svs_gks']),
+        'f_cs_gks':       ('CS_90',                 DEFAULTS['f_cs_gks']),
+        'f_xgc_gks':      ('xGC_90',                DEFAULTS['f_xgc_gks']),
+        'f_xgp_gks':      ('xGP_90',                DEFAULTS['f_xgp_gks']),
+        'f_pass90_gks':   ('Pass_90',               DEFAULTS['f_pass90_gks']),
+        'f_pass_gks':     ('Pass_pct',              DEFAULTS['f_pass_gks']),
     }
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key and col_name in df.columns:
@@ -323,14 +328,14 @@ def auto_update_slider(key, col, cast=float, only_positive=False):
 
     avail_min = cast(series.min())
     avail_max = cast(series.max())
-    gb_lower  = cast(GB[key][0])
+    def_lower = cast(DEFAULTS[key][0])
     gb_upper  = cast(GB[key][1])
 
-    new_lower = max(gb_lower, avail_min)
+    new_lower = max(def_lower, avail_min)
     new_upper = min(gb_upper, avail_max)
 
     if new_lower > new_upper:
-        new_lower = gb_lower
+        new_lower = def_lower
         new_upper = gb_upper
 
     st.session_state[key] = (new_lower, new_upper)
@@ -518,6 +523,8 @@ mask = (
     play_pos_mask &
     (df['full_name'].str.contains(search_name, case=False, na=False))
 )
+if 'is_other_league' in df.columns:
+    mask &= (~df['is_other_league'])
 
 filter_vars = [
     ('av_rating_alt',         f_rating,   GB['f_rating_gks']),
