@@ -625,20 +625,29 @@ if not plot_df.empty:
     )
 
 
+    r_start = 6.55
     r_min, r_max = plot_df['av_rating_alt'].min(), plot_df['av_rating_alt'].max()
-    if pd.isna(r_max) or r_max < 6.5:
+    if pd.isna(r_max) or r_max < r_start:
         r_max = 10.0
-    r_start = 6.5
     r_end = np.ceil(r_max * 10) / 10
     if r_end < r_start: r_end = r_start + 0.5
-    r_ticks = np.arange(r_start, r_end + 0.05, 0.1).round(1)
+    r_ticks = np.arange(6.6, r_end + 0.05, 0.1).round(1)
 
     x_min, x_max = plot_df['xGI_norm'].min(), plot_df['xGI_norm'].max()
     if pd.isna(x_min) or pd.isna(x_max):
-        x_min, x_max = 0.0, 1.2
+        x_min, x_max = 0.0, 1.05
+
+    mins_col = 'min_played' if 'min_played' in plot_df.columns else ('min_played_1y' if 'min_played_1y' in plot_df.columns else 'avg_mins')
+    has_high_xgi_player = not plot_df[(plot_df[mins_col] > 200) & (plot_df['xGI_norm'] > 1.05)].empty
+
+    if has_high_xgi_player:
+        x_cap = np.ceil(x_max * 10) / 10
+    else:
+        x_cap = 1.05
+
     x_start = max(0.0, np.floor(x_min * 10) / 10)
-    x_end = min(1.20, np.ceil(x_max * 10) / 10)
-    if x_end < x_start: x_end = 1.20
+    x_end = x_cap
+    if x_end < x_start: x_end = 1.05
     x_ticks = np.arange(x_start, x_end + 0.05, 0.1).round(1)
 
     fig.update_layout(
@@ -741,20 +750,29 @@ if not plot_df.empty:
             marker=dict(opacity=0.75, line=dict(width=0.8, color='white'))
         )
 
+        r_start2 = 6.55
         r_min2, r_max2 = plot_df_h2['av_rating_alt_h2'].min(), plot_df_h2['av_rating_alt_h2'].max()
-        if pd.isna(r_max2) or r_max2 < 6.5:
+        if pd.isna(r_max2) or r_max2 < r_start2:
             r_max2 = 10.0
-        r_start2 = 6.5
         r_end2 = np.ceil(r_max2 * 10) / 10
         if r_end2 < r_start2: r_end2 = r_start2 + 0.5
-        r_ticks2 = np.arange(r_start2, r_end2 + 0.05, 0.1).round(1)
+        r_ticks2 = np.arange(6.6, r_end2 + 0.05, 0.1).round(1)
 
         x_min2, x_max2 = plot_df_h2['xGI_norm_h2'].min(), plot_df_h2['xGI_norm_h2'].max()
         if pd.isna(x_min2) or pd.isna(x_max2):
-            x_min2, x_max2 = 0.0, 1.2
+            x_min2, x_max2 = 0.0, 1.05
+
+        mins_col2 = 'min_played_h2' if 'min_played_h2' in plot_df_h2.columns else ('min_played' if 'min_played' in plot_df_h2.columns else 'avg_mins_h2')
+        has_high_xgi_player2 = not plot_df_h2[(plot_df_h2[mins_col2] > 200) & (plot_df_h2['xGI_norm_h2'] > 1.05)].empty
+
+        if has_high_xgi_player2:
+            x_cap2 = np.ceil(x_max2 * 10) / 10
+        else:
+            x_cap2 = 1.05
+
         x_start2 = max(0.0, np.floor(x_min2 * 10) / 10)
-        x_end2 = min(1.20, np.ceil(x_max2 * 10) / 10)
-        if x_end2 < x_start2: x_end2 = 1.20
+        x_end2 = x_cap2
+        if x_end2 < x_start2: x_end2 = 1.05
         x_ticks2 = np.arange(x_start2, x_end2 + 0.05, 0.1).round(1)
 
         fig_h2.update_layout(
