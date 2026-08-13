@@ -577,7 +577,12 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None, reverse=False)
             styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {alpha})')
     return styles
 
-styled_df = filtered_df[existing_cols].style    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['CS_90', 'Svs_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols])    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols])    .format(precision=2)
+styled_df = filtered_df[existing_cols].style\
+    .apply(soft_gradient, cmap_name='YlOrBr', alpha=0.22, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
+    .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, subset=[c for c in ['CS_90', 'Svs_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])\
+    .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.25, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols])\
+    .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Touches_90', 'Pass_pct'] if c in existing_cols])\
+    .format(precision=2)
 
 st.subheader(f"Goalkeeper Stats: {len(filtered_df)} players", anchor=False)
 
