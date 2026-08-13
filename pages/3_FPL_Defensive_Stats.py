@@ -608,6 +608,9 @@ def warm_honey_gradient(s, min_alpha=0.06, max_alpha=0.28, max_cap=None):
             b = int(90  + norm_val * (35  - 90))
             alpha = min_alpha + norm_val * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
+    return styles
+
+
 def soft_blue_gradient(s, min_alpha=0.05, max_alpha=0.28, max_cap=None):
     if s.empty:
         return ['' for _ in s]
