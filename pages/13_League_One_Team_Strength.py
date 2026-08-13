@@ -217,8 +217,55 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
 
             intensity = intensity ** power
 
-            dynamic_alpha = intensity * alpha
-            styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {dynamic_alpha:.3f})')
+def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.35, reverse=False):
+    if s.empty:
+        return ['' for _ in s]
+    s_min, s_max = s.min(), s.max()
+    if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
+        return ['' for _ in s]
+
+    styles = []
+    for val in s:
+        if pd.isna(val):
+            styles.append('')
+        else:
+            norm_val = (val - s_min) / (s_max - s_min)
+            if reverse:
+                norm_val = 1.0 - norm_val
+            r = int(45  + norm_val * (15  - 45))
+            g = int(185 + norm_val * (215 - 185))
+            b = int(65  + norm_val * (55  - 65))
+            alpha = min_alpha + norm_val * (max_alpha - min_alpha)
+            styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
+    return styles
+
+
+def soft_overall_gradient(s, min_alpha=0.05, max_alpha=0.35):
+    if s.empty:
+        return ['' for _ in s]
+    s_min, s_max = s.min(), s.max()
+    if pd.isna(s_min) or pd.isna(s_max) or s_min == s_max:
+        return ['' for _ in s]
+
+    styles = []
+    for val in s:
+        if pd.isna(val):
+            styles.append('')
+        else:
+            norm_val = (val - s_min) / (s_max - s_min)
+            if norm_val >= 0.5:
+                t = (norm_val - 0.5) * 2.0
+                r = int(240 + t * (15  - 240))
+                g = int(240 + t * (215 - 240))
+                b = int(240 + t * (55  - 240))
+                alpha = min_alpha + t * (max_alpha - min_alpha)
+            else:
+                t = (0.5 - norm_val) * 2.0
+                r = int(240 + t * (235 - 240))
+                g = int(240 + t * (85  - 240))
+                b = int(240 + t * (85  - 240))
+                alpha = min_alpha + t * (max_alpha - min_alpha)
+            styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
 
 light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff", "#00B4FF"])
@@ -291,7 +338,11 @@ with col1:
         df_ratings.reset_index(inplace=True)
         df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
 
-        df_ratings_styled = df_ratings.style            .apply(soft_gradient, cmap_name='YlGn', alpha=0.6, transparent_at='min', power=0.6, subset=['Attack'])            .apply(soft_gradient, cmap_name='YlGn_r', alpha=0.6, transparent_at='max', power=0.6, subset=['Defense'])            .apply(soft_gradient, cmap_name='RdYlGn', alpha=0.6, transparent_at='mid', power=0.6, subset=['Overall'])            .format(precision=3)
+        df_ratings_styled = df_ratings.style\
+            .apply(soft_green_gradient, subset=['Attack'])\
+            .apply(soft_green_gradient, reverse=True, subset=['Defense'])\
+            .apply(soft_overall_gradient, subset=['Overall'])\
+            .format(precision=3)
 
         st.dataframe(
             df_ratings_styled,
