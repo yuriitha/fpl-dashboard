@@ -561,8 +561,32 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.25, max_cap=None):
     return styles
 
 
+def warm_honey_gradient(s, min_alpha=0.04, max_alpha=0.18, max_cap=None):
+    if s.empty:
+        return ['' for _ in s]
+    s_min, s_max = s.min(), s.max()
+    if max_cap is not None and not pd.isna(s_max):
+        s_max = min(s_max, max_cap)
+    if pd.isna(s_min) or pd.isna(s_max) or s_min >= s_max:
+        return ['' for _ in s]
+
+    styles = []
+    for val in s:
+        if pd.isna(val):
+            styles.append('')
+        else:
+            val_clamped = min(val, s_max)
+            norm_val = (val_clamped - s_min) / (s_max - s_min)
+            r = int(215 + norm_val * (235 - 215))
+            g = int(180 + norm_val * (145 - 180))
+            b = int(90  + norm_val * (40  - 90))
+            alpha = min_alpha + norm_val * (max_alpha - min_alpha)
+            styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
+    return styles
+
+
 styled_df = filtered_df[existing_cols].style\
-    .apply(soft_gradient, cmap_name='Purples', alpha=0.20, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
+    .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_gradient, cmap_name='YlGn', alpha=0.25, max_cap=0.90, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90', 'A_90', 'xA_90', 'xGI_norm'] if c in existing_cols])\
     .apply(soft_gradient, cmap_name='Blues', alpha=0.25, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Cross_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90'] if c in existing_cols])\
     .format(precision=2)
