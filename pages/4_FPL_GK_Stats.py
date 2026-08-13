@@ -100,6 +100,12 @@ def load_data():
     else:
         df['transfer_activity_pct'] = 0.0
 
+    if 'Pass_90' not in df.columns:
+        if 'totalPass' in df.columns and 'min_played' in df.columns:
+            df['Pass_90'] = np.where(df['min_played'] > 0, np.round((df['totalPass'] / df['min_played']) * 90, 2), 0.0)
+        elif 'Touches_90' in df.columns:
+            df['Pass_90'] = df['Touches_90']
+
     return df
 
 try:
@@ -159,7 +165,7 @@ GB = {
     'f_cs_gks':       _slider_bounds(0.0, _get_max_sane('CS_90')),
     'f_xgc_gks':      _slider_bounds(_get_min_sane('xGC_90', -2.0), _get_max_sane('xGC_90', 2.0)),
     'f_xgp_gks':      _slider_bounds(_get_min_sane('xGP_90', -2.0), _get_max_sane('xGP_90', 2.0)),
-    'f_tchs_gks':     _slider_bounds(0.0, _get_max_sane('Touches_90')),
+    'f_pass90_gks':   _slider_bounds(0.0, _get_max_sane('Pass_90')),
     'f_pass_gks':     _slider_bounds(0.0, _get_max('Pass_pct', 100.0)),
 }
 
@@ -176,7 +182,7 @@ DEFAULTS = {
     'f_cs_gks':       GB['f_cs_gks'],
     'f_xgc_gks':      GB['f_xgc_gks'],
     'f_xgp_gks':      GB['f_xgp_gks'],
-    'f_tchs_gks':     GB['f_tchs_gks'],
+    'f_pass90_gks':   GB['f_pass90_gks'],
     'f_pass_gks':     GB['f_pass_gks'],
 }
 
@@ -285,7 +291,7 @@ def get_base_df(exclude_key=None):
         'f_cs_gks':       ('CS_90',                 GB['f_cs_gks']),
         'f_xgc_gks':      ('xGC_90',                GB['f_xgc_gks']),
         'f_xgp_gks':      ('xGP_90',                GB['f_xgp_gks']),
-        'f_tchs_gks':     ('Touches_90',            GB['f_tchs_gks']),
+        'f_pass90_gks':   ('Pass_90',               GB['f_pass90_gks']),
         'f_pass_gks':     ('Pass_pct',              GB['f_pass_gks']),
     }
     for k, (col_name, d) in _slider_cols.items():
@@ -496,9 +502,9 @@ with st.sidebar.expander("Goalkeeper Stats", expanded=True):
     f_svs  = st.slider("Saves/90",   GB['f_svs_gks'][0], GB['f_svs_gks'][1], step=0.05, key="f_svs_gks")
     f_cs   = st.slider("CS/90",      GB['f_cs_gks'][0],  GB['f_cs_gks'][1],  step=0.05, key="f_cs_gks")
     f_xgc  = st.slider("xGC/90",     GB['f_xgc_gks'][0], GB['f_xgc_gks'][1], step=0.05, key="f_xgc_gks")
-    f_xgp  = st.slider("xGP/90",     GB['f_xgp_gks'][0], GB['f_xgp_gks'][1], step=0.05, key="f_xgp_gks")
-    f_tchs = st.slider("Touches/90", GB['f_tchs_gks'][0], GB['f_tchs_gks'][1], step=0.5, key="f_tchs_gks")
-    f_pass = st.slider("Pass%",      GB['f_pass_gks'][0], GB['f_pass_gks'][1], step=1.0, key="f_pass_gks")
+    f_xgp    = st.slider("xGP/90",     GB['f_xgp_gks'][0],    GB['f_xgp_gks'][1],    step=0.05, key="f_xgp_gks")
+    f_pass90 = st.slider("Pass/90",    GB['f_pass90_gks'][0], GB['f_pass90_gks'][1], step=0.5,  key="f_pass90_gks")
+    f_pass   = st.slider("Pass%",      GB['f_pass_gks'][0],   GB['f_pass_gks'][1],   step=1.0,  key="f_pass_gks")
 
 
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
@@ -524,7 +530,7 @@ filter_vars = [
     ('CS_90',                 f_cs,       GB['f_cs_gks']),
     ('xGC_90',                f_xgc,      GB['f_xgc_gks']),
     ('xGP_90',                f_xgp,      GB['f_xgp_gks']),
-    ('Touches_90',            f_tchs,     GB['f_tchs_gks']),
+    ('Pass_90',               f_pass90,   GB['f_pass90_gks']),
     ('Pass_pct',              f_pass,     GB['f_pass_gks']),
     ('avg_mins',              f_avg_mins, GB['f_avg_mins_gks']),
 ]
@@ -548,7 +554,7 @@ display_columns = [
     "avg_mins", "60_min", "av_rating_alt",
     "CS_90", "xGC_90", "xGP_90",
     "Svs_90", "penalties_saved",
-    "Touches_90", "Pass_pct", "yellow_cards", "YC_90", "red_cards", "RC_90"
+    "Pass_90", "Pass_pct", "yellow_cards", "YC_90", "red_cards", "RC_90"
 ]
 
 existing_cols = [c for c in display_columns if c in filtered_df.columns]
@@ -703,7 +709,7 @@ format_map = {
     "xGP_90":              ("NumberColumn", "%.2f", "xGP/90"),
     "Svs_90":              ("NumberColumn", "%.2f", "Svs/90"),
     "penalties_saved":     ("NumberColumn", "%d", "PS"),
-    "Touches_90":          ("NumberColumn", "%.2f", "Tchs/90"),
+    "Pass_90":             ("NumberColumn", "%.2f", "Pass/90"),
     "Pass_pct":            ("NumberColumn", "%.1f", "Pass%"),
     "yellow_cards":        ("NumberColumn", "%d", "YC"),
     "YC_90":               ("NumberColumn", "%.2f", "YC/90"),

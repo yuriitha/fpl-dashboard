@@ -75,6 +75,12 @@ def load_data():
     else:
         df['transfer_activity_pct'] = 0.0
 
+    if 'Pass_90' not in df.columns:
+        if 'totalPass' in df.columns and 'min_played' in df.columns:
+            df['Pass_90'] = np.where(df['min_played'] > 0, np.round((df['totalPass'] / df['min_played']) * 90, 2), 0.0)
+        elif 'Touches_90' in df.columns:
+            df['Pass_90'] = df['Touches_90']
+
     return df
 
 try:
@@ -133,7 +139,7 @@ GB = {
     'f_xgi_as':      _slider_bounds(0.0, _get_max_sane('xGI_norm')),
     'f_sh_as':       _slider_bounds(0.0, _get_max_sane('Sh_90')),
     'f_shot_as':     _slider_bounds(0.0, _get_max_sane('ShoT_90')),
-    'f_tchs_as':     _slider_bounds(0.0, _get_max_sane('Touches_90')),
+    'f_pass90_as':   _slider_bounds(0.0, _get_max_sane('Pass_90')),
     'f_pass_as':     _slider_bounds(0.0, _get_max('Pass_pct', 100.0)),
 }
 
@@ -151,7 +157,7 @@ DEFAULTS = {
     'f_xgi_as':      GB['f_xgi_as'],
     'f_sh_as':       GB['f_sh_as'],
     'f_shot_as':     GB['f_shot_as'],
-    'f_tchs_as':     GB['f_tchs_as'],
+    'f_pass90_as':   GB['f_pass90_as'],
     'f_pass_as':     GB['f_pass_as'],
 }
 
@@ -266,7 +272,7 @@ def get_base_df(exclude_key=None):
         'f_xgi_as':      ('xGI_norm',              GB['f_xgi_as']),
         'f_sh_as':       ('Sh_90',                 GB['f_sh_as']),
         'f_shot_as':     ('ShoT_90',               GB['f_shot_as']),
-        'f_tchs_as':     ('Touches_90',            GB['f_tchs_as']),
+        'f_pass90_as':   ('Pass_90',               GB['f_pass90_as']),
         'f_pass_as':     ('Pass_pct',              GB['f_pass_as']),
     }
     for k, (col_name, d) in _slider_cols.items():
@@ -477,13 +483,13 @@ with st.sidebar.expander("Market & Popularity", expanded=False):
 
 
 with st.sidebar.expander("Attacking Stats", expanded=True):
-    f_xgot = st.slider("xGoT/90",   GB['f_xgot_as'][0], GB['f_xgot_as'][1], step=0.05, key="f_xgot_as")
-    f_xa   = st.slider("xA/90",     GB['f_xa_as'][0],   GB['f_xa_as'][1],   step=0.05, key="f_xa_as")
-    f_xgi  = st.slider("xGI/90",    GB['f_xgi_as'][0],  GB['f_xgi_as'][1],  step=0.1,  key="f_xgi_as")
-    f_sh   = st.slider("Shots/90",  GB['f_sh_as'][0],   GB['f_sh_as'][1],   step=0.5,  key="f_sh_as")
-    f_shot = st.slider("OnTarget/90", GB['f_shot_as'][0], GB['f_shot_as'][1], step=0.1, key="f_shot_as")
-    f_tchs = st.slider("Touches/90", GB['f_tchs_as'][0], GB['f_tchs_as'][1], step=0.5,  key="f_tchs_as")
-    f_pass = st.slider("Pass%",     GB['f_pass_as'][0], GB['f_pass_as'][1], step=1.0,  key="f_pass_as")
+    f_xgot   = st.slider("xGoT/90",   GB['f_xgot_as'][0],   GB['f_xgot_as'][1],   step=0.05, key="f_xgot_as")
+    f_xa     = st.slider("xA/90",     GB['f_xa_as'][0],     GB['f_xa_as'][1],     step=0.05, key="f_xa_as")
+    f_xgi    = st.slider("xGI/90",    GB['f_xgi_as'][0],    GB['f_xgi_as'][1],    step=0.1,  key="f_xgi_as")
+    f_sh     = st.slider("Shots/90",  GB['f_sh_as'][0],     GB['f_sh_as'][1],     step=0.5,  key="f_sh_as")
+    f_shot   = st.slider("OnTarget/90", GB['f_shot_as'][0], GB['f_shot_as'][1],   step=0.1,  key="f_shot_as")
+    f_pass90 = st.slider("Pass/90",   GB['f_pass90_as'][0], GB['f_pass90_as'][1], step=0.5,  key="f_pass90_as")
+    f_pass   = st.slider("Pass%",     GB['f_pass_as'][0],   GB['f_pass_as'][1],   step=1.0,  key="f_pass_as")
 
 
 if selected_pl_pos and len(selected_pl_pos) == len(all_pl_pos):
@@ -511,7 +517,7 @@ filter_vars = [
     ('xGI_norm',              f_xgi,      GB['f_xgi_as']),
     ('Sh_90',                 f_sh,       GB['f_sh_as']),
     ('ShoT_90',               f_shot,     GB['f_shot_as']),
-    ('Touches_90',            f_tchs,     GB['f_tchs_as']),
+    ('Pass_90',               f_pass90,   GB['f_pass90_as']),
     ('Pass_pct',              f_pass,     GB['f_pass_as']),
     ('avg_mins',              f_avg_mins, GB['f_avg_mins_as']),
 ]
@@ -533,7 +539,7 @@ display_columns = [
     "selected_by_percent", "min_played", "matches_played", "matches_started",
     "avg_mins", "60_min", "av_rating_alt",
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm",
-    "Sh_90", "ShoT_90", "KP_90", "Cross_90", "Touches_90", "Pass_pct", "BC_90", "PBC_90"
+    "Sh_90", "ShoT_90", "KP_90", "Cross_90", "Pass_90", "Pass_pct"
 ]
 
 
@@ -641,7 +647,7 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
 styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
     .apply(soft_green_gradient, max_cap=0.90, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90', 'A_90', 'xA_90', 'xGI_norm'] if c in existing_cols])\
-    .apply(soft_blue_gradient, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Cross_90', 'Touches_90', 'Pass_pct', 'BC_90', 'PBC_90'] if c in existing_cols])\
+    .apply(soft_blue_gradient, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Cross_90', 'Pass_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)
 
 st.subheader(f"Attacking Stats: {len(filtered_df)} players", anchor=False)
@@ -691,10 +697,8 @@ format_map = {
     "ShoT_90":             ("NumberColumn", None, "ShoT/90"),
     "KP_90":               ("NumberColumn", None, "KP/90"),
     "Cross_90":            ("NumberColumn", "%.2f", "Crs/90"),
-    "Touches_90":          ("NumberColumn", None, "Tchs/90"),
+    "Pass_90":             ("NumberColumn", "%.2f", "Pass/90"),
     "Pass_pct":            ("NumberColumn", None, "Pass%"),
-    "BC_90":               ("NumberColumn", None, "BC/90"),
-    "PBC_90":              ("NumberColumn", None, "PBC/90"),
 }
 
 for col in existing_cols:
