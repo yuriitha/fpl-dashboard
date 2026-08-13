@@ -502,10 +502,10 @@ plot_df = df[mask].copy()
 
 
 POSITION_COLOR_MAP = {
-    "GK":  "#FFC72C",  # Golden Amber
-    "DEF": "#00D2FF",  # Electric Cyan
-    "MID": "#00E676",  # Emerald Green
-    "FW":  "#FF3366"   # Crimson Rose
+    "GK":  "#E5A823",  # Deep Amber Gold
+    "DEF": "#00A3E0",  # Ocean Cyan
+    "MID": "#00B359",  # Rich Emerald
+    "FW":  "#D92552"   # Deep Crimson
 }
 
 
