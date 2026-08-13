@@ -221,8 +221,8 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
             styles.append(f'background-color: rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {dynamic_alpha:.3f})')
     return styles
 
-light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff", "#00BFFF"])
-orange_blue = mcolors.LinearSegmentedColormap.from_list("OrangeBlue", ["#ff8c00", "#ffffff", "#00BFFF"])
+light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff", "#00B4FF"])
+honey_blue = mcolors.LinearSegmentedColormap.from_list("HoneyBlue", ["#F58C19", "#ffffff", "#00B4FF"])
 
 
 col1, col2 = st.columns([0.35, 0.65])
@@ -328,7 +328,7 @@ with col2:
         xg_min = df_future[xg_cols].min().min()
         xg_max = df_future[xg_cols].max().max()
 
-        df_future_styled = df_future.style            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', power=0.6, subset=xg_cols)            .apply(soft_gradient, cmap_name=orange_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta'])            .format(precision=2)
+        df_future_styled = df_future.style            .apply(soft_gradient, cmap_name=light_blues, alpha=0.6, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', power=0.6, subset=xg_cols)            .apply(soft_gradient, cmap_name=honey_blue, alpha=0.6, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta'])            .format(precision=2)
 
         st.dataframe(
             df_future_styled,
