@@ -486,34 +486,92 @@ if sort_cols:
 
 
 st.subheader(f"Players filtered: {len(filtered_df)}", anchor=False)
+existing_display_cols = [c for c in display_columns if c in filtered_df.columns]
+
+base_widths = {}
+for col in existing_display_cols:
+    if col == "news":
+        continue
+    if not filtered_df.empty and col in filtered_df.columns:
+        val_series = filtered_df[col].dropna().astype(str)
+        max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
+    else:
+        max_val_len = 1
+
+    bw = max_val_len * 7
+    if col == "full_name":
+        bw = min(bw, 140)
+    elif col == "news_added":
+        bw = min(bw, 110)
+    else:
+        bw = min(bw, 48)
+    base_widths[col] = max(bw, 12)
+
+inv_weights = {col: 1.0 / (w ** 0.5) for col, w in base_widths.items()}
+sum_inv_weights = sum(inv_weights.values())
+TOTAL_PADDING_BUDGET = 650
+
+smart_column_config = {}
+format_map = {
+    "full_name":           ("TextColumn", None, "Player"),
+    "Age":                 ("NumberColumn", "%d", "Age"),
+    "element_type":        ("TextColumn", None, "Pos"),
+    "Play Pos":            ("TextColumn", None, "Pl Pos"),
+    "team_short_name":     ("TextColumn", None, "Team"),
+    "now_cost":            ("NumberColumn", "%.1f", "Price"),
+    "M Price":             ("NumberColumn", "%.1f", "TM Price"),
+    "Foot":                ("TextColumn", None, "Foot"),
+    "selected_by_percent": ("NumberColumn", "%.1f%%", "Selected"),
+    "min_played":          ("NumberColumn", None, "Mins"),
+    "matches_played":      ("NumberColumn", None, "MP"),
+    "matches_started":     ("NumberColumn", None, "GS"),
+    "avg_mins":            ("NumberColumn", "%d", "AvgMins"),
+    "60_min":              ("NumberColumn", "%.1f", "60Mins%"),
+    "goals_scored":        ("NumberColumn", None, "G"),
+    "assists":             ("NumberColumn", None, "A"),
+    "av_rating":           ("NumberColumn", "%.2f", "Rat"),
+    "av_rating_alt":       ("NumberColumn", "%.2f", "RatA"),
+    "points_per_game":     ("NumberColumn", "%.1f", "PPM"),
+    "transfers_in_event":  ("NumberColumn", None, "In"),
+    "transfers_out_event": ("NumberColumn", None, "Out"),
+    "transfers_in_24":     ("NumberColumn", None, "In 24"),
+    "transfers_out_24":    ("NumberColumn", None, "Out 24"),
+    "news":                ("TextColumn", None, "News"),
+    "news_added":          ("TextColumn", None, "Updated"),
+}
+
+for col in existing_display_cols:
+    col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
+
+    if col == "news":
+        calc_w = 185
+    else:
+        bw = base_widths[col]
+        bonus = (inv_weights[col] / sum_inv_weights) * TOTAL_PADDING_BUDGET
+        calc_w = int(round(bw + bonus))
+
+        if col == "full_name":
+            calc_w = max(calc_w, 140)
+        elif col == "news_added":
+            calc_w = max(calc_w, 110)
+        else:
+            calc_w = max(calc_w, 48)
+
+    kwargs = {"label": col_label, "width": calc_w}
+    if col == "full_name":
+        kwargs["pinned"] = True
+    if col_fmt:
+        kwargs["format"] = col_fmt
+
+    if col_type == "NumberColumn":
+        smart_column_config[col] = st.column_config.NumberColumn(**kwargs)
+    elif col_type == "TextColumn":
+        smart_column_config[col] = st.column_config.TextColumn(**kwargs)
+    else:
+        smart_column_config[col] = st.column_config.Column(**kwargs)
+
 st.dataframe(
-    filtered_df[display_columns],
+    filtered_df[existing_display_cols],
     width="stretch", hide_index=True, height=800,
-    column_config={
-        "full_name":           st.column_config.TextColumn("Player",    width="medium", pinned=True),
-        "Age":                 st.column_config.NumberColumn("Age",     width=40,  format="%d"),
-        "element_type":        st.column_config.TextColumn("Pos",       width=45),
-        "Play Pos":            st.column_config.TextColumn("Pl Pos",    width=45),
-        "team_short_name":     st.column_config.TextColumn("Team",      width=45),
-        "now_cost":            st.column_config.NumberColumn("Price",   width=40,  format="%.1f"),
-        "M Price":             st.column_config.NumberColumn("TM Price",width=55,  format="%.1f"),
-        "Foot":                st.column_config.TextColumn("Foot",      width=45),
-        "selected_by_percent": st.column_config.NumberColumn("Selected",width=55,  format="%.1f%%"),
-        "min_played":          st.column_config.NumberColumn("Mins",    width=45),
-        "matches_played":      st.column_config.NumberColumn("MP",      width=35),
-        "matches_started":     st.column_config.NumberColumn("GS",      width=35),
-        "avg_mins":            st.column_config.NumberColumn("AvgMins", width=45,  format="%d"),
-        "60_min":              st.column_config.NumberColumn("60Mins%", width=50,  format="%.1f"),
-        "goals_scored":        st.column_config.NumberColumn("G",       width=30),
-        "assists":             st.column_config.NumberColumn("A",       width=30),
-        "av_rating":           st.column_config.NumberColumn("Rat",     width=40,  format="%.2f"),
-        "av_rating_alt":       st.column_config.NumberColumn("RatA",    width=40,  format="%.2f"),
-        "points_per_game":     st.column_config.NumberColumn("PPM",     width=40,  format="%.1f"),
-        "transfers_in_event":  st.column_config.NumberColumn("In",      width=60),
-        "transfers_out_event": st.column_config.NumberColumn("Out",     width=60),
-        "transfers_in_24":     st.column_config.NumberColumn("In 24",   width=60),
-        "transfers_out_24":    st.column_config.NumberColumn("Out 24",  width=60),
-        "news":                st.column_config.TextColumn("News",      width="medium"),
-        "news_added":          st.column_config.TextColumn("Updated",   width=125),
-    }
+    column_config=smart_column_config
 )
