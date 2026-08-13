@@ -521,7 +521,7 @@ if not plot_df.empty:
     )
 
 
-    st.subheader(f"xGI vs Rating — 1 Year (Players: {len(plot_df)})", anchor=False)
+    st.subheader(f"xGI vs Rating — 12-Month Performance (Players: {len(plot_df)})", anchor=False)
 
     fig = px.scatter(
         plot_df,
@@ -641,7 +641,7 @@ if not plot_df.empty:
         )
 
         st.markdown("<br><hr>", unsafe_allow_html=True)
-        st.subheader(f"xGI vs Rating — 6 Months (Players: {len(plot_df_h2)})", anchor=False)
+        st.subheader(f"xGI vs Rating — 6-Month Performance (Players: {len(plot_df_h2)})", anchor=False)
 
         fig_h2 = px.scatter(
             plot_df_h2,
