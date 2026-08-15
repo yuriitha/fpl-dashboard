@@ -825,19 +825,35 @@ if not df_hist.empty:
                     var needsTraceUpdate = false;
                     var newColors = [];
 
-                    plotEl.data.forEach(function(trace) {{
+                    var svgTraces = plotEl.querySelectorAll('.scatterlayer .trace');
+
+                    plotEl.data.forEach(function(trace, idx) {{
                         var c = colorsMap[trace.name] || (trace.line ? trace.line.color : '#888888');
                         newColors.push(c);
                         if (trace.line && trace.line.color !== c) {{
                             trace.line.color = c;
                             needsTraceUpdate = true;
                         }}
+                        if (svgTraces[idx]) {{
+                            var linePath = svgTraces[idx].querySelector('path.js-line') || svgTraces[idx].querySelector('path');
+                            if (linePath && linePath.style.stroke !== c) {{
+                                linePath.style.stroke = c;
+                            }}
+                        }}
+                    }});
+
+                    var svgAnnotations = plotEl.querySelectorAll('.infolayer .annotation text, g.annotation text, g.annotation-text text');
+                    svgAnnotations.forEach(function(tNode) {{
+                        var code = (tNode.textContent || '').trim();
+                        if (colorsMap[code] && tNode.style.fill !== colorsMap[code]) {{
+                            tNode.style.fill = colorsMap[code];
+                        }}
                     }});
 
                     var needsAnnUpdate = false;
                     if (plotEl.layout.annotations) {{
                         plotEl.layout.annotations.forEach(function(ann) {{
-                            var annCode = ann.text;
+                            var annCode = (ann.text || '').trim();
                             if (colorsMap[annCode]) {{
                                 var targetCol = colorsMap[annCode];
                                 if (!ann.font || ann.font.color !== targetCol) {{
@@ -850,17 +866,29 @@ if not df_hist.empty:
 
                     if ((needsTraceUpdate || needsAnnUpdate) && plotlyGlobal) {{
                         try {{
-                            plotlyGlobal.react(plotEl, plotEl.data, plotEl.layout);
-                        }} catch(err) {{
-                            try {{
-                                if (needsTraceUpdate) plotlyGlobal.restyle(plotEl, {{ 'line.color': newColors }});
-                                if (needsAnnUpdate) plotlyGlobal.relayout(plotEl, {{ annotations: plotEl.layout.annotations }});
-                            }} catch(err2) {{}}
-                        }}
+                            if (needsTraceUpdate) plotlyGlobal.restyle(plotEl, {{ 'line.color': newColors }});
+                            if (needsAnnUpdate) plotlyGlobal.relayout(plotEl, {{ annotations: plotEl.layout.annotations }});
+                        }} catch(err) {{}}
                     }}
                 }});
             }} catch(e) {{}}
         }}
+
+        try {{
+            var doc = window.parent.document;
+            var obs = new MutationObserver(function() {{
+                updateChartColors();
+            }});
+            obs.observe(doc.documentElement, {{ attributes: true, attributeFilter: ['data-theme', 'class', 'style'] }});
+            obs.observe(doc.body, {{ attributes: true, attributeFilter: ['data-theme', 'class', 'style'] }});
+            var stApp = doc.querySelector('.stApp');
+            if (stApp) obs.observe(stApp, {{ attributes: true, attributeFilter: ['data-theme', 'class', 'style'] }});
+
+            var mql = window.parent.matchMedia('(prefers-color-scheme: dark)');
+            if (mql && mql.addEventListener) {{
+                mql.addEventListener('change', updateChartColors);
+            }}
+        }} catch(e) {{}}
 
         function sortHoverBoxes() {{
             try {{
@@ -900,7 +928,6 @@ if not df_hist.empty:
                         }}
                     }});
 
-                    // Filter out traces from adjacent season at season boundary
                     var gwCounts = {{}};
                     activeItems.forEach(function(item) {{
                         if (item.gwStr) gwCounts[item.gwStr] = (gwCounts[item.gwStr] || 0) + 1;
@@ -917,7 +944,6 @@ if not df_hist.empty:
                         activeItems = activeItems.filter(function(item) {{ return item.gwStr === majorityGw; }});
                     }}
 
-                    // Hide non-matching traces from DOM
                     traces.forEach(function(t) {{
                         var isKeeper = activeItems.some(function(item) {{ return item.node === t; }});
                         if (!isKeeper) {{
@@ -954,7 +980,7 @@ if not df_hist.empty:
         setInterval(function() {{
             sortHoverBoxes();
             updateChartColors();
-        }}, 60);
+        }}, 30);
     }})();
     </script>
     """
