@@ -87,27 +87,11 @@ except Exception as e:
 
 def get_active_theme():
     try:
-        if hasattr(st, 'context') and hasattr(st.context, 'cookies'):
-            c_theme = st.context.cookies.get('app_theme')
-            if c_theme and str(c_theme).lower() in ['light', 'dark']:
-                return str(c_theme).lower()
-    except Exception:
-        pass
-
-    try:
-        if hasattr(st, 'query_params'):
-            q_theme = st.query_params.get('theme')
-            if q_theme and str(q_theme).lower() in ['light', 'dark']:
-                return str(q_theme).lower()
-    except Exception:
-        pass
-
-    try:
         if hasattr(st, 'context') and hasattr(st.context, 'theme'):
             t_obj = st.context.theme
             if isinstance(t_obj, dict):
                 t_type = t_obj.get('type') or t_obj.get('base')
-                if t_type and str(t_type).lower() in ['light', 'dark']:
+                if t_type:
                     return str(t_type).lower()
             elif hasattr(t_obj, 'type') and t_obj.type:
                 return str(t_obj.type).lower()
@@ -118,7 +102,7 @@ def get_active_theme():
 
     try:
         base_opt = st.get_option('theme.base')
-        if base_opt and str(base_opt).lower() in ['light', 'dark']:
+        if base_opt:
             return str(base_opt).lower()
     except Exception:
         pass
@@ -803,13 +787,14 @@ if not df_hist.empty:
     js_hover_sorter = f"""
     <script>
     (function() {{
-        var pythonRenderedTheme = "{'light' if is_light else 'dark'}";
+        var teamColorsLight = {light_map_json};
+        var teamColorsDark = {dark_map_json};
 
         function getDetectedTheme() {{
             try {{
                 var doc = window.parent.document;
                 var app = doc.querySelector('.stApp') || doc.body;
-                if (!app) return pythonRenderedTheme;
+                if (!app) return 'dark';
 
                 var bg = window.getComputedStyle(app).backgroundColor;
                 if (bg) {{
@@ -823,45 +808,59 @@ if not df_hist.empty:
                     }}
                 }}
             }} catch(e) {{}}
-            return pythonRenderedTheme;
+            return 'dark';
         }}
 
-        function checkThemeSync() {{
+        function updateChartColors() {{
             try {{
+                var doc = window.parent.document;
                 var currentTheme = getDetectedTheme();
-                var lastKnown = sessionStorage.getItem('fpl_active_theme');
+                var colorsMap = (currentTheme === 'light') ? teamColorsLight : teamColorsDark;
 
-                document.cookie = "app_theme=" + currentTheme + "; path=/; max-age=31536000";
+                var chartContainers = doc.querySelectorAll('.js-plotly-plot');
+                chartContainers.forEach(function(plotEl) {{
+                    if (!plotEl.data || !plotEl.layout) return;
 
-                if (!lastKnown) {{
-                    sessionStorage.setItem('fpl_active_theme', currentTheme);
-                    if (currentTheme !== pythonRenderedTheme) {{
-                        window.parent.location.reload();
+                    var plotlyGlobal = window.parent.Plotly || window.Plotly;
+                    var needsTraceUpdate = false;
+                    var newColors = [];
+
+                    plotEl.data.forEach(function(trace) {{
+                        var c = colorsMap[trace.name] || (trace.line ? trace.line.color : '#888888');
+                        newColors.push(c);
+                        if (trace.line && trace.line.color !== c) {{
+                            trace.line.color = c;
+                            needsTraceUpdate = true;
+                        }}
+                    }});
+
+                    var needsAnnUpdate = false;
+                    if (plotEl.layout.annotations) {{
+                        plotEl.layout.annotations.forEach(function(ann) {{
+                            var annCode = ann.text;
+                            if (colorsMap[annCode]) {{
+                                var targetCol = colorsMap[annCode];
+                                if (!ann.font || ann.font.color !== targetCol) {{
+                                    ann.font = Object.assign({{}}, ann.font || {{}}, {{ color: targetCol }});
+                                    needsAnnUpdate = true;
+                                }}
+                            }}
+                        }});
                     }}
-                }} else if (currentTheme !== lastKnown) {{
-                    sessionStorage.setItem('fpl_active_theme', currentTheme);
-                    window.parent.location.reload();
-                }}
+
+                    if ((needsTraceUpdate || needsAnnUpdate) && plotlyGlobal) {{
+                        try {{
+                            plotlyGlobal.react(plotEl, plotEl.data, plotEl.layout);
+                        }} catch(err) {{
+                            try {{
+                                if (needsTraceUpdate) plotlyGlobal.restyle(plotEl, {{ 'line.color': newColors }});
+                                if (needsAnnUpdate) plotlyGlobal.relayout(plotEl, {{ annotations: plotEl.layout.annotations }});
+                            }} catch(err2) {{}}
+                        }}
+                    }}
+                }});
             }} catch(e) {{}}
         }}
-
-        checkThemeSync();
-
-        try {{
-            var doc = window.parent.document;
-            var obs = new MutationObserver(function() {{
-                checkThemeSync();
-            }});
-            obs.observe(doc.documentElement, {{ attributes: true, attributeFilter: ['data-theme', 'class', 'style'] }});
-            obs.observe(doc.body, {{ attributes: true, attributeFilter: ['data-theme', 'class', 'style'] }});
-            var stApp = doc.querySelector('.stApp');
-            if (stApp) obs.observe(stApp, {{ attributes: true, attributeFilter: ['data-theme', 'class', 'style'] }});
-
-            var mql = window.parent.matchMedia('(prefers-color-scheme: dark)');
-            if (mql && mql.addEventListener) {{
-                mql.addEventListener('change', checkThemeSync);
-            }}
-        }} catch(e) {{}}
 
         function sortHoverBoxes() {{
             try {{
@@ -901,6 +900,7 @@ if not df_hist.empty:
                         }}
                     }});
 
+                    // Filter out traces from adjacent season at season boundary
                     var gwCounts = {{}};
                     activeItems.forEach(function(item) {{
                         if (item.gwStr) gwCounts[item.gwStr] = (gwCounts[item.gwStr] || 0) + 1;
@@ -917,6 +917,7 @@ if not df_hist.empty:
                         activeItems = activeItems.filter(function(item) {{ return item.gwStr === majorityGw; }});
                     }}
 
+                    // Hide non-matching traces from DOM
                     traces.forEach(function(t) {{
                         var isKeeper = activeItems.some(function(item) {{ return item.node === t; }});
                         if (!isKeeper) {{
@@ -952,8 +953,8 @@ if not df_hist.empty:
 
         setInterval(function() {{
             sortHoverBoxes();
-            checkThemeSync();
-        }}, 50);
+            updateChartColors();
+        }}, 60);
     }})();
     </script>
     """
