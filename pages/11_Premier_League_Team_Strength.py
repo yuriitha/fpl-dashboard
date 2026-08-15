@@ -357,7 +357,7 @@ with col1:
 with col2:
     head_col1, head_col2 = st.columns([0.5, 0.5])
     with head_col1:
-        st.subheader("Upcoming Matches", anchor=False)
+        st.subheader("Current Matches", anchor=False)
     with head_col2:
         if last_update_str:
             st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: 0.6rem; margin-bottom: 0;'>Data updated: <b>{last_update_str}</b></p>", unsafe_allow_html=True)
@@ -367,10 +367,11 @@ with col2:
         (df['match_result'].isna() | (df['match_date'] >= threshold))
     ].copy()
     if not df_future.empty:
-        cols = ['match_date', 'home_team', 'away_team', 'home_team_code', 'away_team_code', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
+        df_future['score'] = df_future['match_result'].apply(
+            lambda x: str(x).strip().split()[0] if pd.notna(x) and str(x).strip() and str(x).strip().lower() not in ('none', 'nan') else " "
+        )
+        cols = ['match_date', 'home_team', 'away_team', 'score', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
         df_future = df_future[cols].sort_values('match_date')
-
-        df_future = df_future.drop(columns=['home_team_code', 'away_team_code'])
 
         xg_cols = ['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']
         xg_min = df_future[xg_cols].min().min()
@@ -390,6 +391,7 @@ with col2:
                 'match_date': st.column_config.DatetimeColumn("Date", format="DD/MM/YYYY HH:mm"),
                 'home_team': st.column_config.TextColumn("Home"),
                 'away_team': st.column_config.TextColumn("Away"),
+                'score': st.column_config.TextColumn(" ", width=50),
                 'home_xg': st.column_config.NumberColumn("Model xG (H)", format="%.2f", width=50),
                 'away_xg': st.column_config.NumberColumn("Model xG (A)", format="%.2f", width=50),
                 'home_xg_odds': st.column_config.NumberColumn("Odds xG (H)", format="%.2f", width=50),
@@ -399,7 +401,7 @@ with col2:
             }
         )
     else:
-        st.info("No upcoming matches found.")
+        st.info("No current matches found.")
 
 
 st.subheader("Historical Ratings", anchor=False)
