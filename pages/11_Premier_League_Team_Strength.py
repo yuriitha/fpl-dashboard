@@ -294,8 +294,8 @@ with col1:
     current_season_teams = sorted(list(set(curr_season_df['home_team_code'].dropna()).union(set(curr_season_df['away_team_code'].dropna()))))
 
     df_played = df.dropna(subset=['match_result'])
-    latest_home = df_played.sort_values('match_date').groupby('home_team_code').last()[['match_date', 'home_rating_att_post', 'home_rating_def_post']]
-    latest_away = df_played.sort_values('match_date').groupby('away_team_code').last()[['match_date', 'away_rating_att_post', 'away_rating_def_post']]
+    latest_home = df_played.sort_values('match_date').groupby('home_team_code').last()[['match_date', 'home_rating_att_post', 'home_rating_def_post', 'home_rating_att', 'home_rating_def']]
+    latest_away = df_played.sort_values('match_date').groupby('away_team_code').last()[['match_date', 'away_rating_att_post', 'away_rating_def_post', 'away_rating_att', 'away_rating_def']]
 
     df_unplayed = df[df['match_result'].isna()]
     first_unplayed_home = df_unplayed.sort_values('match_date').groupby('home_team_code').first()[['match_date', 'home_rating_att', 'home_rating_def']]
@@ -327,13 +327,17 @@ with col1:
 
             if h is not None and a is not None:
                 if h['match_date'] > a['match_date']:
-                    att, def_rating = h['home_rating_att_post'], h['home_rating_def_post']
+                    att = h['home_rating_att_post'] if pd.notna(h['home_rating_att_post']) else h['home_rating_att']
+                    def_rating = h['home_rating_def_post'] if pd.notna(h['home_rating_def_post']) else h['home_rating_def']
                 else:
-                    att, def_rating = a['away_rating_att_post'], a['away_rating_def_post']
+                    att = a['away_rating_att_post'] if pd.notna(a['away_rating_att_post']) else a['away_rating_att']
+                    def_rating = a['away_rating_def_post'] if pd.notna(a['away_rating_def_post']) else a['away_rating_def']
             elif h is not None:
-                att, def_rating = h['home_rating_att_post'], h['home_rating_def_post']
+                att = h['home_rating_att_post'] if pd.notna(h['home_rating_att_post']) else h['home_rating_att']
+                def_rating = h['home_rating_def_post'] if pd.notna(h['home_rating_def_post']) else h['home_rating_def']
             elif a is not None:
-                att, def_rating = a['away_rating_att_post'], a['away_rating_def_post']
+                att = a['away_rating_att_post'] if pd.notna(a['away_rating_att_post']) else a['away_rating_att']
+                def_rating = a['away_rating_def_post'] if pd.notna(a['away_rating_def_post']) else a['away_rating_def']
 
         if pd.notna(att) and pd.notna(def_rating):
             current_ratings.append({
@@ -379,7 +383,11 @@ with col2:
     with head_col2:
         if last_update_str:
             st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: 0.6rem; margin-bottom: 0;'>Data updated: <b>{last_update_str}</b></p>", unsafe_allow_html=True)
-    df_future = df[(df['match_result'].isna()) & (df['league'] == 'Premier League')].copy()
+    threshold = pd.Timestamp.now() - pd.Timedelta(hours=48)
+    df_future = df[
+        (df['league'] == 'Premier League') & 
+        (df['match_result'].isna() | (df['match_date'] >= threshold))
+    ].copy()
     if not df_future.empty:
         cols = ['match_date', 'home_team', 'away_team', 'home_team_code', 'away_team_code', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
         df_future = df_future[cols].sort_values('match_date')
