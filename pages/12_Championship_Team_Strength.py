@@ -226,61 +226,11 @@ def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=Non
     return styles
 
 
-def soft_slate_blue_gradient(s, min_alpha=0.04, max_alpha=0.55, reverse=False):
+def soft_honey_blue_gradient(s, min_alpha=0.04, max_alpha=0.60, reverse=False):
     if s.empty or s.nunique() <= 1:
         return ['' for _ in s]
 
     ranks = s.rank(ascending=not reverse, method='min')
-    r_min, r_max = ranks.min(), ranks.max()
-    if r_min == r_max:
-        return ['' for _ in s]
-
-    norm_ranks = (ranks - r_min) / (r_max - r_min)
-
-    styles = []
-    for r_val in norm_ranks:
-        if pd.isna(r_val):
-            styles.append('')
-        else:
-            # Modern Slate-Blue / Indigo (Attack)
-            r = int(95  + r_val * (59  - 95))
-            g = int(140 + r_val * (130 - 140))
-            b = int(220 + r_val * (246 - 220))
-            alpha = min_alpha + r_val * (max_alpha - min_alpha)
-            styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
-    return styles
-
-
-def soft_teal_gradient(s, min_alpha=0.04, max_alpha=0.55, reverse=False):
-    if s.empty or s.nunique() <= 1:
-        return ['' for _ in s]
-
-    ranks = s.rank(ascending=not reverse, method='min')
-    r_min, r_max = ranks.min(), ranks.max()
-    if r_min == r_max:
-        return ['' for _ in s]
-
-    norm_ranks = (ranks - r_min) / (r_max - r_min)
-
-    styles = []
-    for r_val in norm_ranks:
-        if pd.isna(r_val):
-            styles.append('')
-        else:
-            # Modern Teal-Mint (Defense)
-            r = int(60  + r_val * (20  - 60))
-            g = int(185 + r_val * (184 - 185))
-            b = int(175 + r_val * (166 - 175))
-            alpha = min_alpha + r_val * (max_alpha - min_alpha)
-            styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
-    return styles
-
-
-def soft_overall_gradient(s, min_alpha=0.04, max_alpha=0.60):
-    if s.empty or s.nunique() <= 1:
-        return ['' for _ in s]
-
-    ranks = s.rank(ascending=True, method='min')
     r_min, r_max = ranks.min(), ranks.max()
     if r_min == r_max:
         return ['' for _ in s]
@@ -294,15 +244,17 @@ def soft_overall_gradient(s, min_alpha=0.04, max_alpha=0.60):
         else:
             if norm_val >= 0.5:
                 t = (norm_val - 0.5) * 2.0
-                r = int(245 + t * (16  - 245))
-                g = int(245 + t * (185 - 245))
-                b = int(245 + t * (129 - 245))
+                # Blue (#00B4FF -> rgb(0, 180, 255))
+                r = int(245 + t * (0   - 245))
+                g = int(245 + t * (180 - 245))
+                b = int(245 + t * (255 - 245))
                 alpha = min_alpha + t * (max_alpha - min_alpha)
             else:
                 t = (0.5 - norm_val) * 2.0
-                r = int(245 + t * (239 - 245))
-                g = int(245 + t * (68  - 245))
-                b = int(245 + t * (68  - 245))
+                # Honey Orange (#F58C19 -> rgb(245, 140, 25))
+                r = int(245 + t * (245 - 245))
+                g = int(245 + t * (140 - 245))
+                b = int(245 + t * (25  - 245))
                 alpha = min_alpha + t * (max_alpha - min_alpha)
             styles.append(f'background-color: rgba({r}, {g}, {b}, {alpha:.2f})')
     return styles
@@ -382,9 +334,9 @@ with col1:
         df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
 
         df_ratings_styled = df_ratings.style\
-            .apply(soft_slate_blue_gradient, subset=['Attack'])\
-            .apply(soft_teal_gradient, reverse=True, subset=['Defense'])\
-            .apply(soft_overall_gradient, subset=['Overall'])\
+            .apply(soft_honey_blue_gradient, subset=['Attack'])\
+            .apply(soft_honey_blue_gradient, reverse=True, subset=['Defense'])\
+            .apply(soft_honey_blue_gradient, subset=['Overall'])\
             .format(precision=2)
 
         st.dataframe(
