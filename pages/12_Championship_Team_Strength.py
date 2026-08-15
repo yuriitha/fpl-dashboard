@@ -85,14 +85,65 @@ except Exception as e:
     st.stop()
 
 
-team_colors = {}
+def get_active_theme():
+    try:
+        if hasattr(st, 'context') and hasattr(st.context, 'theme'):
+            t_obj = st.context.theme
+            if isinstance(t_obj, dict):
+                t_type = t_obj.get('type') or t_obj.get('base')
+                if t_type:
+                    return str(t_type).lower()
+            elif hasattr(t_obj, 'type') and t_obj.type:
+                return str(t_obj.type).lower()
+            elif hasattr(t_obj, 'base') and t_obj.base:
+                return str(t_obj.base).lower()
+    except Exception:
+        pass
+
+    try:
+        base_opt = st.get_option('theme.base')
+        if base_opt:
+            return str(base_opt).lower()
+    except Exception:
+        pass
+
+    return 'dark'
+
+
+team_colors_light = {}
+team_colors_dark = {}
+
+has_light_dark = 'home_color_light' in df.columns and 'home_color_dark' in df.columns
+
+if has_light_dark:
+    for _, row in df[['home_team', 'home_color_light', 'home_color_dark']].dropna(subset=['home_team']).drop_duplicates(subset=['home_team']).iterrows():
+        t = row['home_team']
+        if pd.notna(row['home_color_light']) and t not in team_colors_light:
+            team_colors_light[t] = row['home_color_light']
+        if pd.notna(row['home_color_dark']) and t not in team_colors_dark:
+            team_colors_dark[t] = row['home_color_dark']
+
+    for _, row in df[['away_team', 'away_color_light', 'away_color_dark']].dropna(subset=['away_team']).drop_duplicates(subset=['away_team']).iterrows():
+        t = row['away_team']
+        if pd.notna(row['away_color_light']) and t not in team_colors_light:
+            team_colors_light[t] = row['away_color_light']
+        if pd.notna(row['away_color_dark']) and t not in team_colors_dark:
+            team_colors_dark[t] = row['away_color_dark']
+else:
+    h_col = 'home_color' if 'home_color' in df.columns else None
+    a_col = 'away_color' if 'away_color' in df.columns else None
+    if h_col:
+        for _, row in df[['home_team', h_col]].dropna().drop_duplicates().iterrows():
+            team_colors_light[row['home_team']] = row[h_col]
+            team_colors_dark[row['home_team']] = row[h_col]
+    if a_col:
+        for _, row in df[['away_team', a_col]].dropna().drop_duplicates().iterrows():
+            if row['away_team'] not in team_colors_light: team_colors_light[row['away_team']] = row[a_col]
+            if row['away_team'] not in team_colors_dark: team_colors_dark[row['away_team']] = row[a_col]
+
+is_light = (get_active_theme() == 'light')
+team_colors = team_colors_light if is_light else team_colors_dark
 team_code_to_name = {}
-
-
-for _, row in df[['home_team', 'home_color']].dropna().drop_duplicates().iterrows():
-    if row['home_team'] not in team_colors: team_colors[row['home_team']] = row['home_color']
-for _, row in df[['away_team', 'away_color']].dropna().drop_duplicates().iterrows():
-    if row['away_team'] not in team_colors: team_colors[row['away_team']] = row['away_color']
 
 
 ch_teams_all = df[df['league'] == 'Championship']
@@ -574,6 +625,8 @@ if not df_hist.empty:
                 latest_ratings[t] = 999 if is_defense else -999
 
         sorted_teams = sorted(df['team_name'].unique(), key=lambda t: latest_ratings.get(t, 999 if is_defense else -999), reverse=not is_defense)
+        is_light = (get_active_theme() == 'light')
+        active_team_colors = team_colors_light if is_light else team_colors_dark
 
         for t_name in sorted_teams:
             tdf = df[df['team_name'] == t_name].sort_values('x_pos').copy()
@@ -581,7 +634,6 @@ if not df_hist.empty:
 
             if tdf_clean.empty:
                 continue
-
 
             team_seasons = sorted(tdf['season'].dropna().unique())
             endpoints_list = []
@@ -613,7 +665,7 @@ if not df_hist.empty:
                 if insertions:
                     tdf = pd.concat([tdf, pd.DataFrame(insertions)]).sort_values('x_pos')
 
-            color = team_colors.get(t_name, '#888888')
+            color = active_team_colors.get(t_name, '#888888')
             t_code = tdf['team_code'].dropna().iloc[0] if not tdf['team_code'].dropna().empty else t_name
 
             date_str = tdf['date'].dt.strftime('%d/%m/%Y').fillna('')
