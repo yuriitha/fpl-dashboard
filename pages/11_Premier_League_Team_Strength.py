@@ -261,7 +261,7 @@ light_blues = mcolors.LinearSegmentedColormap.from_list("LightBlues", ["#ffffff"
 honey_blue = mcolors.LinearSegmentedColormap.from_list("HoneyBlue", ["#F58C19", "#ffffff", "#00B4FF"])
 
 
-col1, col2 = st.columns([0.35, 0.65])
+col1, col2 = st.columns([0.30, 0.70])
 
 
 with col1:
@@ -403,17 +403,33 @@ with col2:
         df_future['score'] = df_future['match_result'].apply(
             lambda x: str(x).strip().split()[0] if pd.notna(x) and str(x).strip() and str(x).strip().lower() not in ('none', 'nan') else " "
         )
-        cols = ['match_date', 'home_team', 'away_team', 'score', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta']
+        if 'home_cs_odds' not in df_future.columns or df_future['home_cs_odds'].isna().all():
+            df_future['home_cs_odds'] = np.exp(-df_future['away_xg_odds']) * 100
+        else:
+            df_future['home_cs_odds'] = df_future['home_cs_odds'].fillna(np.exp(-df_future['away_xg_odds']) * 100)
+
+        if 'away_cs_odds' not in df_future.columns or df_future['away_cs_odds'].isna().all():
+            df_future['away_cs_odds'] = np.exp(-df_future['home_xg_odds']) * 100
+        else:
+            df_future['away_cs_odds'] = df_future['away_cs_odds'].fillna(np.exp(-df_future['home_xg_odds']) * 100)
+
+        cols = ['match_date', 'home_team', 'away_team', 'score', 'home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds', 'home_delta', 'away_delta', 'home_cs_odds', 'away_cs_odds']
         df_future = df_future[cols].sort_values('match_date')
 
         xg_cols = ['home_xg', 'away_xg', 'home_xg_odds', 'away_xg_odds']
         xg_min = df_future[xg_cols].min().min()
         xg_max = df_future[xg_cols].max().max()
 
+        cs_cols = ['home_cs_odds', 'away_cs_odds']
+        cs_min = df_future[cs_cols].min().min()
+        cs_max = df_future[cs_cols].max().max()
+
         df_future_styled = df_future.style\
             .apply(soft_gradient, cmap_name=light_blues, alpha=0.75, fixed_min=xg_min, fixed_max=xg_max, transparent_at='min', power=0.6, subset=xg_cols)\
             .apply(soft_gradient, cmap_name=honey_blue, alpha=0.75, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta'])\
-            .format(precision=2)
+            .apply(soft_gradient, cmap_name=light_blues, alpha=0.75, fixed_min=cs_min, fixed_max=cs_max, transparent_at='min', power=0.6, subset=cs_cols)\
+            .format(precision=2)\
+            .format(precision=1, subset=cs_cols)
 
         # Smart widths for df_future
         base_widths_matches = {}
@@ -432,6 +448,8 @@ with col2:
             elif c == 'score':
                 base_widths_matches[c] = 45
             elif 'delta' in c:
+                base_widths_matches[c] = 48
+            elif 'cs' in c:
                 base_widths_matches[c] = 48
             else:
                 base_widths_matches[c] = 52
@@ -471,6 +489,8 @@ with col2:
             'away_xg_odds': st.column_config.NumberColumn("Odds xG (A)", format="%.2f", width=widths_matches['away_xg_odds']),
             'home_delta':   st.column_config.NumberColumn("Delta (H)", format="%.2f", width=widths_matches['home_delta']),
             'away_delta':   st.column_config.NumberColumn("Delta (A)", format="%.2f", width=widths_matches['away_delta']),
+            'home_cs_odds': st.column_config.NumberColumn("CS (H)", format="%.1f", width=widths_matches['home_cs_odds']),
+            'away_cs_odds': st.column_config.NumberColumn("CS (A)", format="%.1f", width=widths_matches['away_cs_odds']),
         }
 
         st.dataframe(
