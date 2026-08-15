@@ -581,10 +581,21 @@ if not df_hist.empty:
                 continue
 
 
-            next_x = tdf['x_pos'].shift(-1)
-            is_end = (next_x - tdf['x_pos'] > 1.5) | next_x.isna()
-            endpoints = tdf[is_end]
+            team_seasons = sorted(tdf['season'].dropna().unique())
+            endpoints_list = []
+            for s in team_seasons:
+                if s not in selected_seasons:
+                    continue
+                s_idx = selected_seasons.index(s)
+                is_last_selected_season = (s_idx == len(selected_seasons) - 1)
+                next_selected_season = selected_seasons[s_idx + 1] if not is_last_selected_season else None
 
+                if is_last_selected_season or (next_selected_season not in team_seasons):
+                    s_clean = tdf_clean[tdf_clean['season'] == s]
+                    if not s_clean.empty:
+                        endpoints_list.append(s_clean.iloc[-1])
+
+            endpoints = pd.DataFrame(endpoints_list) if endpoints_list else pd.DataFrame()
 
             season_changed = (tdf['season'] != tdf['season'].shift(1)) & tdf['season'].shift(1).notna()
             gap_occurred = (tdf['x_pos'].diff() > 1.5)
@@ -617,7 +628,6 @@ if not df_hist.empty:
                 hovertemplate=f"<b>{t_code}</b> (%{{customdata[0]}})<br>Rating: %{{y:.3f}} <extra>%{{customdata[2]}}</extra>",
                 showlegend=False
             ))
-
 
             for _, ep in endpoints.iterrows():
                 if pd.notna(ep[y_col]):
