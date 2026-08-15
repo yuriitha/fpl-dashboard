@@ -87,11 +87,27 @@ except Exception as e:
 
 def get_active_theme():
     try:
+        if hasattr(st, 'context') and hasattr(st.context, 'cookies'):
+            c_theme = st.context.cookies.get('app_theme')
+            if c_theme and str(c_theme).lower() in ['light', 'dark']:
+                return str(c_theme).lower()
+    except Exception:
+        pass
+
+    try:
+        if hasattr(st, 'query_params'):
+            q_theme = st.query_params.get('theme')
+            if q_theme and str(q_theme).lower() in ['light', 'dark']:
+                return str(q_theme).lower()
+    except Exception:
+        pass
+
+    try:
         if hasattr(st, 'context') and hasattr(st.context, 'theme'):
             t_obj = st.context.theme
             if isinstance(t_obj, dict):
                 t_type = t_obj.get('type') or t_obj.get('base')
-                if t_type:
+                if t_type and str(t_type).lower() in ['light', 'dark']:
                     return str(t_type).lower()
             elif hasattr(t_obj, 'type') and t_obj.type:
                 return str(t_obj.type).lower()
@@ -102,7 +118,7 @@ def get_active_theme():
 
     try:
         base_opt = st.get_option('theme.base')
-        if base_opt:
+        if base_opt and str(base_opt).lower() in ['light', 'dark']:
             return str(base_opt).lower()
     except Exception:
         pass
@@ -777,25 +793,16 @@ if not df_hist.empty:
     st.plotly_chart(create_chart(df_hist, 'total', "Overall Rating (Attack - Defense)"), width="stretch")
     st.plotly_chart(create_chart(df_hist, 'att', "Attack Rating"), width="stretch")
     st.plotly_chart(create_chart(df_hist, 'def', "Defense Rating"), width="stretch")
-
-    light_map = {code: team_colors_light.get(name, team_colors_dark.get(name, '#888888')) for code, name in team_code_to_name.items()}
-    dark_map = {code: team_colors_dark.get(name, team_colors_light.get(name, '#888888')) for code, name in team_code_to_name.items()}
-    for name, color in team_colors_light.items(): light_map[name] = color
-    for name, color in team_colors_dark.items(): dark_map[name] = color
-    light_map_json = json.dumps(light_map)
-    dark_map_json = json.dumps(dark_map)
-
-    js_hover_sorter = f"""
+    js_hover_sorter = f"""
     <script>
     (function() {{
-        var teamColorsLight = {light_map_json};
-        var teamColorsDark = {dark_map_json};
+        var pythonRenderedTheme = "{'light' if is_light else 'dark'}";
 
         function getDetectedTheme() {{
             try {{
                 var doc = window.parent.document;
                 var app = doc.querySelector('.stApp') || doc.body;
-                if (!app) return 'dark';
+                if (!app) return pythonRenderedTheme;
 
                 var bg = window.getComputedStyle(app).backgroundColor;
                 if (bg) {{
@@ -809,76 +816,34 @@ if not df_hist.empty:
                     }}
                 }}
             }} catch(e) {{}}
-            return 'dark';
+            return pythonRenderedTheme;
         }}
 
-        function updateChartColors() {{
+        function checkThemeSync() {{
             try {{
-                var doc = window.parent.document;
                 var currentTheme = getDetectedTheme();
-                var colorsMap = (currentTheme === 'light') ? teamColorsLight : teamColorsDark;
+                var lastKnown = sessionStorage.getItem('fpl_active_theme');
 
-                var chartContainers = doc.querySelectorAll('.js-plotly-plot');
-                chartContainers.forEach(function(plotEl) {{
-                    if (!plotEl.data || !plotEl.layout) return;
+                document.cookie = "app_theme=" + currentTheme + "; path=/; max-age=31536000";
 
-                    var plotlyGlobal = window.parent.Plotly || window.Plotly;
-                    var needsTraceUpdate = false;
-                    var newColors = [];
-
-                    var svgTraces = plotEl.querySelectorAll('.scatterlayer .trace');
-
-                    plotEl.data.forEach(function(trace, idx) {{
-                        var c = colorsMap[trace.name] || (trace.line ? trace.line.color : '#888888');
-                        newColors.push(c);
-                        if (trace.line && trace.line.color !== c) {{
-                            trace.line.color = c;
-                            needsTraceUpdate = true;
-                        }}
-                        if (svgTraces[idx]) {{
-                            var linePath = svgTraces[idx].querySelector('path.js-line') || svgTraces[idx].querySelector('path');
-                            if (linePath && linePath.style.stroke !== c) {{
-                                linePath.style.stroke = c;
-                            }}
-                        }}
-                    }});
-
-                    var svgAnnotations = plotEl.querySelectorAll('.infolayer .annotation text, g.annotation text, g.annotation-text text');
-                    svgAnnotations.forEach(function(tNode) {{
-                        var code = (tNode.textContent || '').trim();
-                        if (colorsMap[code] && tNode.style.fill !== colorsMap[code]) {{
-                            tNode.style.fill = colorsMap[code];
-                        }}
-                    }});
-
-                    var needsAnnUpdate = false;
-                    if (plotEl.layout.annotations) {{
-                        plotEl.layout.annotations.forEach(function(ann) {{
-                            var annCode = (ann.text || '').trim();
-                            if (colorsMap[annCode]) {{
-                                var targetCol = colorsMap[annCode];
-                                if (!ann.font || ann.font.color !== targetCol) {{
-                                    ann.font = Object.assign({{}}, ann.font || {{}}, {{ color: targetCol }});
-                                    needsAnnUpdate = true;
-                                }}
-                            }}
-                        }});
+                if (!lastKnown) {{
+                    sessionStorage.setItem('fpl_active_theme', currentTheme);
+                    if (currentTheme !== pythonRenderedTheme) {{
+                        window.parent.location.reload();
                     }}
-
-                    if ((needsTraceUpdate || needsAnnUpdate) && plotlyGlobal) {{
-                        try {{
-                            if (needsTraceUpdate) plotlyGlobal.restyle(plotEl, {{ 'line.color': newColors }});
-                            if (needsAnnUpdate) plotlyGlobal.relayout(plotEl, {{ annotations: plotEl.layout.annotations }});
-                        }} catch(err) {{}}
-                    }}
-                }});
+                }} else if (currentTheme !== lastKnown) {{
+                    sessionStorage.setItem('fpl_active_theme', currentTheme);
+                    window.parent.location.reload();
+                }}
             }} catch(e) {{}}
         }}
+
+        checkThemeSync();
 
         try {{
             var doc = window.parent.document;
             var obs = new MutationObserver(function() {{
-                updateChartColors();
+                checkThemeSync();
             }});
             obs.observe(doc.documentElement, {{ attributes: true, attributeFilter: ['data-theme', 'class', 'style'] }});
             obs.observe(doc.body, {{ attributes: true, attributeFilter: ['data-theme', 'class', 'style'] }});
@@ -887,7 +852,7 @@ if not df_hist.empty:
 
             var mql = window.parent.matchMedia('(prefers-color-scheme: dark)');
             if (mql && mql.addEventListener) {{
-                mql.addEventListener('change', updateChartColors);
+                mql.addEventListener('change', checkThemeSync);
             }}
         }} catch(e) {{}}
 
@@ -980,8 +945,8 @@ if not df_hist.empty:
 
         setInterval(function() {{
             sortHoverBoxes();
-            updateChartColors();
-        }}, 30);
+            checkThemeSync();
+        }}, 50);
     }})();
     </script>
     """
