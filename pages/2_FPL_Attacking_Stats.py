@@ -123,7 +123,7 @@ else:
 def _get_max_sane(col, default=1.0):
     return float(sane_df[col].max()) if (col in sane_df.columns and not sane_df.empty) else _get_max(col, default)
 
-rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna() if 'av_rating_alt' in df.columns else pd.Series(dtype=float)
+rating_series = df[df['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df.columns else pd.Series(dtype=float)
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
@@ -218,7 +218,7 @@ def get_available(exclude_key=None):
         'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
         'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
         'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
-        'f_rating_as':   ('av_rating_alt',         DEFAULTS['f_rating_as']),
+        'f_rating_as':   ('av_rating',             DEFAULTS['f_rating_as']),
         'f_selected_as': ('selected_by_percent',   DEFAULTS['f_selected_as']),
         'f_top100k_as':  ('top_100k',              DEFAULTS['f_top100k_as']),
         'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity_as']),
@@ -269,7 +269,7 @@ def get_base_df(exclude_key=None):
         'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
         'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
         'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
-        'f_rating_as':   ('av_rating_alt',         DEFAULTS['f_rating_as']),
+        'f_rating_as':   ('av_rating',             DEFAULTS['f_rating_as']),
         'f_selected_as': ('selected_by_percent',   DEFAULTS['f_selected_as']),
         'f_top100k_as':  ('top_100k',              DEFAULTS['f_top100k_as']),
         'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity_as']),
@@ -403,7 +403,7 @@ def inject_sidebar_layout(inactive_all: list):
 auto_update_slider('f_cost_as',     'now_cost',            float)
 auto_update_slider('f_matches_as',  'matches_played',      int)
 auto_update_slider('f_started_as',  'matches_started',     int)
-auto_update_slider('f_rating_as',   'av_rating_alt',       float, only_positive=True)
+auto_update_slider('f_rating_as',   'av_rating',           float, only_positive=True)
 auto_update_slider('f_avg_mins_as', 'avg_mins',            float)
 auto_update_slider('f_60min_as',    '60_min',              float)
 auto_update_slider('f_selected_as', 'selected_by_percent', float)
@@ -513,7 +513,7 @@ mask = (
 )
 
 filter_vars = [
-    ('av_rating_alt',         f_rating,   GB['f_rating_as']),
+    ('av_rating',             f_rating,   GB['f_rating_as']),
     ('matches_played',        f_matches,  GB['f_matches_as']),
     ('matches_started',       f_started,  GB['f_started_as']),
     ('60_min',                f_60min,    GB['f_60min_as']),
@@ -547,7 +547,7 @@ display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
     "selected_by_percent", "min_played", "matches_played", "matches_started",
     "goals_scored", "assists",
-    "avg_mins", "60_min", "av_rating_alt",
+    "avg_mins", "60_min", "av_rating",
     "G_90", "xG_90", "xGoT_90", "A_90", "xA_90", "xGI_norm",
     "Sh_90", "ShoT_90", "KP_90", "Cross_90", "Pass_90", "Pass_pct"
 ]
@@ -655,7 +655,7 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
 
 
 styled_df = filtered_df[existing_cols].style\
-    .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
+    .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating', '60_min'] if c in existing_cols])\
     .apply(soft_green_gradient, max_cap=0.90, subset=[c for c in ['G_90', 'xG_90', 'xGoT_90', 'A_90', 'xA_90', 'xGI_norm'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['Sh_90', 'ShoT_90', 'KP_90', 'Cross_90', 'Pass_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)\
@@ -699,7 +699,7 @@ format_map = {
     "assists":             ("NumberColumn", "%d", "A"),
     "avg_mins":            ("NumberColumn", "%d", "AvMins"),
     "60_min":              ("NumberColumn", "%.1f", "60m %"),
-    "av_rating_alt":       ("NumberColumn", "%.2f", "RatA"),
+    "av_rating":           ("NumberColumn", "%.2f", "Rat"),
     "G_90":                ("NumberColumn", None, "G/90"),
     "xG_90":               ("NumberColumn", None, "xG/90"),
     "xGoT_90":             ("NumberColumn", None, "xGoT/90"),

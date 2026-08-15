@@ -55,8 +55,8 @@ st.markdown("""
 def load_data():
     url = "http://198.244.151.163:8000/fpl_players"
     df = pd.read_parquet(url)
-    if 'av_rating_alt' in df.columns:
-        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
+    if 'av_rating' in df.columns:
+        df['av_rating'] = pd.to_numeric(df['av_rating'], errors='coerce').fillna(0.0)
 
 
     if 'clean_sheets' in df.columns and 'min_played' in df.columns:
@@ -140,7 +140,7 @@ else:
 def _get_max_sane(col, default=1.0):
     return float(sane_df[col].max()) if (col in sane_df.columns and not sane_df.empty) else _get_max(col, default)
 
-rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna() if 'av_rating_alt' in df.columns else pd.Series(dtype=float)
+rating_series = df[df['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df.columns else pd.Series(dtype=float)
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
@@ -238,7 +238,7 @@ def get_available(exclude_key=None):
         'f_60min_ds':    ('60_min',                DEFAULTS['f_60min_ds']),
         'f_cost_ds':     ('now_cost',              DEFAULTS['f_cost_ds']),
         'f_avg_mins_ds': ('avg_mins',              DEFAULTS['f_avg_mins_ds']),
-        'f_rating_ds':   ('av_rating_alt',         DEFAULTS['f_rating_ds']),
+        'f_rating_ds':   ('av_rating',             DEFAULTS['f_rating_ds']),
         'f_selected_ds': ('selected_by_percent',   DEFAULTS['f_selected_ds']),
         'f_activity_ds': ('transfer_activity_pct', DEFAULTS['f_activity_ds']),
         'f_cs_ds':       ('CS_90',                 DEFAULTS['f_cs_ds']),
@@ -287,7 +287,7 @@ def get_base_df(exclude_key=None):
         'f_60min_ds':    ('60_min',                DEFAULTS['f_60min_ds']),
         'f_cost_ds':     ('now_cost',              DEFAULTS['f_cost_ds']),
         'f_avg_mins_ds': ('avg_mins',              DEFAULTS['f_avg_mins_ds']),
-        'f_rating_ds':   ('av_rating_alt',         DEFAULTS['f_rating_ds']),
+        'f_rating_ds':   ('av_rating',             DEFAULTS['f_rating_ds']),
         'f_selected_ds': ('selected_by_percent',   DEFAULTS['f_selected_ds']),
         'f_activity_ds': ('transfer_activity_pct', DEFAULTS['f_activity_ds']),
         'f_cs_ds':       ('CS_90',                 DEFAULTS['f_cs_ds']),
@@ -422,7 +422,7 @@ def inject_sidebar_layout(inactive_all: list):
 auto_update_slider('f_cost_ds',     'now_cost',            float)
 auto_update_slider('f_matches_ds',  'matches_played',      int)
 auto_update_slider('f_started_ds',  'matches_started',     int)
-auto_update_slider('f_rating_ds',   'av_rating_alt',       float, only_positive=True)
+auto_update_slider('f_rating_ds',   'av_rating',           float, only_positive=True)
 auto_update_slider('f_avg_mins_ds', 'avg_mins',            float)
 auto_update_slider('f_60min_ds',    '60_min',              float)
 auto_update_slider('f_selected_ds', 'selected_by_percent', float)
@@ -534,7 +534,7 @@ mask = (
 )
 
 filter_vars = [
-    ('av_rating_alt',         f_rating,   GB['f_rating_ds']),
+    ('av_rating',             f_rating,   GB['f_rating_ds']),
     ('matches_played',        f_matches,  GB['f_matches_ds']),
     ('matches_started',       f_started,  GB['f_started_ds']),
     ('60_min',                f_60min,    GB['f_60min_ds']),
@@ -568,7 +568,7 @@ if sort_cols:
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "M Price",
     "selected_by_percent", "min_played", "matches_played", "matches_started",
-    "avg_mins", "60_min", "av_rating_alt",
+    "avg_mins", "60_min", "av_rating",
     "CS_90",
     "DC_90", "Clr_90", "Blk_90", "Int_90", "Tck_90", "Rec_90", "Aerial_pct", "Duel_pct",
     "Pass_90", "Pass_pct", "yellow_cards", "YC_90", "red_cards", "RC_90"
@@ -679,7 +679,7 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None):
 
 
 styled_df = filtered_df[existing_cols].style\
-    .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating_alt', '60_min'] if c in existing_cols])\
+    .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating', '60_min'] if c in existing_cols])\
     .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'DC_90', 'Clr_90', 'Blk_90', 'Int_90', 'Tck_90', 'Rec_90', 'Aerial_pct', 'Duel_pct'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['Pass_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)\
@@ -721,7 +721,7 @@ format_map = {
     "matches_started":     ("NumberColumn", None, "GS"),
     "avg_mins":            ("NumberColumn", "%d", "AvMins"),
     "60_min":              ("NumberColumn", "%.1f", "60m %"),
-    "av_rating_alt":       ("NumberColumn", "%.2f", "RatA"),
+    "av_rating":           ("NumberColumn", "%.2f", "Rat"),
     "CS_90":               ("NumberColumn", "%.2f", "CS/90"),
     "DC_90":               ("NumberColumn", "%.2f", "DC/90"),
     "Clr_90":              ("NumberColumn", "%.2f", "Clr/90"),

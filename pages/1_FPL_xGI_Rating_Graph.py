@@ -62,13 +62,13 @@ st.markdown("""
 def load_data():
     url = "http://198.244.151.163:8000/fpl_players"
     df = pd.read_parquet(url)
-    if 'av_rating_alt' in df.columns:
-        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
+    if 'av_rating' in df.columns:
+        df['av_rating'] = pd.to_numeric(df['av_rating'], errors='coerce').fillna(0.0)
     sort_cols = [c for c in ['now_cost', 'M Price'] if c in df.columns]
     if sort_cols:
         df = df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
-    for h2_col in ['av_rating_alt_h2', 'xGI_norm_h2', 'avg_mins_h2', '60_min_h2', 'matches_played_h2']:
+    for h2_col in ['av_rating_h2', 'xGI_norm_h2', 'avg_mins_h2', '60_min_h2', 'matches_played_h2']:
         if h2_col not in df.columns:
             base_col = h2_col.replace('_h2', '')
             df[h2_col] = df[base_col] if base_col in df.columns else 0.0
@@ -107,7 +107,7 @@ others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
 if others: pl_lines.append(others)
 all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
-rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna()
+rating_series = df[df['av_rating'] > 0]['av_rating'].dropna()
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty and rating_series.max() > 0 else 10.0
 
@@ -180,7 +180,7 @@ def get_available(exclude_key=None):
         avail = [p for p in line if p in actual_pl_pos]
         cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_gr_{i}', avail))
 
-    mask = pd.Series([True] * len(df), index=df.index) & (df['av_rating_alt'] > 0)
+    mask = pd.Series([True] * len(df), index=df.index) & (df['av_rating'] > 0)
     if exclude_key != 'pills_pos_gr':   mask &= df['element_type'].isin(cv_pos)
     if exclude_key != 'pills_teams_gr': mask &= df['team_short_name'].isin(cv_teams)
     if exclude_key != 'pills_pl_gr':
@@ -202,7 +202,7 @@ def get_available(exclude_key=None):
     if exclude_key != 'f_activity_gr':
         mask &= (df['transfer_activity_pct'] >= cv_activity[0]) & (df['transfer_activity_pct'] <= cv_activity[1])
     if exclude_key != 'f_rating_gr':
-        mask &= (df['av_rating_alt'] >= cv_rating[0]) & (df['av_rating_alt'] <= cv_rating[1])
+        mask &= (df['av_rating'] >= cv_rating[0]) & (df['av_rating'] <= cv_rating[1])
     if exclude_key != 'search_gr':
         mask &= df['full_name'].str.contains(cv_search, case=False, na=False)
     return df[mask]
@@ -218,7 +218,7 @@ def get_base_df(exclude_key=None):
         cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_gr_{i}', avail))
 
     mask = (
-        (df['av_rating_alt'] > 0) &
+        (df['av_rating'] > 0) &
         df['element_type'].isin(cv_pos) &
         df['team_short_name'].isin(cv_teams) &
         df['full_name'].str.contains(cv_search, case=False, na=False)
@@ -236,7 +236,7 @@ def get_base_df(exclude_key=None):
         'f_avg_mins_gr': ('avg_mins',            DEFAULTS['f_avg_mins']),
         'f_selected_gr': ('selected_by_percent', DEFAULTS['f_selected']),
         'f_activity_gr': ('transfer_activity_pct', DEFAULTS['f_activity']),
-        'f_rating_gr':   ('av_rating_alt',       DEFAULTS['f_rating']),
+        'f_rating_gr':   ('av_rating',           DEFAULTS['f_rating']),
     }
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key:
@@ -384,7 +384,7 @@ def inject_sidebar_layout(inactive_all: list):
 
 auto_update_slider('f_cost_gr',     'f_cost',     'now_cost',            float)
 auto_update_slider('f_matches_gr',  'f_matches',  'matches_played',      int)
-auto_update_slider('f_rating_gr',   'f_rating',   'av_rating_alt',       float)
+auto_update_slider('f_rating_gr',   'f_rating',   'av_rating',           float)
 auto_update_slider('f_avg_mins_gr', 'f_avg_mins', 'avg_mins',            float)
 auto_update_slider('f_60min_gr',    'f_60min',    '60_min',              float)
 auto_update_slider('f_selected_gr', 'f_selected', 'selected_by_percent', float)
@@ -484,12 +484,12 @@ else:
     league_mask = pd.Series([True] * len(df), index=df.index)
 
 mask = (
-    (df['av_rating_alt'] > 0) &
+    (df['av_rating'] > 0) &
     df['element_type'].isin(selected_positions if selected_positions else []) &
     df['team_short_name'].isin(selected_teams  if selected_teams  else []) &
     play_pos_mask &
     league_mask &
-    (df['av_rating_alt']       >= f_rating[0])   & (df['av_rating_alt']       <= f_rating[1]) &
+    (df['av_rating']           >= f_rating[0])   & (df['av_rating']           <= f_rating[1]) &
     (df['matches_played']      >= f_matches[0])  & (df['matches_played']      <= f_matches[1]) &
     (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
     (df['now_cost']            >= f_cost[0])     & (df['now_cost']            <= f_cost[1]) &
@@ -566,7 +566,7 @@ if not plot_df.empty:
 
     plot_df['size_for_plot'] = (plot_df['combined_rank'] ** 2) * 100 + 10
 
-    plot_df['rating_sqrt'] = plot_df['av_rating_alt'] ** 0.5
+    plot_df['rating_sqrt'] = plot_df['av_rating'] ** 0.5
     plot_df['xGI_sqrt'] = plot_df['xGI_norm'] ** 0.5
 
     plot_df['label_text'] = get_smart_labels(plot_df, 'rating_sqrt', 'xGI_sqrt', 'size_for_plot', 'web_name', 0.040)
@@ -589,7 +589,7 @@ if not plot_df.empty:
             "team_short_name": True,
             "league_status": True,
             "now_cost": ":.1f",
-            "av_rating_alt": ":.2f",
+            "av_rating": ":.2f",
             "xGI_norm": ":.2f",
             "avg_mins": ":.0f",
             "selected_by_percent": ":.1f",
@@ -609,7 +609,7 @@ if not plot_df.empty:
             "team_short_name": "Team",
             "league_status": "League Origin",
             "now_cost": "Price",
-            "av_rating_alt": "Rating",
+            "av_rating": "Rating",
             "xGI_norm": "xGI",
             "avg_mins": "AvMins",
             "selected_by_percent": "Sel %"
@@ -626,7 +626,7 @@ if not plot_df.empty:
 
 
     r_start = 6.55
-    r_min, r_max = plot_df['av_rating_alt'].min(), plot_df['av_rating_alt'].max()
+    r_min, r_max = plot_df['av_rating'].min(), plot_df['av_rating'].max()
     if pd.isna(r_max) or r_max < r_start:
         r_max = 10.0
     r_end = np.ceil(r_max * 10) / 10
@@ -681,7 +681,7 @@ if not plot_df.empty:
     st.plotly_chart(fig, width="stretch")
 
 
-    has_h2_rating = (df['av_rating_alt_h2'] > 0) if 'av_rating_alt_h2' in df.columns else (df['av_rating_alt'] > 0)
+    has_h2_rating = (df['av_rating_h2'] > 0) if 'av_rating_h2' in df.columns else (df['av_rating'] > 0)
     mask_h2 = mask & has_h2_rating
     plot_df_h2 = df[mask_h2].copy()
 
@@ -691,7 +691,7 @@ if not plot_df.empty:
         plot_df_h2['combined_rank'] = (plot_df_h2['p_selected'] + plot_df_h2['p_avgmins']) / 2
         plot_df_h2['size_for_plot'] = (plot_df_h2['combined_rank'] ** 2) * 100 + 10
 
-        plot_df_h2['rating_sqrt'] = plot_df_h2['av_rating_alt_h2'] ** 0.5
+        plot_df_h2['rating_sqrt'] = plot_df_h2['av_rating_h2'] ** 0.5
         plot_df_h2['xGI_sqrt'] = plot_df_h2['xGI_norm_h2'] ** 0.5
 
         plot_df_h2['label_text'] = get_smart_labels(plot_df_h2, 'rating_sqrt', 'xGI_sqrt', 'size_for_plot', 'web_name', 0.040)
@@ -714,7 +714,7 @@ if not plot_df.empty:
                 "team_short_name": True,
                 "league_status": True,
                 "now_cost": ":.1f",
-                "av_rating_alt_h2": ":.2f",
+                "av_rating_h2": ":.2f",
                 "xGI_norm_h2": ":.2f",
                 "avg_mins_h2": ":.0f",
                 "top_100k": ":.1f",
@@ -734,7 +734,7 @@ if not plot_df.empty:
                 "team_short_name": "Team",
                 "league_status": "League Origin",
                 "now_cost": "Price",
-                "av_rating_alt_h2": "Rating (6M)",
+                "av_rating_h2": "Rating (6M)",
                 "xGI_norm_h2": "xGI (6M)",
                 "avg_mins_h2": "AvMins (6M)",
                 "top_100k": "Top 100K %"
@@ -750,7 +750,7 @@ if not plot_df.empty:
         )
 
         r_start2 = 6.55
-        r_min2, r_max2 = plot_df_h2['av_rating_alt_h2'].min(), plot_df_h2['av_rating_alt_h2'].max()
+        r_min2, r_max2 = plot_df_h2['av_rating_h2'].min(), plot_df_h2['av_rating_h2'].max()
         if pd.isna(r_max2) or r_max2 < r_start2:
             r_max2 = 10.0
         r_end2 = np.ceil(r_max2 * 10) / 10

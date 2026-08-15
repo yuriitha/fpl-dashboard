@@ -79,8 +79,8 @@ def load_data():
         else:
             df[col] = 0.0
 
-    if 'av_rating_alt' in df.columns:
-        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
+    if 'av_rating' in df.columns:
+        df['av_rating'] = pd.to_numeric(df['av_rating'], errors='coerce').fillna(0.0)
 
     sort_cols = [c for c in ['now_cost'] if c in df.columns]
     if sort_cols:
@@ -139,7 +139,7 @@ def _get_max_sane(col, default=1.0):
 def _get_min_sane(col, default=0.0):
     return float(sane_df[col].min()) if (col in sane_df.columns and not sane_df.empty) else _get_min(col, default)
 
-rating_series = df[df['av_rating_alt'] > 0]['av_rating_alt'].dropna() if 'av_rating_alt' in df.columns else pd.Series(dtype=float)
+rating_series = df[df['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df.columns else pd.Series(dtype=float)
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
@@ -241,7 +241,7 @@ def get_available(exclude_key=None):
         'f_mins1y_form':   ('min_played_1y',         DEFAULTS['f_mins1y_form']),
         'f_mins3y_form':   ('min_played_3y',         DEFAULTS['f_mins3y_form']),
         'f_cost_form':     ('now_cost',              DEFAULTS['f_cost_form']),
-        'f_rating_form':   ('av_rating_alt',         DEFAULTS['f_rating_form']),
+        'f_rating_form':   ('av_rating',             DEFAULTS['f_rating_form']),
         'f_selected_form': ('selected_by_percent',   DEFAULTS['f_selected_form']),
         'f_activity_form': ('transfer_activity_pct', DEFAULTS['f_activity_form']),
         'f_g1y_form':      ('pct_goals_1y',          DEFAULTS['f_g1y_form']),
@@ -291,7 +291,7 @@ def get_base_df(exclude_key=None):
         'f_mins1y_form':   ('min_played_1y',         DEFAULTS['f_mins1y_form']),
         'f_mins3y_form':   ('min_played_3y',         DEFAULTS['f_mins3y_form']),
         'f_cost_form':     ('now_cost',              DEFAULTS['f_cost_form']),
-        'f_rating_form':   ('av_rating_alt',         DEFAULTS['f_rating_form']),
+        'f_rating_form':   ('av_rating',             DEFAULTS['f_rating_form']),
         'f_selected_form': ('selected_by_percent',   DEFAULTS['f_selected_form']),
         'f_activity_form': ('transfer_activity_pct', DEFAULTS['f_activity_form']),
         'f_g1y_form':      ('pct_goals_1y',          DEFAULTS['f_g1y_form']),
@@ -424,7 +424,7 @@ def inject_sidebar_layout(inactive_all: list):
 
 auto_update_slider('f_cost_form',     'now_cost',            float)
 auto_update_slider('f_matches_form',  'matches_played',      int)
-auto_update_slider('f_rating_form',   'av_rating_alt',       float, only_positive=True)
+auto_update_slider('f_rating_form',   'av_rating',           float, only_positive=True)
 auto_update_slider('f_mins1y_form',   'min_played_1y',       float)
 auto_update_slider('f_mins3y_form',   'min_played_3y',       float)
 auto_update_slider('f_selected_form', 'selected_by_percent', float)

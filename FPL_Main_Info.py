@@ -45,8 +45,8 @@ st.markdown("""
 def load_data():
     url = "http://198.244.151.163:8000/fpl_players"
     df = pd.read_parquet(url)
-    if 'av_rating_alt' in df.columns:
-        df['av_rating_alt'] = pd.to_numeric(df['av_rating_alt'], errors='coerce').fillna(0.0)
+    if 'av_rating' in df.columns:
+        df['av_rating'] = pd.to_numeric(df['av_rating'], errors='coerce').fillna(0.0)
     sort_cols = [c for c in ['now_cost', 'M Price'] if c in df.columns]
     if sort_cols:
         df = df.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
@@ -76,7 +76,7 @@ display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost",
     "M Price", "Foot", "selected_by_percent", "min_played",
     "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored",
-    "assists", "av_rating", "av_rating_alt", "points_per_game", "transfers_in_event",
+    "assists", "av_rating", "points_per_game", "transfers_in_event",
     "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
 ]
 
@@ -93,7 +93,7 @@ others = sorted([p for p in actual_pl_pos if p not in defined_pl_pos])
 if others: pl_lines.append(others)
 all_pl_pos = [p for line in pl_lines for p in line if p in actual_pl_pos]
 
-rating_series = df['av_rating_alt'].dropna()
+rating_series = df['av_rating'].dropna()
 r_min = 0.0
 r_max = float(rating_series.max()) if not rating_series.empty and rating_series.max() > 0 else 10.0
 
@@ -194,7 +194,7 @@ def get_available(exclude_key=None):
     if exclude_key != 'f_activity':
         mask &= (df['transfer_activity_pct'] >= cv_activity[0]) & (df['transfer_activity_pct'] <= cv_activity[1])
     if exclude_key != 'f_rating':
-        mask &= (df['av_rating_alt'] >= cv_rating[0]) & (df['av_rating_alt'] <= cv_rating[1])
+        mask &= (df['av_rating'] >= cv_rating[0]) & (df['av_rating'] <= cv_rating[1])
     if exclude_key != 'search':
         mask &= df['full_name'].str.contains(cv_search, case=False, na=False)
     return df[mask]
@@ -234,7 +234,7 @@ def get_base_df(exclude_key=None):
         'f_avg_mins': ('avg_mins',            DEFAULTS['f_avg_mins']),
         'f_selected': ('selected_by_percent', DEFAULTS['f_selected']),
         'f_activity': ('transfer_activity_pct', DEFAULTS['f_activity']),
-        'f_rating':   ('av_rating_alt',       DEFAULTS['f_rating']),
+        'f_rating':   ('av_rating',           DEFAULTS['f_rating']),
     }
     for k, (col_name, d) in _slider_cols.items():
         if k != exclude_key:
@@ -385,7 +385,7 @@ def inject_sidebar_layout(inactive_all: list):
 
 auto_update_slider('f_cost',     'now_cost',            float)
 auto_update_slider('f_matches',  'matches_played',      int)
-auto_update_slider('f_rating',   'av_rating_alt',       float)
+auto_update_slider('f_rating',   'av_rating',           float)
 auto_update_slider('f_avg_mins', 'avg_mins',            float)
 auto_update_slider('f_60min',    '60_min',              float)
 auto_update_slider('f_selected', 'selected_by_percent', float)
@@ -470,7 +470,7 @@ mask = (
     df['element_type'].isin(selected_positions if selected_positions else []) &
     df['team_short_name'].isin(selected_teams  if selected_teams  else []) &
     play_pos_mask &
-    (df['av_rating_alt']       >= f_rating[0])   & (df['av_rating_alt']       <= f_rating[1]) &
+    (df['av_rating']           >= f_rating[0])   & (df['av_rating']           <= f_rating[1]) &
     (df['matches_played']      >= f_matches[0])  & (df['matches_played']      <= f_matches[1]) &
     (df['60_min']              >= f_60min[0])    & (df['60_min']              <= f_60min[1]) &
     (df['now_cost']            >= f_cost[0])     & (df['now_cost']            <= f_cost[1]) &
@@ -530,7 +530,6 @@ format_map = {
     "goals_scored":        ("NumberColumn", None, "G"),
     "assists":             ("NumberColumn", None, "A"),
     "av_rating":           ("NumberColumn", "%.2f", "Rat"),
-    "av_rating_alt":       ("NumberColumn", "%.2f", "RatA"),
     "points_per_game":     ("NumberColumn", "%.1f", "PPM"),
     "transfers_in_event":  ("NumberColumn", None, "In"),
     "transfers_out_event": ("NumberColumn", None, "Out"),
