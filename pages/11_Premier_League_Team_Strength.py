@@ -337,18 +337,51 @@ with col1:
             .apply(soft_honey_blue_gradient, subset=['Overall'])\
             .format(precision=2)
 
+        # Smart widths for df_ratings
+        ratings_cols = ['Pos', 'Team', 'Attack', 'Defense', 'Overall']
+        base_widths_ratings = {}
+        for c in ratings_cols:
+            if not df_ratings.empty and c in df_ratings.columns:
+                val_series = df_ratings[c].dropna().astype(str)
+                max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
+            else:
+                max_val_len = 1
+            max_len = max(max_val_len, len(c))
+            bw = max_len * 7.5
+            if c == 'Team':
+                bw = min(bw, 140)
+            elif c == 'Pos':
+                bw = min(bw, 30)
+            else:
+                bw = min(bw, 55)
+            base_widths_ratings[c] = max(bw, 25)
+
+        inv_w_r = {c: 1.0 / (w ** 0.5) for c, w in base_widths_ratings.items()}
+        sum_inv_w_r = sum(inv_w_r.values())
+        BUDGET_RATINGS = 80
+
+        column_config_ratings = {}
+        for c in ratings_cols:
+            bw = base_widths_ratings[c]
+            bonus = (inv_w_r[c] / sum_inv_w_r) * BUDGET_RATINGS
+            calc_w = int(round(bw + bonus))
+            if c == 'Pos':
+                column_config_ratings[c] = st.column_config.NumberColumn("Pos", width=max(calc_w, 35))
+            elif c == 'Team':
+                column_config_ratings[c] = st.column_config.TextColumn("Team", width=max(calc_w, 110))
+            elif c == 'Attack':
+                column_config_ratings[c] = st.column_config.NumberColumn("Attack", format="%.2f", width=max(calc_w, 60))
+            elif c == 'Defense':
+                column_config_ratings[c] = st.column_config.NumberColumn("Defense", format="%.2f", width=max(calc_w, 60))
+            elif c == 'Overall':
+                column_config_ratings[c] = st.column_config.NumberColumn("Overall", format="%.2f", width=max(calc_w, 60))
+
         st.dataframe(
             df_ratings_styled,
             hide_index=True,
             width="stretch",
             height=738,
-            column_config={
-                'Pos': st.column_config.NumberColumn("Pos", width=30),
-                'Team': st.column_config.TextColumn("Team"),
-                'Attack': st.column_config.NumberColumn("Attack", format="%.2f", width=65),
-                'Defense': st.column_config.NumberColumn("Defense", format="%.2f", width=65),
-                'Overall': st.column_config.NumberColumn("Overall", format="%.2f", width=65),
-            }
+            column_config=column_config_ratings
         )
     else:
         st.info("No teams selected.")
@@ -382,23 +415,70 @@ with col2:
             .apply(soft_gradient, cmap_name=honey_blue, alpha=0.75, fixed_min=-0.45, fixed_max=0.45, transparent_at='mid', power=0.6, subset=['home_delta', 'away_delta'])\
             .format(precision=2)
 
+        # Smart widths for df_future
+        base_widths_matches = {}
+        team_max_len = max(
+            int(df_future['home_team'].dropna().astype(str).str.len().max()) if not df_future.empty else 1,
+            int(df_future['away_team'].dropna().astype(str).str.len().max()) if not df_future.empty else 1,
+            len('Home'), len('Away')
+        )
+        team_bw = max(min(team_max_len * 7.5, 130), 85)
+
+        for c in cols:
+            if c in ('home_team', 'away_team'):
+                base_widths_matches[c] = team_bw
+            elif c == 'match_date':
+                base_widths_matches[c] = 105
+            elif c == 'score':
+                base_widths_matches[c] = 45
+            elif 'delta' in c:
+                base_widths_matches[c] = 48
+            else:
+                base_widths_matches[c] = 52
+
+        inv_w_m = {c: 1.0 / (w ** 0.5) for c, w in base_widths_matches.items()}
+        sum_inv_w_m = sum(inv_w_m.values())
+        BUDGET_MATCHES = 160
+
+        widths_matches = {}
+        for c in cols:
+            bw = base_widths_matches[c]
+            bonus = (inv_w_m[c] / sum_inv_w_m) * BUDGET_MATCHES
+            calc_w = int(round(bw + bonus))
+            if c in ('home_team', 'away_team'):
+                calc_w = max(calc_w, 90)
+            elif c == 'match_date':
+                calc_w = max(calc_w, 110)
+            elif c == 'score':
+                calc_w = max(calc_w, 50)
+            else:
+                calc_w = max(calc_w, 55)
+            widths_matches[c] = calc_w
+
+        # Ensure Home and Away have identical widths
+        equal_team_w = max(widths_matches['home_team'], widths_matches['away_team'])
+        widths_matches['home_team'] = equal_team_w
+        widths_matches['away_team'] = equal_team_w
+
+        column_config_matches = {
+            'match_date':   st.column_config.DatetimeColumn("Date", format="DD/MM/YYYY HH:mm", width=widths_matches['match_date']),
+            'home_team':    st.column_config.TextColumn("Home", width=widths_matches['home_team']),
+            'away_team':    st.column_config.TextColumn("Away", width=widths_matches['away_team']),
+            'score':        st.column_config.TextColumn("Score", width=widths_matches['score']),
+            'home_xg':      st.column_config.NumberColumn("Model xG (H)", format="%.2f", width=widths_matches['home_xg']),
+            'away_xg':      st.column_config.NumberColumn("Model xG (A)", format="%.2f", width=widths_matches['away_xg']),
+            'home_xg_odds': st.column_config.NumberColumn("Odds xG (H)", format="%.2f", width=widths_matches['home_xg_odds']),
+            'away_xg_odds': st.column_config.NumberColumn("Odds xG (A)", format="%.2f", width=widths_matches['away_xg_odds']),
+            'home_delta':   st.column_config.NumberColumn("Delta (H)", format="%.2f", width=widths_matches['home_delta']),
+            'away_delta':   st.column_config.NumberColumn("Delta (A)", format="%.2f", width=widths_matches['away_delta']),
+        }
+
         st.dataframe(
             df_future_styled,
             hide_index=True,
             width="stretch",
             height=len(df_future) * 35 + 40,
-            column_config={
-                'match_date': st.column_config.DatetimeColumn("Date", format="DD/MM/YYYY HH:mm"),
-                'home_team': st.column_config.TextColumn("Home"),
-                'away_team': st.column_config.TextColumn("Away"),
-                'score': st.column_config.TextColumn(" ", width=50),
-                'home_xg': st.column_config.NumberColumn("Model xG (H)", format="%.2f", width=50),
-                'away_xg': st.column_config.NumberColumn("Model xG (A)", format="%.2f", width=50),
-                'home_xg_odds': st.column_config.NumberColumn("Odds xG (H)", format="%.2f", width=50),
-                'away_xg_odds': st.column_config.NumberColumn("Odds xG (A)", format="%.2f", width=50),
-                'home_delta': st.column_config.NumberColumn("Delta (H)", format="%.2f", width=50),
-                'away_delta': st.column_config.NumberColumn("Delta (A)", format="%.2f", width=50),
-            }
+            column_config=column_config_matches
         )
     else:
         st.info("No current matches found.")
