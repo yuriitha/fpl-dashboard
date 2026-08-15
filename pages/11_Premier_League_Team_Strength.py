@@ -777,99 +777,185 @@ if not df_hist.empty:
     st.plotly_chart(create_chart(df_hist, 'att', "Attack Rating"), width="stretch")
     st.plotly_chart(create_chart(df_hist, 'def', "Defense Rating"), width="stretch")
 
-    js_hover_sorter = r"""
+    light_map = {code: team_colors_light.get(name, team_colors_dark.get(name, '#888888')) for code, name in team_code_to_name.items()}
+    dark_map = {code: team_colors_dark.get(name, team_colors_light.get(name, '#888888')) for code, name in team_code_to_name.items()}
+    for name, color in team_colors_light.items(): light_map[name] = color
+    for name, color in team_colors_dark.items(): dark_map[name] = color
+    light_map_json = json.dumps(light_map)
+    dark_map_json = json.dumps(dark_map)
+
+    js_hover_sorter = f"""
     <script>
-    (function() {
-        function sortHoverBoxes() {
-            try {
+    (function() {{
+        var teamColorsLight = {light_map_json};
+        var teamColorsDark = {dark_map_json};
+
+        function getDetectedTheme() {{
+            try {{
+                var doc = window.parent.document;
+                var app = doc.querySelector('.stApp') || doc.body;
+                if (!app) return 'dark';
+
+                var bg = window.getComputedStyle(app).backgroundColor;
+                if (bg) {{
+                    var m = bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+                    if (m) {{
+                        var r = parseInt(m[1], 10);
+                        var g = parseInt(m[2], 10);
+                        var b = parseInt(m[3], 10);
+                        var lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                        return lum > 140 ? 'light' : 'dark';
+                    }}
+                }}
+            }} catch(e) {{}}
+            return 'dark';
+        }}
+
+        function updateChartColors() {{
+            try {{
+                var doc = window.parent.document;
+                var currentTheme = getDetectedTheme();
+                var colorsMap = (currentTheme === 'light') ? teamColorsLight : teamColorsDark;
+
+                var chartContainers = doc.querySelectorAll('.js-plotly-plot');
+                chartContainers.forEach(function(plotEl) {{
+                    if (!plotEl.data || !plotEl.layout) return;
+
+                    var plotlyGlobal = window.parent.Plotly || window.Plotly;
+                    var needsTraceUpdate = false;
+                    var newColors = [];
+
+                    plotEl.data.forEach(function(trace) {{
+                        var c = colorsMap[trace.name] || (trace.line ? trace.line.color : '#888888');
+                        newColors.push(c);
+                        if (trace.line && trace.line.color !== c) {{
+                            trace.line.color = c;
+                            needsTraceUpdate = true;
+                        }}
+                    }});
+
+                    var needsAnnUpdate = false;
+                    if (plotEl.layout.annotations) {{
+                        plotEl.layout.annotations.forEach(function(ann) {{
+                            var annCode = ann.text;
+                            if (colorsMap[annCode]) {{
+                                var targetCol = colorsMap[annCode];
+                                if (!ann.font || ann.font.color !== targetCol) {{
+                                    ann.font = Object.assign({{}}, ann.font || {{}}, {{ color: targetCol }});
+                                    needsAnnUpdate = true;
+                                }}
+                            }}
+                        }});
+                    }}
+
+                    if ((needsTraceUpdate || needsAnnUpdate) && plotlyGlobal) {{
+                        try {{
+                            plotlyGlobal.react(plotEl, plotEl.data, plotEl.layout);
+                        }} catch(err) {{
+                            try {{
+                                if (needsTraceUpdate) plotlyGlobal.restyle(plotEl, {{ 'line.color': newColors }});
+                                if (needsAnnUpdate) plotlyGlobal.relayout(plotEl, {{ annotations: plotEl.layout.annotations }});
+                            }} catch(err2) {{}}
+                        }}
+                    }}
+                }});
+            }} catch(e) {{}}
+        }}
+
+        function sortHoverBoxes() {{
+            try {{
                 var doc = window.parent.document;
                 var hoverlayers = doc.querySelectorAll('.hoverlayer');
-                hoverlayers.forEach(function(hoverlayer) {
+                hoverlayers.forEach(function(hoverlayer) {{
                     var groups = hoverlayer.querySelector('.groups');
                     if (!groups) return;
                     var traces = Array.from(groups.querySelectorAll('g.traces'));
 
                     var chartContainer = hoverlayer.closest('.js-plotly-plot');
                     var isDefense = false;
-                    if (chartContainer) {
+                    if (chartContainer) {{
                         var tEl = chartContainer.querySelector('.gtitle');
-                        if (tEl && tEl.textContent.includes('Defense Rating')) {
+                        if (tEl && tEl.textContent.includes('Defense Rating')) {{
                             isDefense = true;
-                        }
-                    }
+                        }}
+                    }}
 
                     var activeItems = [];
                     var activeYs = [];
 
-                    traces.forEach(function(t) {
+                    traces.forEach(function(t) {{
                         var txt = t.innerText || t.textContent || '';
-                        var mGw = txt.match(/GW\s*\d+/);
-                        var mVal = txt.match(/Rating:\s*([0-9.-]+)/);
+                        var mGw = txt.match(/GW\\s*\\d+/);
+                        var mVal = txt.match(/Rating:\\s*([0-9.-]+)/);
                         var tr = t.getAttribute('transform') || '';
-                        var mY = tr.match(/translate\(([^,]+),\s*([0-9.-]+)\)/);
+                        var mY = tr.match(/translate\\(([^,]+),\\s*([0-9.-]+)\\)/);
 
-                        if (mVal && mY) {
+                        if (mVal && mY) {{
                             var yVal = parseFloat(mY[2]);
                             var rVal = parseFloat(mVal[1]);
-                            if (yVal > 0 && !isNaN(rVal)) {
+                            if (yVal > 0 && !isNaN(rVal)) {{
                                 var gwStr = mGw ? mGw[0] : '';
-                                activeItems.push({ node: t, val: rVal, xVal: mY[1], yVal: yVal, gwStr: gwStr });
-                            }
-                        }
-                    });
+                                activeItems.push({{ node: t, val: rVal, xVal: mY[1], yVal: yVal, gwStr: gwStr }});
+                            }}
+                        }}
+                    }});
 
                     // Filter out traces from adjacent season at season boundary
-                    var gwCounts = {};
-                    activeItems.forEach(function(item) {
+                    var gwCounts = {{}};
+                    activeItems.forEach(function(item) {{
                         if (item.gwStr) gwCounts[item.gwStr] = (gwCounts[item.gwStr] || 0) + 1;
-                    });
+                    }});
                     var majorityGw = null;
                     var maxCount = 0;
-                    for (var gw in gwCounts) {
-                        if (gwCounts[gw] > maxCount) {
+                    for (var gw in gwCounts) {{
+                        if (gwCounts[gw] > maxCount) {{
                             maxCount = gwCounts[gw];
                             majorityGw = gw;
-                        }
-                    }
-                    if (majorityGw) {
-                        activeItems = activeItems.filter(function(item) { return item.gwStr === majorityGw; });
-                    }
+                        }}
+                    }}
+                    if (majorityGw) {{
+                        activeItems = activeItems.filter(function(item) {{ return item.gwStr === majorityGw; }});
+                    }}
 
                     // Hide non-matching traces from DOM
-                    traces.forEach(function(t) {
-                        var isKeeper = activeItems.some(function(item) { return item.node === t; });
-                        if (!isKeeper) {
+                    traces.forEach(function(t) {{
+                        var isKeeper = activeItems.some(function(item) {{ return item.node === t; }});
+                        if (!isKeeper) {{
                             t.style.display = 'none';
-                        } else {
+                        }} else {{
                             t.style.display = '';
-                        }
-                    });
+                        }}
+                    }});
 
-                    if (activeItems.length > 0 && activeItems[0].gwStr) {
+                    if (activeItems.length > 0 && activeItems[0].gwStr) {{
                         var titleEl = hoverlayer.querySelector('text.legendtitletext');
-                        if (titleEl) {
+                        if (titleEl) {{
                             titleEl.innerHTML = '<tspan style="font-weight:bold">' + activeItems[0].gwStr + '</tspan>';
-                        }
-                    }
+                        }}
+                    }}
 
-                    if (activeItems.length > 1) {
-                        var activeYs = activeItems.map(function(item) { return item.yVal; }).sort(function(a, b) { return a - b; });
+                    if (activeItems.length > 1) {{
+                        var activeYs = activeItems.map(function(item) {{ return item.yVal; }}).sort(function(a, b) {{ return a - b; }});
 
-                        activeItems.sort(function(a, b) {
+                        activeItems.sort(function(a, b) {{
                             return isDefense ? (a.val - b.val) : (b.val - a.val);
-                        });
+                        }});
 
-                        activeItems.forEach(function(item, idx) {
+                        activeItems.forEach(function(item, idx) {{
                             var newTr = 'translate(' + item.xVal + ',' + activeYs[idx] + ')';
                             item.node.setAttribute('transform', newTr);
                             groups.appendChild(item.node);
-                        });
-                    }
-                });
-            } catch(e) {}
-        }
-        setInterval(sortHoverBoxes, 50);
-    })();
+                        }});
+                    }}
+                }});
+            }} catch(e) {{}}
+        }}
+
+        setInterval(function() {{
+            sortHoverBoxes();
+            updateChartColors();
+        }}, 60);
+    }})();
     </script>
     """
     st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
