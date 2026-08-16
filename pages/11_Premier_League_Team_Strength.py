@@ -645,18 +645,18 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
     sub_color = "#6b7280" if is_light else "#8b949e"
 
     html = [
-        f'<div style="overflow-x: auto; width: 100%; border: 1px solid {border_color}; border-radius: 8px; margin-bottom: 1.5rem; background: {bg_card};">',
-        f'<table style="width: 100%; border-collapse: separate; border-spacing: 0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 0.8rem; text-align: center; color: {text_color};">',
+        f'<div style="overflow-x: auto; width: 100%; border: 1px solid {border_color}; border-radius: 6px; margin-bottom: 1.2rem; background: {bg_card};">',
+        f'<table style="width: 100%; border-collapse: separate; border-spacing: 0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 0.75rem; text-align: center; color: {text_color};">',
         '<thead>',
         f'<tr style="background: {bg_main}; border-bottom: 2px solid {border_color};">'
     ]
     
-    html.append(f'<th style="padding: 8px 12px; font-weight: 700; text-align: center; position: sticky; left: 0; background: {bg_main}; border-right: 1px solid {border_color}; min-width: 65px; z-index: 2;">Team</th>')
+    html.append(f'<th style="padding: 4px 6px; font-weight: 700; text-align: center; position: sticky; left: 0; background: {bg_main}; border-right: 1px solid {border_color}; min-width: 55px; z-index: 2; font-size: 0.76rem;">Team</th>')
     
     for gw in gws:
-        html.append(f'<th style="padding: 8px 4px; font-weight: 600; min-width: 75px; border-right: 1px solid {border_color};">GW {gw}</th>')
+        html.append(f'<th style="padding: 4px 2px; font-weight: 600; min-width: 65px; border-right: 1px solid {border_color}; font-size: 0.74rem;">GW {gw}</th>')
         
-    html.append(f'<th style="padding: 8px 10px; font-weight: 700; min-width: 65px; background: {bg_main};">Avg</th>')
+    html.append(f'<th style="padding: 4px 6px; font-weight: 700; min-width: 55px; background: {bg_main}; font-size: 0.76rem;">Avg</th>')
     html.append('</tr></thead><tbody>')
 
     for r_idx, r in enumerate(rows):
@@ -664,7 +664,7 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
         row_bg = bg_card if r_idx % 2 == 0 else bg_main
         html.append(f'<tr style="background: {row_bg}; {border_b}">')
         
-        html.append(f'<td style="padding: 6px 8px; font-weight: 700; font-size: 0.85rem; position: sticky; left: 0; background: {row_bg}; border-right: 1px solid {border_color}; z-index: 1;">{r["Team"]}</td>')
+        html.append(f'<td style="padding: 2px 6px; font-weight: 700; font-size: 0.78rem; position: sticky; left: 0; background: {row_bg}; border-right: 1px solid {border_color}; z-index: 1; line-height: 1.1;">{r["Team"]}</td>')
         
         for gw in gws:
             cell = r['cells'][gw]
@@ -676,12 +676,12 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
             else:
                 cell_bg = "transparent"
                 
-            html.append(f'<td style="padding: 4px 2px; background-color: {cell_bg}; border-right: 1px solid {border_color};">')
-            html.append(f'<div style="font-weight: 700; font-size: 0.82rem; line-height: 1.1;">{cell["val_str"]}</div>')
-            html.append(f'<div style="font-size: 0.65rem; color: {sub_color}; margin-top: 2px;">{cell["opp_str"]}</div>')
+            html.append(f'<td style="padding: 2px 1px; background-color: {cell_bg}; border-right: 1px solid {border_color};">')
+            html.append(f'<div style="font-weight: 700; font-size: 0.78rem; line-height: 1.05;">{cell["val_str"]}</div>')
+            html.append(f'<div style="font-size: 0.60rem; color: {sub_color}; margin-top: 1px; line-height: 1;">{cell["opp_str"]}</div>')
             html.append('</td>')
             
-        html.append(f'<td style="padding: 6px 8px; font-weight: 700; font-size: 0.85rem; background: {row_bg};">{r["avg_str"]}</td>')
+        html.append(f'<td style="padding: 2px 6px; font-weight: 700; font-size: 0.78rem; background: {row_bg}; line-height: 1.1;">{r["avg_str"]}</td>')
         html.append('</tr>')
 
     html.append('</tbody></table></div>')
