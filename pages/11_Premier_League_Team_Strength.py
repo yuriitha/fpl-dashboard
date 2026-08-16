@@ -82,9 +82,9 @@ st.markdown("""
             font-weight: 600;
             font-size: 0.82rem;
             text-align: left;
-            width: 110px;
-            min-width: 110px;
-            max-width: 125px;
+            width: 125px;
+            min-width: 125px;
+            max-width: 135px;
             position: sticky;
             left: 0;
             z-index: 2;
@@ -93,8 +93,9 @@ st.markdown("""
         .proj-table th.avg-th {
             padding: 5px 4px;
             font-weight: 600;
-            width: 48px;
-            min-width: 48px;
+            width: 64px;
+            min-width: 64px;
+            max-width: 64px;
             font-size: 0.78rem;
         }
         .proj-table tbody tr {
@@ -115,9 +116,9 @@ st.markdown("""
             font-weight: 500;
             font-size: 0.84rem;
             text-align: left;
-            width: 110px;
-            min-width: 110px;
-            max-width: 125px;
+            width: 125px;
+            min-width: 125px;
+            max-width: 135px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -134,8 +135,9 @@ st.markdown("""
             padding: 4px 4px;
             font-weight: 600;
             font-size: 0.80rem;
-            width: 48px;
-            min-width: 48px;
+            width: 64px;
+            min-width: 64px;
+            max-width: 64px;
             background: var(--secondary-background-color, inherit);
             line-height: 1.15;
         }
