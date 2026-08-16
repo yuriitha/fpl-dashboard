@@ -68,26 +68,34 @@ st.markdown("""
             border-bottom: 2px solid rgba(128, 128, 128, 0.25);
         }
         .proj-table th {
-            padding: 6px 3px;
+            padding: 5px 2px;
             font-weight: 600;
-            min-width: 68px;
+            min-width: 56px;
             background: var(--background-color, inherit);
             color: var(--text-color, inherit);
             border-right: 1px solid rgba(128, 128, 128, 0.2);
             border-bottom: 2px solid rgba(128, 128, 128, 0.25);
             font-size: 0.76rem;
         }
-        .proj-table th.team-th, .proj-table th.avg-th {
-            padding: 6px 8px;
-            font-weight: 700;
-            min-width: 58px;
-            font-size: 0.78rem;
-        }
         .proj-table th.team-th {
+            padding: 5px 8px;
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-align: left;
+            width: 110px;
+            min-width: 110px;
+            max-width: 125px;
             position: sticky;
             left: 0;
             z-index: 2;
             background: var(--background-color, inherit);
+        }
+        .proj-table th.avg-th {
+            padding: 5px 4px;
+            font-weight: 600;
+            width: 48px;
+            min-width: 48px;
+            font-size: 0.78rem;
         }
         .proj-table tbody tr {
             background: var(--secondary-background-color, transparent);
@@ -104,21 +112,30 @@ st.markdown("""
         }
         .proj-table td.team-td {
             padding: 4px 8px;
-            font-weight: 700;
-            font-size: 0.81rem;
+            font-weight: 500;
+            font-size: 0.84rem;
+            text-align: left;
+            width: 110px;
+            min-width: 110px;
+            max-width: 125px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             position: sticky;
             left: 0;
             z-index: 1;
             background: var(--secondary-background-color, inherit);
-            line-height: 1.15;
+            line-height: 1.2;
         }
         .proj-table tbody tr:nth-child(even) td.team-td {
             background: var(--background-color, inherit);
         }
         .proj-table td.avg-td {
-            padding: 4px 8px;
-            font-weight: 700;
-            font-size: 0.81rem;
+            padding: 4px 4px;
+            font-weight: 600;
+            font-size: 0.80rem;
+            width: 48px;
+            min-width: 48px;
             background: var(--secondary-background-color, inherit);
             line-height: 1.15;
         }
@@ -126,7 +143,7 @@ st.markdown("""
             background: var(--background-color, inherit);
         }
         .proj-table .cell-val {
-            font-weight: 700;
+            font-weight: 600;
             font-size: 0.80rem;
             line-height: 1.1;
             color: var(--text-color, inherit);
@@ -799,7 +816,7 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
         '<table class="proj-table">',
         '<thead>',
         '<tr>',
-        '<th class="team-th" style="text-align: left; padding-left: 10px; min-width: 125px;">Team</th>'
+        '<th class="team-th">Team</th>'
     ]
     
     for gw in gws:
@@ -810,7 +827,7 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
 
     for r in rows:
         html.append('<tr>')
-        html.append(f'<td class="team-td" style="text-align: left; padding-left: 10px; min-width: 125px; white-space: nowrap;">{r["Team"]}</td>')
+        html.append(f'<td class="team-td">{r["Team"]}</td>')
         
         for gw in gws:
             cell = r['cells'][gw]
