@@ -657,30 +657,6 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
             alpha = 0.08 + (t ** 0.85) * 0.56
             return f"rgba(245, 140, 25, {alpha:.2f})"
 
-    # Rank normalization for Avg column
-    avg_vals = pd.Series([r['avg_val'] for r in rows if r['avg_val'] is not None])
-    if not avg_vals.empty and avg_vals.nunique() > 1:
-        avg_ranks = avg_vals.rank(method='average')
-        min_ar, max_ar = avg_ranks.min(), avg_ranks.max()
-        avg_rank_map = {}
-        for v, r in zip(avg_vals, avg_ranks):
-            avg_rank_map[v] = (r - min_ar) / (max_ar - min_ar) if max_ar > min_ar else 0.5
-    else:
-        avg_rank_map = {}
-
-    def get_avg_color(avg_v):
-        if avg_v is None:
-            return "transparent"
-        norm_val = avg_rank_map.get(avg_v, 0.5)
-        if norm_val >= 0.5:
-            t = (norm_val - 0.5) * 2.0
-            alpha = 0.10 + (t ** 0.85) * 0.58
-            return f"rgba(0, 180, 255, {alpha:.2f})"
-        else:
-            t = (0.5 - norm_val) * 2.0
-            alpha = 0.10 + (t ** 0.85) * 0.50
-            return f"rgba(245, 140, 25, {alpha:.2f})"
-
     bg_main = "#ffffff" if is_light else "#0e1117"
     bg_card = "#f8f9fa" if is_light else "#161b22"
     border_color = "#e5e7eb" if is_light else "#30363d"
@@ -718,8 +694,7 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
             html.append(f'<div style="font-size: 0.63rem; color: {sub_color}; margin-top: 1.5px; line-height: 1.05;">{cell["opp_str"]}</div>')
             html.append('</td>')
             
-        avg_bg = get_avg_color(r['avg_val'])
-        html.append(f'<td style="padding: 4px 8px; font-weight: 700; font-size: 0.81rem; background-color: {avg_bg}; line-height: 1.15;">{r["avg_str"]}</td>')
+        html.append(f'<td style="padding: 4px 8px; font-weight: 700; font-size: 0.81rem; background: {row_bg}; line-height: 1.15;">{r["avg_str"]}</td>')
         html.append('</tr>')
 
     html.append('</tbody></table></div>')
