@@ -77,7 +77,7 @@ display_columns = [
     "M Price", "Foot", "selected_by_percent", "min_played",
     "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored",
     "assists", "av_rating", "points_per_game", "transfers_in_event",
-    "transfers_out_event", "transfers_in_24", "transfers_out_24", "news", "news_added"
+    "transfers_out_event", "transfers_in_24", "transfers_out_24", "injury_name", "expected_return"
 ]
 
 
@@ -472,7 +472,7 @@ existing_display_cols = [c for c in display_columns if c in filtered_df.columns]
 
 base_widths = {}
 for col in existing_display_cols:
-    if col == "news":
+    if col == "injury_name":
         continue
     if not filtered_df.empty and col in filtered_df.columns:
         val_series = filtered_df[col].dropna().astype(str)
@@ -483,8 +483,8 @@ for col in existing_display_cols:
     bw = max_val_len * 7
     if col == "full_name":
         bw = min(bw, 140)
-    elif col == "news_added":
-        bw = min(bw, 110)
+    elif col == "expected_return":
+        bw = min(bw, 130)
     else:
         bw = min(bw, 48)
     base_widths[col] = max(bw, 12)
@@ -517,15 +517,15 @@ format_map = {
     "transfers_out_event": ("NumberColumn", None, "Out"),
     "transfers_in_24":     ("NumberColumn", None, "In 24"),
     "transfers_out_24":    ("NumberColumn", None, "Out 24"),
-    "news":                ("TextColumn", None, "News"),
-    "news_added":          ("TextColumn", None, "Updated"),
+    "injury_name":         ("TextColumn", None, "Injury"),
+    "expected_return":     ("TextColumn", None, "Expected Return"),
 }
 
 for col in existing_display_cols:
     col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
 
-    if col == "news":
-        calc_w = 185
+    if col == "injury_name":
+        calc_w = 175
     else:
         bw = base_widths[col]
         bonus = (inv_weights[col] / sum_inv_weights) * TOTAL_PADDING_BUDGET
@@ -533,8 +533,8 @@ for col in existing_display_cols:
 
         if col == "full_name":
             calc_w = max(calc_w, 140)
-        elif col == "news_added":
-            calc_w = max(calc_w, 110)
+        elif col == "expected_return":
+            calc_w = max(calc_w, 120)
         else:
             calc_w = max(calc_w, 48)
 
