@@ -680,20 +680,34 @@ except Exception:
 if not df_fixtures.empty:
     st.markdown("<hr style='margin: 1.8rem 0 1.2rem 0; opacity: 0.2;'>", unsafe_allow_html=True)
     
-    unplayed_gws = sorted([int(x) for x in df_fixtures[df_fixtures['finished'] == False]['event'].dropna().unique()])
-    default_gw = unplayed_gws[0] if unplayed_gws else 1
-    max_start = 27
-    default_gw_idx = max(0, min(default_gw - 1, max_start - 1))
-    gw_opts = [f"GW {i} – GW {min(i+11, 38)}" for i in range(1, max_start + 1)]
-
-    hdr_c1, hdr_c2 = st.columns([0.7, 0.3])
+    hdr_c1, hdr_c2, hdr_c3 = st.columns([0.46, 0.24, 0.30])
     with hdr_c1:
         st.subheader("Expected Goals (xG)", anchor=False)
     with hdr_c2:
-        selected_gw_str = st.selectbox("Gameweek Range", options=gw_opts, index=default_gw_idx, key="ts_gw_range_select", label_visibility="collapsed")
+        week_options = [f"{i} Weeks" for i in range(4, 13)]
+        selected_weeks_str = st.selectbox(
+            "Weeks to show",
+            options=week_options,
+            index=8, # 12 Weeks default
+            key="ts_gw_count_select"
+        )
+        num_gws = int(selected_weeks_str.split()[0])
+    with hdr_c3:
+        max_start = 38 - num_gws + 1
+        unplayed_gws = sorted([int(x) for x in df_fixtures[df_fixtures['finished'] == False]['event'].dropna().unique()])
+        default_gw = unplayed_gws[0] if unplayed_gws else 1
+        default_gw_idx = max(0, min(default_gw - 1, max_start - 1))
+        gw_opts = [f"GW {i} – GW {i + num_gws - 1}" for i in range(1, max_start + 1)]
+        
+        selected_gw_str = st.selectbox(
+            "Gameweek Range",
+            options=gw_opts,
+            index=default_gw_idx,
+            key=f"ts_gw_range_select_{num_gws}"
+        )
         
     start_gw = int(selected_gw_str.split()[1])
-    end_gw = min(start_gw + 11, 38)
+    end_gw = start_gw + num_gws - 1
     gws_window = list(range(start_gw, end_gw + 1))
     
     html_xg = build_projection_table_html(df_fixtures, metric_type='xg', gws=gws_window, selected_teams=final_teams, is_light=is_light)
