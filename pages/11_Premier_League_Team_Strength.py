@@ -740,25 +740,23 @@ if not df_fixtures.empty:
     
     st.markdown("""
         <style>
-        div[data-testid="stSelectbox"]:has(label:contains("Table View")) > div,
-        div[data-testid="stSelectbox"]:has(label:contains("Table View")) [data-baseweb="select"] {
-            max-width: 105px !important;
-            min-width: 85px !important;
+        [data-testid="column"]:has(div[data-testid="stSelectbox"]) {
+            min-width: 0 !important;
         }
-        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) > div,
-        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) [data-baseweb="select"] {
-            max-width: 95px !important;
-            min-width: 75px !important;
+        [data-testid="column"] [data-testid="stSelectbox"] {
+            min-width: 0 !important;
         }
-        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) > div,
-        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="select"] {
-            max-width: 120px !important;
-            min-width: 95px !important;
+        [data-testid="column"] [data-baseweb="select"] {
+            min-width: 0 !important;
+        }
+        [data-testid="column"] label p {
+            font-size: 0.78rem !important;
+            white-space: nowrap !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    hdr_c1, hdr_c2, hdr_c3, hdr_c4 = st.columns([0.52, 0.16, 0.14, 0.18], gap="small")
+    hdr_c1, hdr_c2, hdr_c3, hdr_c4 = st.columns([0.67, 0.11, 0.09, 0.13], gap="small")
     with hdr_c1:
         st.subheader("Expected Goals", anchor=False)
     with hdr_c2:
