@@ -82,9 +82,7 @@ st.markdown("""
             font-weight: 600;
             font-size: 0.82rem;
             text-align: left;
-            width: 140px;
-            min-width: 140px;
-            max-width: 150px;
+            min-width: 100px;
             position: sticky;
             left: 0;
             z-index: 2;
@@ -93,9 +91,7 @@ st.markdown("""
         .proj-table th.avg-th {
             padding: 5px 4px;
             font-weight: 600;
-            width: 64px;
-            min-width: 64px;
-            max-width: 64px;
+            min-width: 44px;
             font-size: 0.78rem;
         }
         .proj-table tbody tr {
@@ -116,9 +112,7 @@ st.markdown("""
             font-weight: 500;
             font-size: 0.84rem;
             text-align: left;
-            width: 140px;
-            min-width: 140px;
-            max-width: 150px;
+            min-width: 100px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -135,9 +129,7 @@ st.markdown("""
             padding: 4px 4px;
             font-weight: 600;
             font-size: 0.80rem;
-            width: 64px;
-            min-width: 64px;
-            max-width: 64px;
+            min-width: 44px;
             background: var(--secondary-background-color, inherit);
             line-height: 1.15;
         }
@@ -818,17 +810,30 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
 
     avg_header = "W.Avg" if is_rel else "Avg"
 
+    w_team = 2.4
+    w_gw = 1.0
+    w_avg = 0.9
+    num_gws = len(gws)
+    w_total = w_team + num_gws * w_gw + w_avg
+
+    pct_team = (w_team / w_total) * 100.0
+    pct_gw = (w_gw / w_total) * 100.0
+    pct_avg = (w_avg / w_total) * 100.0
+
     html = [
         '<div class="proj-table-container">',
-        '<table class="proj-table">',
-        '<thead>',
-        '<tr>',
-        '<th class="team-th">Team</th>'
+        '<table class="proj-table" style="table-layout: fixed; width: 100%;">',
+        '<colgroup>',
+        f'<col style="width: {pct_team:.2f}%;">',
     ]
-    
+    for _ in gws:
+        html.append(f'<col style="width: {pct_gw:.2f}%;">')
+    html.append(f'<col style="width: {pct_avg:.2f}%;">')
+    html.append('</colgroup>')
+    html.append('<thead><tr>')
+    html.append('<th class="team-th">Team</th>')
     for gw in gws:
         html.append(f'<th>GW {gw}</th>')
-        
     html.append(f'<th class="avg-th">{avg_header}</th>')
     html.append('</tr></thead><tbody>')
 
