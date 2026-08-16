@@ -686,30 +686,45 @@ with col2:
 
 
 def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute', gws=range(1, 13), selected_teams=None):
-    all_teams_short = sorted(list(set(df_model['team_h_short'].dropna()).union(set(df_model['team_a_short'].dropna()))))
+    # Mapping between short code and model name
+    short_to_model = {}
+    model_to_short = {}
+    for _, r in df_model[['team_h_short', 'team_h_model']].drop_duplicates().iterrows():
+        short_to_model[r['team_h_short']] = r['team_h_model']
+        model_to_short[r['team_h_model']] = r['team_h_short']
+    for _, r in df_model[['team_a_short', 'team_a_model']].drop_duplicates().iterrows():
+        short_to_model[r['team_a_short']] = r['team_a_model']
+        model_to_short[r['team_a_model']] = r['team_a_short']
+
+    all_teams_model = sorted(list(set(df_model['team_h_model'].dropna()).union(set(df_model['team_a_model'].dropna()))))
+    
     if selected_teams:
-        teams_to_show = [t for t in all_teams_short if t in selected_teams or team_code_to_name.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)]
+        teams_to_show = [
+            t for t in all_teams_model 
+            if t in selected_teams or model_to_short.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)
+        ]
         if not teams_to_show:
-            teams_to_show = all_teams_short
+            teams_to_show = all_teams_model
     else:
-        teams_to_show = all_teams_short
+        teams_to_show = all_teams_model
 
     rows = []
     all_vals = []
     is_rel = (view_mode == 'Relative')
 
-    for t in teams_to_show:
-        row = {'Team': t, 'cells': {}}
+    for t_model in teams_to_show:
+        t_short = model_to_short.get(t_model, t_model)
+        row = {'Team': t_model, 'TeamShort': t_short, 'cells': {}}
         vals_list = []
         for gw in gws:
-            matches = df_model[(df_model['event'] == gw) & ((df_model['team_h_short'] == t) | (df_model['team_a_short'] == t))]
+            matches = df_model[(df_model['event'] == gw) & ((df_model['team_h_model'] == t_model) | (df_model['team_a_model'] == t_model))]
             if matches.empty:
                 row['cells'][gw] = {'val': None, 'val_str': '—', 'opp_str': '-'}
             else:
                 m_vals = []
                 opps = []
                 for _, m in matches.iterrows():
-                    if m['team_h_short'] == t:
+                    if m['team_h_model'] == t_model:
                         if is_rel:
                             v = m['home_xg_rel'] if (metric_type == 'xg' and 'home_xg_rel' in m) else (m['home_cs_rel'] if 'home_cs_rel' in m else 1.0)
                         else:
@@ -784,7 +799,7 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
         '<table class="proj-table">',
         '<thead>',
         '<tr>',
-        '<th class="team-th">Team</th>'
+        '<th class="team-th" style="text-align: left; padding-left: 10px; min-width: 125px;">Team</th>'
     ]
     
     for gw in gws:
@@ -795,7 +810,7 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
 
     for r in rows:
         html.append('<tr>')
-        html.append(f'<td class="team-td">{r["Team"]}</td>')
+        html.append(f'<td class="team-td" style="text-align: left; padding-left: 10px; min-width: 125px; white-space: nowrap;">{r["Team"]}</td>')
         
         for gw in gws:
             cell = r['cells'][gw]
