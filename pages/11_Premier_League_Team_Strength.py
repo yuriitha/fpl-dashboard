@@ -633,27 +633,26 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
 
     rows = sorted(rows, key=lambda x: x['avg_val'], reverse=True)
 
-    # Rank normalization for cells to distinctly highlight differences
-    valid_vals = pd.Series([v for v in all_vals if v is not None])
-    if not valid_vals.empty and valid_vals.nunique() > 1:
-        val_ranks = valid_vals.rank(method='average')
-        min_r, max_r = val_ranks.min(), val_ranks.max()
-        norm_rank_map = {}
-        for v, r in zip(valid_vals, val_ranks):
-            norm_rank_map[v] = (r - min_r) / (max_r - min_r) if max_r > min_r else 0.5
+    # Unified global table scaling across all cells in the entire table
+    valid_vals = np.array([v for v in all_vals if v is not None])
+    if len(valid_vals) > 0 and np.max(valid_vals) > np.min(valid_vals):
+        p5 = float(np.percentile(valid_vals, 5))
+        p95 = float(np.percentile(valid_vals, 95))
+        median_val = float(np.median(valid_vals))
     else:
-        norm_rank_map = {}
+        p5, p95, median_val = (0.8, 2.2, 1.4) if metric_type == 'xg' else (10.0, 40.0, 25.0)
 
     def get_color(val):
-        if val is None:
+        if val is None or pd.isna(val):
             return "transparent"
-        norm_val = norm_rank_map.get(val, 0.5)
-        if norm_val >= 0.5:
-            t = (norm_val - 0.5) * 2.0
+        if val >= median_val:
+            denom = (p95 - median_val) if p95 > median_val else 1.0
+            t = min(1.0, max(0.0, (val - median_val) / denom))
             alpha = 0.08 + (t ** 0.85) * 0.62
             return f"rgba(0, 180, 255, {alpha:.2f})"
         else:
-            t = (0.5 - norm_val) * 2.0
+            denom = (median_val - p5) if median_val > p5 else 1.0
+            t = min(1.0, max(0.0, (median_val - val) / denom))
             alpha = 0.08 + (t ** 0.85) * 0.56
             return f"rgba(245, 140, 25, {alpha:.2f})"
 
