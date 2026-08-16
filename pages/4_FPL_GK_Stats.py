@@ -76,12 +76,14 @@ def load_data():
     else:
         df['Svs_90'] = 0.0
 
-    if 'SvsB_90' in df.columns and df['SvsB_90'].fillna(0).sum() > 0:
-        df['SvsB_90'] = pd.to_numeric(df['SvsB_90'], errors='coerce').fillna(0.0).round(2)
-    elif 'saves_box' in df.columns and 'min_played' in df.columns:
-        df['SvsB_90'] = np.where(df['min_played'] > 0, (pd.to_numeric(df['saves_box'], errors='coerce').fillna(0) / df['min_played'] * 90).round(2), 0.0)
+    if 'Svsob_90' in df.columns and df['Svsob_90'].fillna(0).sum() > 0:
+        df['Svsob_90'] = pd.to_numeric(df['Svsob_90'], errors='coerce').fillna(0.0).round(2)
+    elif 'saves' in df.columns and 'saves_box' in df.columns and 'min_played' in df.columns:
+        df['Svsob_90'] = np.where(df['min_played'] > 0, ((pd.to_numeric(df['saves'], errors='coerce').fillna(0) - pd.to_numeric(df['saves_box'], errors='coerce').fillna(0)) / df['min_played'] * 90).clip(lower=0).round(2), 0.0)
+    elif 'Svs_90' in df.columns and 'SvsB_90' in df.columns:
+        df['Svsob_90'] = (pd.to_numeric(df['Svs_90'], errors='coerce').fillna(0) - pd.to_numeric(df['SvsB_90'], errors='coerce').fillna(0)).clip(lower=0).round(2)
     else:
-        df['SvsB_90'] = 0.0
+        df['Svsob_90'] = 0.0
 
     if 'expected_goals_conceded_per_90' in df.columns:
         df['xGC_90'] = np.where(df.get('xGC_90', 0) > 0, df['xGC_90'], df['expected_goals_conceded_per_90'].fillna(0.0).round(2))
@@ -570,7 +572,7 @@ display_columns = [
     "selected_by_percent", "min_played", "matches_played", "matches_started",
     "avg_mins", "60_min", "av_rating",
     "CS_90", "xGC_90", "xGP_90",
-    "Svs_90", "SvsB_90", "penalties_saved",
+    "Svs_90", "Svsob_90", "penalties_saved",
     "Pass_90", "Pass_pct", "yellow_cards", "YC_90", "red_cards", "RC_90"
 ]
 
@@ -682,7 +684,7 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None, reverse
 
 styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating', '60_min'] if c in existing_cols])\
-    .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'Svs_90', 'SvsB_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])\
+    .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'Svs_90', 'Svsob_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])\
     .apply(soft_green_gradient, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['Pass_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)\
@@ -729,7 +731,7 @@ format_map = {
     "xGC_90":              ("NumberColumn", "%.2f", "xGC/90"),
     "xGP_90":              ("NumberColumn", "%.2f", "xGP/90"),
     "Svs_90":              ("NumberColumn", "%.2f", "Svs/90"),
-    "SvsB_90":             ("NumberColumn", "%.2f", "SvsB/90"),
+    "Svsob_90":            ("NumberColumn", "%.2f", "Svsob/90"),
     "penalties_saved":     ("NumberColumn", "%d", "PS"),
     "Pass_90":             ("NumberColumn", "%.2f", "Pass/90"),
     "Pass_pct":            ("NumberColumn", "%.1f", "Pass%"),
