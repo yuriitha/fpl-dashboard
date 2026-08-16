@@ -402,6 +402,31 @@ st.subheader(f"UCL Players filtered: {len(filtered_df)}", anchor=False)
 
 existing_display_cols = [c for c in display_columns if c in filtered_df.columns]
 
+format_map = {
+    "Price": ("NumberColumn", "%.1f", "Price"),
+    "TM Value": ("NumberColumn", "%.1f", "TM Value"),
+    "Selected": ("NumberColumn", "%.1f", "Sel %"),
+    "PPM": ("NumberColumn", "%.1f", "PPM"),
+    "Value": ("NumberColumn", "%.1f", "Value"),
+    "Age": ("NumberColumn", None, "Age"),
+    "Mins": ("NumberColumn", None, "Mins"),
+    "G": ("NumberColumn", None, "G"),
+    "A": ("NumberColumn", None, "A"),
+    "POTM": ("NumberColumn", None, "POTM"),
+    "In": ("NumberColumn", None, "In"),
+    "Out": ("NumberColumn", None, "Out"),
+    "In 24": ("NumberColumn", None, "In 24"),
+    "Out 24": ("NumberColumn", None, "Out 24"),
+    "Player": ("TextColumn", None, "Player"),
+    "Pos": ("TextColumn", None, "Pos"),
+    "Pl Pos": ("TextColumn", None, "Pl Pos"),
+    "Team": ("TextColumn", None, "Team"),
+    "Team Name": ("TextColumn", None, "Team Name"),
+    "Foot": ("TextColumn", None, "Foot"),
+    "injury_name": ("TextColumn", None, "Injury"),
+    "expected_return": ("TextColumn", None, "Expected Return"),
+}
+
 base_widths = {}
 for col in existing_display_cols:
     col_label = format_map.get(col, ("", "", col))[2]
@@ -431,30 +456,6 @@ sum_inv_weights = sum(inv_weights.values())
 TOTAL_PADDING_BUDGET = 550
 
 smart_column_config = {}
-format_map = {
-    "Price": ("NumberColumn", "%.1f", "Price"),
-    "TM Value": ("NumberColumn", "%.1f", "TM Value"),
-    "Selected": ("NumberColumn", "%.1f", "Sel %"),
-    "PPM": ("NumberColumn", "%.1f", "PPM"),
-    "Value": ("NumberColumn", "%.1f", "Value"),
-    "Age": ("NumberColumn", None, "Age"),
-    "Mins": ("NumberColumn", None, "Mins"),
-    "G": ("NumberColumn", None, "G"),
-    "A": ("NumberColumn", None, "A"),
-    "POTM": ("NumberColumn", None, "POTM"),
-    "In": ("NumberColumn", None, "In"),
-    "Out": ("NumberColumn", None, "Out"),
-    "In 24": ("NumberColumn", None, "In 24"),
-    "Out 24": ("NumberColumn", None, "Out 24"),
-    "Player": ("TextColumn", None, "Player"),
-    "Pos": ("TextColumn", None, "Pos"),
-    "Pl Pos": ("TextColumn", None, "Pl Pos"),
-    "Team": ("TextColumn", None, "Team"),
-    "Team Name": ("TextColumn", None, "Team Name"),
-    "Foot": ("TextColumn", None, "Foot"),
-    "injury_name": ("TextColumn", None, "Injury"),
-    "expected_return": ("TextColumn", None, "Expected Return"),
-}
 
 for col in existing_display_cols:
     bw = base_widths[col]

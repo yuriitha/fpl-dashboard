@@ -473,6 +473,33 @@ if sort_cols:
 st.subheader(f"Players filtered: {len(filtered_df)}", anchor=False)
 existing_display_cols = [c for c in display_columns if c in filtered_df.columns]
 
+format_map = {
+    "full_name":           ("TextColumn", None, "Player"),
+    "Age":                 ("NumberColumn", "%d", "Age"),
+    "element_type":        ("TextColumn", None, "Pos"),
+    "Play Pos":            ("TextColumn", None, "Pl Pos"),
+    "team_short_name":     ("TextColumn", None, "Team"),
+    "now_cost":            ("NumberColumn", "%.1f", "Price"),
+    "M Price":             ("NumberColumn", "%.1f", "TM Price"),
+    "Foot":                ("TextColumn", None, "Foot"),
+    "selected_by_percent": ("NumberColumn", "%.1f%%", "Sel %"),
+    "min_played":          ("NumberColumn", None, "Mins"),
+    "matches_played":      ("NumberColumn", None, "MP"),
+    "matches_started":     ("NumberColumn", None, "GS"),
+    "avg_mins":            ("NumberColumn", "%d", "AvMins"),
+    "60_min":              ("NumberColumn", "%.1f", "60m %"),
+    "goals_scored":        ("NumberColumn", None, "G"),
+    "assists":             ("NumberColumn", None, "A"),
+    "av_rating":           ("NumberColumn", "%.2f", "Rat"),
+    "points_per_game":     ("NumberColumn", "%.1f", "PPM"),
+    "transfers_in_event":  ("NumberColumn", None, "In"),
+    "transfers_out_event": ("NumberColumn", None, "Out"),
+    "transfers_in_24":     ("NumberColumn", None, "In 24"),
+    "transfers_out_24":    ("NumberColumn", None, "Out 24"),
+    "injury_name":         ("TextColumn", None, "Injury"),
+    "expected_return":     ("TextColumn", None, "Expected Return"),
+}
+
 base_widths = {}
 for col in existing_display_cols:
     col_label = format_map.get(col, ("", "", col))[2]
@@ -500,32 +527,6 @@ sum_inv_weights = sum(inv_weights.values())
 TOTAL_PADDING_BUDGET = 650
 
 smart_column_config = {}
-format_map = {
-    "full_name":           ("TextColumn", None, "Player"),
-    "Age":                 ("NumberColumn", "%d", "Age"),
-    "element_type":        ("TextColumn", None, "Pos"),
-    "Play Pos":            ("TextColumn", None, "Pl Pos"),
-    "team_short_name":     ("TextColumn", None, "Team"),
-    "now_cost":            ("NumberColumn", "%.1f", "Price"),
-    "M Price":             ("NumberColumn", "%.1f", "TM Price"),
-    "Foot":                ("TextColumn", None, "Foot"),
-    "selected_by_percent": ("NumberColumn", "%.1f%%", "Sel %"),
-    "min_played":          ("NumberColumn", None, "Mins"),
-    "matches_played":      ("NumberColumn", None, "MP"),
-    "matches_started":     ("NumberColumn", None, "GS"),
-    "avg_mins":            ("NumberColumn", "%d", "AvMins"),
-    "60_min":              ("NumberColumn", "%.1f", "60m %"),
-    "goals_scored":        ("NumberColumn", None, "G"),
-    "assists":             ("NumberColumn", None, "A"),
-    "av_rating":           ("NumberColumn", "%.2f", "Rat"),
-    "points_per_game":     ("NumberColumn", "%.1f", "PPM"),
-    "transfers_in_event":  ("NumberColumn", None, "In"),
-    "transfers_out_event": ("NumberColumn", None, "Out"),
-    "transfers_in_24":     ("NumberColumn", None, "In 24"),
-    "transfers_out_24":    ("NumberColumn", None, "Out 24"),
-    "injury_name":         ("TextColumn", None, "Injury"),
-    "expected_return":     ("TextColumn", None, "Expected Return"),
-}
 
 for col in existing_display_cols:
     col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
