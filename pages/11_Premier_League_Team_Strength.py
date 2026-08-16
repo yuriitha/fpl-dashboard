@@ -947,10 +947,12 @@ if not df_fixtures.empty:
             key="ts_view_mode_select"
         )
     with hdr_c3:
+        gw_count_options = list(range(3, 17))
+        default_count_idx = gw_count_options.index(12) if 12 in gw_count_options else len(gw_count_options) - 1
         num_gws = st.selectbox(
             "GWs To Show",
-            options=list(range(4, 13)),
-            index=8, # 12 default
+            options=gw_count_options,
+            index=default_count_idx,
             key="ts_gw_count_select"
         )
     with hdr_c4:
