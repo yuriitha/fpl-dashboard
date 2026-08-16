@@ -775,11 +775,14 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
                 all_vals.append(tot_val)
                 row['cells'][gw] = {'val': tot_val, 'val_str': val_str, 'opp_str': opp_str}
         
-        avg_val = np.mean(vals_list) if vals_list else 0.0
-        if is_rel or metric_type == 'xg':
+        if is_rel:
+            decay_weights = np.array([0.95 ** i for i in range(len(vals_list))])
+            sum_weights = float(np.sum(decay_weights)) if len(vals_list) > 0 else 1.0
+            avg_val = float(np.sum(np.array(vals_list) * decay_weights) / sum_weights) if vals_list else 1.0
             avg_str = f"{avg_val:.2f}"
         else:
-            avg_str = f"{avg_val:.1f}%"
+            avg_val = float(np.mean(vals_list)) if vals_list else 0.0
+            avg_str = f"{avg_val:.2f}" if metric_type == 'xg' else f"{avg_val:.1f}%"
             
         row['avg_val'] = avg_val
         row['avg_str'] = avg_str
@@ -813,6 +816,8 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
             alpha = 0.08 + (t ** 0.85) * 0.56
             return f"rgba(245, 140, 25, {alpha:.2f})"
 
+    avg_header = "W.Avg" if is_rel else "Avg"
+
     html = [
         '<div class="proj-table-container">',
         '<table class="proj-table">',
@@ -824,7 +829,7 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
     for gw in gws:
         html.append(f'<th>GW {gw}</th>')
         
-    html.append('<th class="avg-th">Avg</th>')
+    html.append(f'<th class="avg-th">{avg_header}</th>')
     html.append('</tr></thead><tbody>')
 
     for r in rows:
