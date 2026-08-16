@@ -78,6 +78,19 @@ def load_data():
 
     return df, last_update_str
 
+@st.cache_data(ttl=300)
+def load_fixtures_model():
+    url = "http://198.244.151.163:8000/fpl_fixtures_model"
+    try:
+        df_fix = pd.read_parquet(url)
+        return df_fix
+    except Exception:
+        import os
+        local_path = os.path.join(os.path.dirname(__file__), "..", "..", "streamlit", "fpl_fixtures_model.parquet")
+        if os.path.exists(local_path):
+            return pd.read_parquet(local_path)
+        return pd.DataFrame()
+
 try:
     df, last_update_str = load_data()
 except Exception as e:
@@ -553,6 +566,142 @@ with col2:
         )
     else:
         st.info("No current matches found.")
+
+
+def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), selected_teams=None, is_light=False):
+    all_teams_short = sorted(list(set(df_model['team_h_short'].dropna()).union(set(df_model['team_a_short'].dropna()))))
+    if selected_teams:
+        teams_to_show = [t for t in all_teams_short if t in selected_teams or team_code_to_name.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)]
+        if not teams_to_show:
+            teams_to_show = all_teams_short
+    else:
+        teams_to_show = all_teams_short
+
+    rows = []
+    all_vals = []
+    
+    for t in teams_to_show:
+        row = {'Team': t, 'cells': {}}
+        vals_list = []
+        for gw in gws:
+            matches = df_model[(df_model['event'] == gw) & ((df_model['team_h_short'] == t) | (df_model['team_a_short'] == t))]
+            if matches.empty:
+                row['cells'][gw] = {'val': None, 'val_str': '—', 'opp_str': '-'}
+            else:
+                m_vals = []
+                opps = []
+                for _, m in matches.iterrows():
+                    if m['team_h_short'] == t:
+                        v = m['home_xg'] if metric_type == 'xg' else m['home_cs']
+                        opp = f"{m['team_a_short']} (H)"
+                    else:
+                        v = m['away_xg'] if metric_type == 'xg' else m['away_cs']
+                        opp = f"{m['team_h_short']} (A)"
+                    m_vals.append(v)
+                    opps.append(opp)
+                
+                tot_val = sum(m_vals) if metric_type == 'xg' else (m_vals[0] if len(m_vals) == 1 else (np.prod([x/100 for x in m_vals])*100))
+                val_str = f"{tot_val:.2f}" if metric_type == 'xg' else f"{tot_val:.1f}%"
+                opp_str = ", ".join(opps)
+                
+                vals_list.append(tot_val)
+                all_vals.append(tot_val)
+                row['cells'][gw] = {'val': tot_val, 'val_str': val_str, 'opp_str': opp_str}
+        
+        avg_val = np.mean(vals_list) if vals_list else 0.0
+        avg_str = f"{avg_val:.2f}" if metric_type == 'xg' else f"{avg_val:.1f}%"
+        row['avg_val'] = avg_val
+        row['avg_str'] = avg_str
+        rows.append(row)
+
+    rows = sorted(rows, key=lambda x: x['avg_val'], reverse=True)
+
+    min_v = min(all_vals) if all_vals else 0
+    max_v = max(all_vals) if all_vals else 1
+    if max_v == min_v:
+        max_v = min_v + 1
+
+    bg_main = "#ffffff" if is_light else "#0e1117"
+    bg_card = "#f8f9fa" if is_light else "#161b22"
+    border_color = "#e5e7eb" if is_light else "#30363d"
+    text_color = "#111827" if is_light else "#f0f6fc"
+    sub_color = "#6b7280" if is_light else "#8b949e"
+
+    html = [
+        f'<div style="overflow-x: auto; width: 100%; border: 1px solid {border_color}; border-radius: 8px; margin-bottom: 1.5rem; background: {bg_card};">',
+        f'<table style="width: 100%; border-collapse: separate; border-spacing: 0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 0.8rem; text-align: center; color: {text_color};">',
+        '<thead>',
+        f'<tr style="background: {bg_main}; border-bottom: 2px solid {border_color};">'
+    ]
+    
+    html.append(f'<th style="padding: 8px 12px; font-weight: 700; text-align: center; position: sticky; left: 0; background: {bg_main}; border-right: 1px solid {border_color}; min-width: 65px; z-index: 2;">Team</th>')
+    
+    for gw in gws:
+        html.append(f'<th style="padding: 8px 4px; font-weight: 600; min-width: 75px; border-right: 1px solid {border_color};">GW {gw}</th>')
+        
+    html.append(f'<th style="padding: 8px 10px; font-weight: 700; min-width: 65px; background: {bg_main};">Avg</th>')
+    html.append('</tr></thead><tbody>')
+
+    for r_idx, r in enumerate(rows):
+        border_b = f"border-bottom: 1px solid {border_color};" if r_idx < len(rows) - 1 else ""
+        row_bg = bg_card if r_idx % 2 == 0 else bg_main
+        html.append(f'<tr style="background: {row_bg}; {border_b}">')
+        
+        html.append(f'<td style="padding: 6px 8px; font-weight: 700; font-size: 0.85rem; position: sticky; left: 0; background: {row_bg}; border-right: 1px solid {border_color}; z-index: 1;">{r["Team"]}</td>')
+        
+        for gw in gws:
+            cell = r['cells'][gw]
+            if cell['val'] is not None:
+                norm_v = (cell['val'] - min_v) / (max_v - min_v)
+                norm_v = max(0.0, min(1.0, norm_v))
+                alpha = 0.04 + (norm_v ** 0.8) * 0.56
+                cell_bg = f"rgba(0, 180, 255, {alpha:.3f})"
+            else:
+                cell_bg = "transparent"
+                
+            html.append(f'<td style="padding: 4px 2px; background-color: {cell_bg}; border-right: 1px solid {border_color};">')
+            html.append(f'<div style="font-weight: 700; font-size: 0.82rem; line-height: 1.1;">{cell["val_str"]}</div>')
+            html.append(f'<div style="font-size: 0.65rem; color: {sub_color}; margin-top: 2px;">{cell["opp_str"]}</div>')
+            html.append('</td>')
+            
+        html.append(f'<td style="padding: 6px 8px; font-weight: 700; font-size: 0.85rem; background: {row_bg};">{r["avg_str"]}</td>')
+        html.append('</tr>')
+
+    html.append('</tbody></table></div>')
+    return "\n".join(html)
+
+
+# ========================== FIXTURES PROJECTIONS (xG & CLEAN SHEETS) ==========================
+try:
+    df_fixtures = load_fixtures_model()
+except Exception:
+    df_fixtures = pd.DataFrame()
+
+if not df_fixtures.empty:
+    st.markdown("<hr style='margin: 1.8rem 0 1.2rem 0; opacity: 0.2;'>", unsafe_allow_html=True)
+    
+    unplayed_gws = sorted([int(x) for x in df_fixtures[df_fixtures['finished'] == False]['event'].dropna().unique()])
+    default_gw = unplayed_gws[0] if unplayed_gws else 1
+    max_start = 27
+    default_gw_idx = max(0, min(default_gw - 1, max_start - 1))
+    gw_opts = [f"GW {i} – GW {min(i+11, 38)}" for i in range(1, max_start + 1)]
+
+    hdr_c1, hdr_c2 = st.columns([0.7, 0.3])
+    with hdr_c1:
+        st.subheader("Expected Goals (xG)", anchor=False)
+    with hdr_c2:
+        selected_gw_str = st.selectbox("Gameweek Range", options=gw_opts, index=default_gw_idx, key="ts_gw_range_select", label_visibility="collapsed")
+        
+    start_gw = int(selected_gw_str.split()[1])
+    end_gw = min(start_gw + 11, 38)
+    gws_window = list(range(start_gw, end_gw + 1))
+    
+    html_xg = build_projection_table_html(df_fixtures, metric_type='xg', gws=gws_window, selected_teams=final_teams, is_light=is_light)
+    st.markdown(html_xg, unsafe_allow_html=True)
+    
+    st.subheader("Clean Sheets (CS %)", anchor=False)
+    html_cs = build_projection_table_html(df_fixtures, metric_type='cs', gws=gws_window, selected_teams=final_teams, is_light=is_light)
+    st.markdown(html_cs, unsafe_allow_html=True)
 
 
 st.subheader("Historical Ratings", anchor=False)
