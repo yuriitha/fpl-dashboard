@@ -48,21 +48,20 @@ st.markdown("""
         /* Real-time Theme-Reactive Fixture Projection Tables */
         .proj-table-container {
             overflow-x: auto;
-            width: fit-content;
-            max-width: 100%;
+            width: 100%;
             border: 1px solid rgba(128, 128, 128, 0.2);
             border-radius: 8px;
             margin-bottom: 1.4rem;
             background: var(--secondary-background-color, transparent);
         }
         .proj-table {
+            width: 100%;
             border-collapse: separate;
             border-spacing: 0;
             font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
             font-size: 0.78rem;
             text-align: center;
             color: var(--text-color, inherit);
-            width: max-content;
         }
         .proj-table thead tr {
             background: var(--background-color, transparent);
@@ -71,9 +70,7 @@ st.markdown("""
         .proj-table th {
             padding: 5px 2px;
             font-weight: 600;
-            width: 62px;
-            min-width: 62px;
-            max-width: 62px;
+            min-width: 50px;
             background: var(--background-color, inherit);
             color: var(--text-color, inherit);
             border-right: 1px solid rgba(128, 128, 128, 0.2);
@@ -85,9 +82,9 @@ st.markdown("""
             font-weight: 600;
             font-size: 0.82rem;
             text-align: left;
-            width: 130px;
-            min-width: 130px;
-            max-width: 130px;
+            width: 135px;
+            min-width: 135px;
+            max-width: 135px;
             position: sticky;
             left: 0;
             z-index: 2;
@@ -96,9 +93,9 @@ st.markdown("""
         .proj-table th.avg-th {
             padding: 5px 4px;
             font-weight: 600;
-            width: 58px;
-            min-width: 58px;
-            max-width: 58px;
+            width: 65px;
+            min-width: 65px;
+            max-width: 65px;
             font-size: 0.78rem;
         }
         .proj-table tbody tr {
@@ -110,9 +107,7 @@ st.markdown("""
         }
         .proj-table td {
             padding: 3px 2px;
-            width: 62px;
-            min-width: 62px;
-            max-width: 62px;
+            min-width: 50px;
             border-right: 1px solid rgba(128, 128, 128, 0.15);
             border-bottom: 1px solid rgba(128, 128, 128, 0.15);
             color: var(--text-color, inherit);
@@ -122,9 +117,9 @@ st.markdown("""
             font-weight: 500;
             font-size: 0.84rem;
             text-align: left;
-            width: 130px;
-            min-width: 130px;
-            max-width: 130px;
+            width: 135px;
+            min-width: 135px;
+            max-width: 135px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -141,9 +136,9 @@ st.markdown("""
             padding: 4px 4px;
             font-weight: 600;
             font-size: 0.80rem;
-            width: 58px;
-            min-width: 58px;
-            max-width: 58px;
+            width: 65px;
+            min-width: 65px;
+            max-width: 65px;
             background: var(--secondary-background-color, inherit);
             line-height: 1.15;
         }
@@ -826,10 +821,16 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
 
     html = [
         '<div class="proj-table-container">',
-        '<table class="proj-table">',
-        '<thead><tr>',
-        '<th class="team-th">Team</th>'
+        '<table class="proj-table" style="table-layout: fixed; width: 100%;">',
+        '<colgroup>',
+        '<col style="width: 135px;">',
     ]
+    for _ in gws:
+        html.append('<col>')
+    html.append('<col style="width: 65px;">')
+    html.append('</colgroup>')
+    html.append('<thead><tr>')
+    html.append('<th class="team-th">Team</th>')
     for gw in gws:
         html.append(f'<th>GW {gw}</th>')
     html.append(f'<th class="avg-th">{avg_header}</th>')
