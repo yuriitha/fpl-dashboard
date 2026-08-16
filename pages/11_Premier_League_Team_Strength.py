@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import json
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from datetime import datetime, timezone, timedelta
 
 st.set_page_config(
     page_title="Team Strength",
@@ -855,6 +856,59 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
     return "\n".join(html)
 
 
+def get_current_active_gw(df_fix):
+    """
+    Dynamically determines the current active/upcoming Gameweek based on kickoff_time and match status.
+    """
+    try:
+        now_utc = datetime.now(timezone.utc)
+        if df_fix is None or df_fix.empty or 'kickoff_time' not in df_fix.columns:
+            return 1
+        
+        df_temp = df_fix.dropna(subset=['event', 'kickoff_time']).copy()
+        if df_temp.empty:
+            return 1
+            
+        df_temp['kickoff_dt'] = pd.to_datetime(df_temp['kickoff_time'], errors='coerce')
+        df_temp = df_temp.dropna(subset=['kickoff_dt'])
+        if df_temp.empty:
+            return 1
+            
+        if 'finished' in df_temp.columns:
+            gw_agg = df_temp.groupby('event').agg(
+                last_ko=('kickoff_dt', 'max'),
+                all_finished=('finished', 'all')
+            ).reset_index()
+        else:
+            gw_agg = df_temp.groupby('event').agg(
+                last_ko=('kickoff_dt', 'max')
+            ).reset_index()
+            gw_agg['all_finished'] = False
+            
+        gw_agg['event'] = gw_agg['event'].astype(int)
+        gw_agg = gw_agg.sort_values('event')
+        
+        for _, row in gw_agg.iterrows():
+            gw = int(row['event'])
+            last_ko = row['last_ko']
+            if pd.isna(last_ko.tzinfo):
+                last_ko = last_ko.replace(tzinfo=timezone.utc)
+                
+            gw_end_estimate = last_ko + timedelta(hours=2.5)
+            if not row['all_finished'] and now_utc <= gw_end_estimate:
+                return gw
+            if now_utc <= gw_end_estimate:
+                return gw
+                
+        unfinished = gw_agg[gw_agg['all_finished'] == False]
+        if not unfinished.empty:
+            return int(unfinished['event'].min())
+            
+        return 1
+    except Exception:
+        return 1
+
+
 # ========================== FIXTURES PROJECTIONS (xG & CLEAN SHEETS) ==========================
 try:
     df_fixtures = load_fixtures_model()
@@ -900,17 +954,16 @@ if not df_fixtures.empty:
             key="ts_gw_count_select"
         )
     with hdr_c4:
+        active_start_gw = get_current_active_gw(df_fixtures)
         max_start = 38 - num_gws + 1
-        unplayed_gws = sorted([int(x) for x in df_fixtures[df_fixtures['finished'] == False]['event'].dropna().unique()])
-        default_gw = unplayed_gws[0] if unplayed_gws else 1
-        default_gw_idx = max(0, min(default_gw - 1, max_start - 1))
+        default_gw_idx = max(0, min(active_start_gw - 1, max_start - 1))
         gw_opts = [f"GW {i}-{i + num_gws - 1}" for i in range(1, max_start + 1)]
         
         selected_gw_str = st.selectbox(
             "GW Range",
             options=gw_opts,
             index=default_gw_idx,
-            key=f"ts_gw_range_select_{num_gws}"
+            key=f"ts_gw_range_select_{num_gws}_{active_start_gw}"
         )
         
     start_gw = int(selected_gw_str.split()[1].split('-')[0])
