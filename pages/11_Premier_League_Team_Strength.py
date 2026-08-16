@@ -44,6 +44,23 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
+        
+        /* Fixture projections compact selectboxes */
+        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) [data-baseweb="select"],
+        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) [data-baseweb="input"] {
+            max-width: 95px !important;
+            min-width: 80px !important;
+        }
+        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="select"],
+        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="input"] {
+            max-width: 120px !important;
+            min-width: 105px !important;
+        }
+        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) label p,
+        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) label p {
+            font-size: 0.8rem !important;
+            white-space: nowrap !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -680,7 +697,22 @@ except Exception:
 if not df_fixtures.empty:
     st.markdown("<hr style='margin: 1.8rem 0 1.2rem 0; opacity: 0.2;'>", unsafe_allow_html=True)
     
-    hdr_c1, hdr_c2, hdr_c3 = st.columns([0.62, 0.17, 0.21])
+    st.markdown("""
+        <style>
+        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) > div,
+        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) [data-baseweb="select"] {
+            max-width: 90px !important;
+            min-width: 75px !important;
+        }
+        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) > div,
+        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="select"] {
+            max-width: 115px !important;
+            min-width: 95px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    hdr_c1, hdr_c2, hdr_c3 = st.columns([0.76, 0.11, 0.13], gap="small")
     with hdr_c1:
         st.subheader("Expected Goals", anchor=False)
     with hdr_c2:
