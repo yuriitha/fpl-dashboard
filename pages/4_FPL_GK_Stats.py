@@ -69,14 +69,18 @@ def load_data():
     elif 'GC_90' not in df.columns:
         df['GC_90'] = 0.0
 
-    if 'saves' in df.columns and 'min_played' in df.columns:
-        df['Svs_90'] = np.where(df['min_played'] > 0, (df['saves'] / df['min_played'] * 90).round(2), 0.0)
-    elif 'Svs_90' not in df.columns:
+    if 'Svs_90' in df.columns and df['Svs_90'].fillna(0).sum() > 0:
+        df['Svs_90'] = pd.to_numeric(df['Svs_90'], errors='coerce').fillna(0.0).round(2)
+    elif 'saves' in df.columns and 'min_played' in df.columns:
+        df['Svs_90'] = np.where(df['min_played'] > 0, (pd.to_numeric(df['saves'], errors='coerce').fillna(0) / df['min_played'] * 90).round(2), 0.0)
+    else:
         df['Svs_90'] = 0.0
 
-    if 'saves_box' in df.columns and 'min_played' in df.columns:
-        df['SvsB_90'] = np.where(df['min_played'] > 0, (df['saves_box'] / df['min_played'] * 90).round(2), 0.0)
-    elif 'SvsB_90' not in df.columns:
+    if 'SvsB_90' in df.columns and df['SvsB_90'].fillna(0).sum() > 0:
+        df['SvsB_90'] = pd.to_numeric(df['SvsB_90'], errors='coerce').fillna(0.0).round(2)
+    elif 'saves_box' in df.columns and 'min_played' in df.columns:
+        df['SvsB_90'] = np.where(df['min_played'] > 0, (pd.to_numeric(df['saves_box'], errors='coerce').fillna(0) / df['min_played'] * 90).round(2), 0.0)
+    else:
         df['SvsB_90'] = 0.0
 
     if 'expected_goals_conceded_per_90' in df.columns:
