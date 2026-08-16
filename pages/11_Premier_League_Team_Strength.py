@@ -45,6 +45,100 @@ st.markdown("""
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
         
+        /* Real-time Theme-Reactive Fixture Projection Tables */
+        .proj-table-container {
+            overflow-x: auto;
+            width: 100%;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            border-radius: 8px;
+            margin-bottom: 1.4rem;
+            background: var(--secondary-background-color, transparent);
+        }
+        .proj-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            font-size: 0.78rem;
+            text-align: center;
+            color: var(--text-color, inherit);
+        }
+        .proj-table thead tr {
+            background: var(--background-color, transparent);
+            border-bottom: 2px solid rgba(128, 128, 128, 0.25);
+        }
+        .proj-table th {
+            padding: 6px 3px;
+            font-weight: 600;
+            min-width: 68px;
+            background: var(--background-color, inherit);
+            color: var(--text-color, inherit);
+            border-right: 1px solid rgba(128, 128, 128, 0.2);
+            border-bottom: 2px solid rgba(128, 128, 128, 0.25);
+            font-size: 0.76rem;
+        }
+        .proj-table th.team-th, .proj-table th.avg-th {
+            padding: 6px 8px;
+            font-weight: 700;
+            min-width: 58px;
+            font-size: 0.78rem;
+        }
+        .proj-table th.team-th {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: var(--background-color, inherit);
+        }
+        .proj-table tbody tr {
+            background: var(--secondary-background-color, transparent);
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+        }
+        .proj-table tbody tr:nth-child(even) {
+            background: var(--background-color, transparent);
+        }
+        .proj-table td {
+            padding: 3px 2px;
+            border-right: 1px solid rgba(128, 128, 128, 0.15);
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+            color: var(--text-color, inherit);
+        }
+        .proj-table td.team-td {
+            padding: 4px 8px;
+            font-weight: 700;
+            font-size: 0.81rem;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: var(--secondary-background-color, inherit);
+            line-height: 1.15;
+        }
+        .proj-table tbody tr:nth-child(even) td.team-td {
+            background: var(--background-color, inherit);
+        }
+        .proj-table td.avg-td {
+            padding: 4px 8px;
+            font-weight: 700;
+            font-size: 0.81rem;
+            background: var(--secondary-background-color, inherit);
+            line-height: 1.15;
+        }
+        .proj-table tbody tr:nth-child(even) td.avg-td {
+            background: var(--background-color, inherit);
+        }
+        .proj-table .cell-val {
+            font-weight: 700;
+            font-size: 0.80rem;
+            line-height: 1.1;
+            color: var(--text-color, inherit);
+        }
+        .proj-table .cell-opp {
+            font-size: 0.63rem;
+            opacity: 0.72;
+            margin-top: 1.5px;
+            line-height: 1.05;
+            color: var(--text-color, inherit);
+        }
+        
         /* Fixture projections compact selectboxes */
         div[data-testid="stSelectbox"]:has(label:contains("Table View")) [data-baseweb="select"],
         div[data-testid="stSelectbox"]:has(label:contains("Table View")) [data-baseweb="input"] {
@@ -591,7 +685,7 @@ with col2:
         st.info("No current matches found.")
 
 
-def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute', gws=range(1, 13), selected_teams=None, is_light=False):
+def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute', gws=range(1, 13), selected_teams=None):
     all_teams_short = sorted(list(set(df_model['team_h_short'].dropna()).union(set(df_model['team_a_short'].dropna()))))
     if selected_teams:
         teams_to_show = [t for t in all_teams_short if t in selected_teams or team_code_to_name.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)]
@@ -685,44 +779,33 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
             alpha = 0.08 + (t ** 0.85) * 0.56
             return f"rgba(245, 140, 25, {alpha:.2f})"
 
-    bg_main = "#ffffff" if is_light else "#0e1117"
-    bg_card = "#f8f9fa" if is_light else "#161b22"
-    border_color = "#e5e7eb" if is_light else "#30363d"
-    text_color = "#111827" if is_light else "#f0f6fc"
-    sub_color = "#6b7280" if is_light else "#8b949e"
-
     html = [
-        f'<div style="overflow-x: auto; width: 100%; border: 1px solid {border_color}; border-radius: 8px; margin-bottom: 1.4rem; background: {bg_card};">',
-        f'<table style="width: 100%; border-collapse: separate; border-spacing: 0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 0.78rem; text-align: center; color: {text_color};">',
+        '<div class="proj-table-container">',
+        '<table class="proj-table">',
         '<thead>',
-        f'<tr style="background: {bg_main}; border-bottom: 2px solid {border_color};">'
+        '<tr>',
+        '<th class="team-th">Team</th>'
     ]
     
-    html.append(f'<th style="padding: 6px 8px; font-weight: 700; text-align: center; position: sticky; left: 0; background: {bg_main}; border-right: 1px solid {border_color}; min-width: 58px; z-index: 2; font-size: 0.78rem;">Team</th>')
-    
     for gw in gws:
-        html.append(f'<th style="padding: 6px 3px; font-weight: 600; min-width: 68px; border-right: 1px solid {border_color}; font-size: 0.76rem;">GW {gw}</th>')
+        html.append(f'<th>GW {gw}</th>')
         
-    html.append(f'<th style="padding: 6px 8px; font-weight: 700; min-width: 58px; background: {bg_main}; font-size: 0.78rem;">Avg</th>')
+    html.append('<th class="avg-th">Avg</th>')
     html.append('</tr></thead><tbody>')
 
-    for r_idx, r in enumerate(rows):
-        border_b = f"border-bottom: 1px solid {border_color};" if r_idx < len(rows) - 1 else ""
-        row_bg = bg_card if r_idx % 2 == 0 else bg_main
-        html.append(f'<tr style="background: {row_bg}; {border_b}">')
-        
-        html.append(f'<td style="padding: 4px 8px; font-weight: 700; font-size: 0.81rem; position: sticky; left: 0; background: {row_bg}; border-right: 1px solid {border_color}; z-index: 1; line-height: 1.15;">{r["Team"]}</td>')
+    for r in rows:
+        html.append('<tr>')
+        html.append(f'<td class="team-td">{r["Team"]}</td>')
         
         for gw in gws:
             cell = r['cells'][gw]
             cell_bg = get_color(cell['val'])
-                
-            html.append(f'<td style="padding: 3px 2px; background-color: {cell_bg}; border-right: 1px solid {border_color};">')
-            html.append(f'<div style="font-weight: 700; font-size: 0.80rem; line-height: 1.1;">{cell["val_str"]}</div>')
-            html.append(f'<div style="font-size: 0.63rem; color: {sub_color}; margin-top: 1.5px; line-height: 1.05;">{cell["opp_str"]}</div>')
+            html.append(f'<td style="background-color: {cell_bg};">')
+            html.append(f'<div class="cell-val">{cell["val_str"]}</div>')
+            html.append(f'<div class="cell-opp">{cell["opp_str"]}</div>')
             html.append('</td>')
             
-        html.append(f'<td style="padding: 4px 8px; font-weight: 700; font-size: 0.81rem; background: {row_bg}; line-height: 1.15;">{r["avg_str"]}</td>')
+        html.append(f'<td class="avg-td">{r["avg_str"]}</td>')
         html.append('</tr>')
 
     html.append('</tbody></table></div>')
@@ -791,11 +874,11 @@ if not df_fixtures.empty:
     end_gw = start_gw + num_gws - 1
     gws_window = list(range(start_gw, end_gw + 1))
     
-    html_xg = build_projection_table_html(df_fixtures, metric_type='xg', view_mode=view_mode, gws=gws_window, selected_teams=final_teams, is_light=is_light)
+    html_xg = build_projection_table_html(df_fixtures, metric_type='xg', view_mode=view_mode, gws=gws_window, selected_teams=final_teams)
     st.markdown(html_xg, unsafe_allow_html=True)
     
     st.subheader("Clean Sheets %" if view_mode == 'Absolute' else "Clean Sheets (Relative)", anchor=False)
-    html_cs = build_projection_table_html(df_fixtures, metric_type='cs', view_mode=view_mode, gws=gws_window, selected_teams=final_teams, is_light=is_light)
+    html_cs = build_projection_table_html(df_fixtures, metric_type='cs', view_mode=view_mode, gws=gws_window, selected_teams=final_teams)
     st.markdown(html_cs, unsafe_allow_html=True)
 
 
