@@ -404,8 +404,6 @@ existing_display_cols = [c for c in display_columns if c in filtered_df.columns]
 
 base_widths = {}
 for col in existing_display_cols:
-    if col == "injury_name":
-        continue
     if not filtered_df.empty and col in filtered_df.columns:
         val_series = filtered_df[col].dropna().astype(str)
         max_val_len = int(val_series.str.len().max()) if not val_series.empty else 1
@@ -417,8 +415,6 @@ for col in existing_display_cols:
         bw = min(bw, 140)
     elif col == "Team Name":
         bw = min(bw, 110)
-    elif col == "expected_return":
-        bw = min(bw, 130)
     else:
         bw = min(bw, 50)
     base_widths[col] = max(bw, 12)
@@ -454,21 +450,16 @@ format_map = {
 }
 
 for col in existing_display_cols:
-    if col == "injury_name":
-        calc_w = 175
-    else:
-        bw = base_widths[col]
-        bonus = (inv_weights[col] / sum_inv_weights) * TOTAL_PADDING_BUDGET
-        calc_w = int(round(bw + bonus))
+    bw = base_widths[col]
+    bonus = (inv_weights[col] / sum_inv_weights) * TOTAL_PADDING_BUDGET
+    calc_w = int(round(bw + bonus))
 
-        if col == "Player":
-            calc_w = max(calc_w, 140)
-        elif col == "Team Name":
-            calc_w = max(calc_w, 120)
-        elif col == "expected_return":
-            calc_w = max(calc_w, 120)
-        else:
-            calc_w = max(calc_w, 52)
+    if col == "Player":
+        calc_w = max(calc_w, 140)
+    elif col == "Team Name":
+        calc_w = max(calc_w, 120)
+    else:
+        calc_w = max(calc_w, 52)
 
     col_type, col_fmt, col_label = format_map.get(col, ("Column", None, col))
 
