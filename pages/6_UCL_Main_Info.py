@@ -186,16 +186,6 @@ def get_base_df(exclude_key=None):
         else:
             mask &= df['Pl Pos'].isin(cv_pl_pos)
 
-    _slider_cols = {
-        'f_cost':     ('Price',    DEFAULTS['f_cost']),
-        'f_mins':     ('Mins',     DEFAULTS['f_mins']),
-        'f_selected': ('Selected', DEFAULTS['f_selected']),
-        'f_ppm':      ('PPM',      DEFAULTS['f_ppm']),
-    }
-    for k, (col_name, d) in _slider_cols.items():
-        if k != exclude_key:
-            mask &= (df[col_name] >= d[0]) & (df[col_name] <= d[1])
-
     return df[mask]
 
 def auto_update_slider(key, col, cast=float):

@@ -128,42 +128,36 @@ def _slider_bounds(min_val, max_val, default_span=1.0):
 def _get_max(col, default=1.0): return float(df[col].max()) if col in df.columns else default
 def _get_min(col, default=0.0): return float(df[col].min()) if col in df.columns else default
 
-if 'matches_played' in df.columns and '60_min' in df.columns:
-    sane_df = df[(df['matches_played'] >= 5) & (df['60_min'] >= 40.5)]
-else:
-    sane_df = df
+df_outfield = df[df['element_type'] != 'GK'] if 'element_type' in df.columns else df
 
-def _get_max_sane(col, default=1.0):
-    return float(sane_df[col].max()) if (col in sane_df.columns and not sane_df.empty) else _get_max(col, default)
+def _get_max(col, default=1.0): return float(df_outfield[col].max()) if col in df_outfield.columns and not df_outfield[col].dropna().empty else default
+def _get_min(col, default=0.0): return float(df_outfield[col].min()) if col in df_outfield.columns and not df_outfield[col].dropna().empty else default
 
-def _get_min_sane(col, default=0.0):
-    return float(sane_df[col].min()) if (col in sane_df.columns and not sane_df.empty) else _get_min(col, default)
-
-rating_series = df[df['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df.columns else pd.Series(dtype=float)
+rating_series = df_outfield[df_outfield['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df_outfield.columns else pd.Series(dtype=float)
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
 
 GB = {
     'f_cost_form':     _slider_bounds(_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
-    'f_matches_form':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 38)), int(_get_min('matches_played', 0)) + 1)),
+    'f_matches_form':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 45)), 1)),
     'f_rating_form':   _slider_bounds(r_min, r_max),
-    'f_mins1y_form':   _slider_bounds(_get_min('min_played_1y'), _get_max('min_played_1y', 4000.0)),
-    'f_mins3y_form':   _slider_bounds(_get_min('min_played_3y'), _get_max('min_played_3y', 12000.0)),
-    'f_selected_form': _slider_bounds(_get_min('selected_by_percent'), _get_max('selected_by_percent', 100.0)),
+    'f_mins1y_form':   _slider_bounds(_get_min('min_played_1y', 0.0), _get_max('min_played_1y', 4000.0)),
+    'f_mins3y_form':   _slider_bounds(_get_min('min_played_3y', 0.0), _get_max('min_played_3y', 12000.0)),
+    'f_selected_form': _slider_bounds(_get_min('selected_by_percent', 0.0), _get_max('selected_by_percent', 100.0)),
     'f_activity_form': _slider_bounds(0.0, 100.0),
-    'f_g1y_form':      _slider_bounds(0.0, _get_max_sane('pct_goals_1y')),
-    'f_xg1y_form':     _slider_bounds(0.0, _get_max_sane('pct_xg_1y')),
-    'f_a1y_form':      _slider_bounds(0.0, _get_max_sane('pct_assists_1y')),
-    'f_xa1y_form':     _slider_bounds(0.0, _get_max_sane('pct_xa_1y')),
+    'f_g1y_form':      _slider_bounds(0.0, _get_max('pct_goals_1y', 100.0)),
+    'f_xg1y_form':     _slider_bounds(0.0, _get_max('pct_xg_1y', 100.0)),
+    'f_a1y_form':      _slider_bounds(0.0, _get_max('pct_assists_1y', 100.0)),
+    'f_xa1y_form':     _slider_bounds(0.0, _get_max('pct_xa_1y', 100.0)),
     'f_avail1y_form':  _slider_bounds(0.0, 100.0),
-    'f_bcc1y_form':    _slider_bounds(0.0, _get_max_sane('pct_bcc_1y')),
-    'f_g3y_form':      _slider_bounds(0.0, _get_max_sane('pct_goals_3y')),
-    'f_xg3y_form':     _slider_bounds(0.0, _get_max_sane('pct_xg_3y')),
-    'f_a3y_form':      _slider_bounds(0.0, _get_max_sane('pct_assists_3y')),
-    'f_xa3y_form':     _slider_bounds(0.0, _get_max_sane('pct_xa_3y')),
+    'f_bcc1y_form':    _slider_bounds(0.0, _get_max('pct_bcc_1y', 100.0)),
+    'f_g3y_form':      _slider_bounds(0.0, _get_max('pct_goals_3y', 100.0)),
+    'f_xg3y_form':     _slider_bounds(0.0, _get_max('pct_xg_3y', 100.0)),
+    'f_a3y_form':      _slider_bounds(0.0, _get_max('pct_assists_3y', 100.0)),
+    'f_xa3y_form':     _slider_bounds(0.0, _get_max('pct_xa_3y', 100.0)),
     'f_avail3y_form':  _slider_bounds(0.0, 100.0),
-    'f_bcc3y_form':    _slider_bounds(0.0, _get_max_sane('pct_bcc_3y')),
+    'f_bcc3y_form':    _slider_bounds(0.0, _get_max('pct_bcc_3y', 100.0)),
 }
 
 
@@ -285,28 +279,6 @@ def get_base_df(exclude_key=None):
             mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
         else:
             mask &= df['Play Pos'].isin(cv_pl_pos)
-
-    _slider_cols = {
-        'f_matches_form':  ('matches_played',        DEFAULTS['f_matches_form']),
-        'f_mins1y_form':   ('min_played_1y',         DEFAULTS['f_mins1y_form']),
-        'f_mins3y_form':   ('min_played_3y',         DEFAULTS['f_mins3y_form']),
-        'f_cost_form':     ('now_cost',              DEFAULTS['f_cost_form']),
-        'f_rating_form':   ('av_rating',             DEFAULTS['f_rating_form']),
-        'f_selected_form': ('selected_by_percent',   DEFAULTS['f_selected_form']),
-        'f_activity_form': ('transfer_activity_pct', DEFAULTS['f_activity_form']),
-        'f_g1y_form':      ('pct_goals_1y',          DEFAULTS['f_g1y_form']),
-        'f_xg1y_form':     ('pct_xg_1y',             DEFAULTS['f_xg1y_form']),
-        'f_a1y_form':      ('pct_assists_1y',        DEFAULTS['f_a1y_form']),
-        'f_xa1y_form':     ('pct_xa_1y',             DEFAULTS['f_xa1y_form']),
-        'f_g3y_form':      ('pct_goals_3y',          DEFAULTS['f_g3y_form']),
-        'f_xg3y_form':     ('pct_xg_3y',             DEFAULTS['f_xg3y_form']),
-        'f_a3y_form':      ('pct_assists_3y',        DEFAULTS['f_a3y_form']),
-        'f_xa3y_form':     ('pct_xa_3y',             DEFAULTS['f_xa3y_form']),
-    }
-    for k, (col_name, d) in _slider_cols.items():
-        if k != exclude_key and col_name in df.columns:
-            val = _safe_range(k, d)
-            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
 
     return df[mask]
 

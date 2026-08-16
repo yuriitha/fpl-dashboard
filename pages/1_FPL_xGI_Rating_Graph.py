@@ -229,19 +229,6 @@ def get_base_df(exclude_key=None):
         else:
             mask &= df['Play Pos'].isin(cv_pl_pos)
 
-    _slider_cols = {
-        'f_matches_gr':  ('matches_played',      DEFAULTS['f_matches']),
-        'f_60min_gr':    ('60_min',              DEFAULTS['f_60min']),
-        'f_cost_gr':     ('now_cost',            DEFAULTS['f_cost']),
-        'f_avg_mins_gr': ('avg_mins',            DEFAULTS['f_avg_mins']),
-        'f_selected_gr': ('selected_by_percent', DEFAULTS['f_selected']),
-        'f_activity_gr': ('transfer_activity_pct', DEFAULTS['f_activity']),
-        'f_rating_gr':   ('av_rating',           DEFAULTS['f_rating']),
-    }
-    for k, (col_name, d) in _slider_cols.items():
-        if k != exclude_key:
-            mask &= (df[col_name] >= d[0]) & (df[col_name] <= d[1])
-
     return df[mask]
 
 def auto_update_slider(key, base_key, col, cast=float, only_positive=False):

@@ -112,38 +112,32 @@ def _slider_bounds(min_val, max_val, default_span=1.0):
         mx = mn + default_span
     return (mn, mx)
 
-def _get_max(col, default=1.0): return float(df[col].max()) if col in df.columns else default
-def _get_min(col, default=0.0): return float(df[col].min()) if col in df.columns else default
+df_outfield = df[df['element_type'] != 'GK'] if 'element_type' in df.columns else df
 
-if 'matches_played' in df.columns and '60_min' in df.columns:
-    sane_df = df[(df['matches_played'] >= 5) & (df['60_min'] >= 37.0)]
-else:
-    sane_df = df
+def _get_max(col, default=1.0): return float(df_outfield[col].max()) if col in df_outfield.columns and not df_outfield[col].dropna().empty else default
+def _get_min(col, default=0.0): return float(df_outfield[col].min()) if col in df_outfield.columns and not df_outfield[col].dropna().empty else default
 
-def _get_max_sane(col, default=1.0):
-    return float(sane_df[col].max()) if (col in sane_df.columns and not sane_df.empty) else _get_max(col, default)
-
-rating_series = df[df['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df.columns else pd.Series(dtype=float)
+rating_series = df_outfield[df_outfield['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df_outfield.columns else pd.Series(dtype=float)
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
 
 GB = {
     'f_cost_as':     _slider_bounds(_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
-    'f_matches_as':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 38)), int(_get_min('matches_played', 0)) + 1)),
-    'f_started_as':  (int(_get_min('matches_started', 0)), max(int(_get_max('matches_started', 38)), int(_get_min('matches_started', 0)) + 1)),
+    'f_matches_as':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 45)), 1)),
+    'f_started_as':  (int(_get_min('matches_started', 0)), max(int(_get_max('matches_started', 45)), 1)),
     'f_rating_as':   _slider_bounds(r_min, r_max),
-    'f_avg_mins_as': _slider_bounds(_get_min('avg_mins'), _get_max('avg_mins', 90.0)),
-    'f_60min_as':    _slider_bounds(_get_min('60_min'), _get_max('60_min', 100.0)),
-    'f_selected_as': _slider_bounds(_get_min('selected_by_percent'), _get_max('selected_by_percent', 100.0)),
-    'f_top100k_as':  _slider_bounds(_get_min('top_100k'), _get_max('top_100k', 100.0)),
+    'f_avg_mins_as': _slider_bounds(_get_min('avg_mins', 0.0), _get_max('avg_mins', 90.0)),
+    'f_60min_as':    _slider_bounds(_get_min('60_min', 0.0), _get_max('60_min', 100.0)),
+    'f_selected_as': _slider_bounds(_get_min('selected_by_percent', 0.0), _get_max('selected_by_percent', 100.0)),
+    'f_top100k_as':  _slider_bounds(_get_min('top_100k', 0.0), _get_max('top_100k', 100.0)),
     'f_activity_as': _slider_bounds(0.0, 100.0),
-    'f_xgot_as':     _slider_bounds(0.0, _get_max_sane('xGoT_90')),
-    'f_xa_as':       _slider_bounds(0.0, _get_max_sane('xA_90')),
-    'f_xgi_as':      _slider_bounds(0.0, _get_max_sane('xGI_norm')),
-    'f_sh_as':       _slider_bounds(0.0, _get_max_sane('Sh_90')),
-    'f_shot_as':     _slider_bounds(0.0, _get_max_sane('ShoT_90')),
-    'f_pass90_as':   _slider_bounds(0.0, _get_max_sane('Pass_90')),
+    'f_xgot_as':     _slider_bounds(0.0, _get_max('xGoT_90', 2.0)),
+    'f_xa_as':       _slider_bounds(0.0, _get_max('xA_90', 2.0)),
+    'f_xgi_as':      _slider_bounds(0.0, _get_max('xGI_norm', 2.0)),
+    'f_sh_as':       _slider_bounds(0.0, _get_max('Sh_90', 10.0)),
+    'f_shot_as':     _slider_bounds(0.0, _get_max('ShoT_90', 5.0)),
+    'f_pass90_as':   _slider_bounds(0.0, _get_max('Pass_90', 120.0)),
     'f_pass_as':     _slider_bounds(0.0, _get_max('Pass_pct', 100.0)),
 }
 
@@ -238,10 +232,7 @@ def get_available(exclude_key=None):
     return df[mask]
 
 def get_base_df(exclude_key=None):
-    """
-    Базовий набір даних для розрахунку діапазонів слайдерів.
-    Застосовує: pills + search + DEFAULTS інших слайдерів (крім exclude_key).
-    """
+    """Базовий набір даних для розрахунку діапазонів слайдерів."""
     cv_pos    = st.session_state.get('pills_pos_as',   [p for p in sorted_positions if p != 'GK']) or []
     cv_teams  = st.session_state.get('pills_teams_as', all_teams) or []
     cv_search = st.session_state.get('search_name_as', '')
@@ -262,29 +253,6 @@ def get_base_df(exclude_key=None):
             mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
         else:
             mask &= df['Play Pos'].isin(cv_pl_pos)
-
-    _slider_cols = {
-        'f_matches_as':  ('matches_played',        DEFAULTS['f_matches_as']),
-        'f_started_as':  ('matches_started',       DEFAULTS['f_started_as']),
-        'f_60min_as':    ('60_min',                DEFAULTS['f_60min_as']),
-        'f_cost_as':     ('now_cost',              DEFAULTS['f_cost_as']),
-        'f_avg_mins_as': ('avg_mins',              DEFAULTS['f_avg_mins_as']),
-        'f_rating_as':   ('av_rating',             DEFAULTS['f_rating_as']),
-        'f_selected_as': ('selected_by_percent',   DEFAULTS['f_selected_as']),
-        'f_top100k_as':  ('top_100k',              DEFAULTS['f_top100k_as']),
-        'f_activity_as': ('transfer_activity_pct', DEFAULTS['f_activity_as']),
-        'f_xgot_as':     ('xGoT_90',               DEFAULTS['f_xgot_as']),
-        'f_xa_as':       ('xA_90',                 DEFAULTS['f_xa_as']),
-        'f_xgi_as':      ('xGI_norm',              DEFAULTS['f_xgi_as']),
-        'f_sh_as':       ('Sh_90',                 DEFAULTS['f_sh_as']),
-        'f_shot_as':     ('ShoT_90',               DEFAULTS['f_shot_as']),
-        'f_pass90_as':   ('Pass_90',               DEFAULTS['f_pass90_as']),
-        'f_pass_as':     ('Pass_pct',              DEFAULTS['f_pass_as']),
-    }
-    for k, (col_name, d) in _slider_cols.items():
-        if k != exclude_key and col_name in df.columns:
-            val = _safe_range(k, d)
-            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
 
     return df[mask]
 

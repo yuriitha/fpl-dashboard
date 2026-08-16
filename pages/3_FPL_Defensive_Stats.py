@@ -129,39 +129,33 @@ def _slider_bounds(min_val, max_val, default_span=1.0):
         mx = mn + default_span
     return (mn, mx)
 
-def _get_max(col, default=1.0): return float(df[col].max()) if col in df.columns else default
-def _get_min(col, default=0.0): return float(df[col].min()) if col in df.columns else default
+df_outfield = df[df['element_type'] != 'GK'] if 'element_type' in df.columns else df
 
-if 'matches_played' in df.columns and '60_min' in df.columns:
-    sane_df = df[(df['matches_played'] >= 5) & (df['60_min'] >= 40.5)]
-else:
-    sane_df = df
+def _get_max(col, default=1.0): return float(df_outfield[col].max()) if col in df_outfield.columns and not df_outfield[col].dropna().empty else default
+def _get_min(col, default=0.0): return float(df_outfield[col].min()) if col in df_outfield.columns and not df_outfield[col].dropna().empty else default
 
-def _get_max_sane(col, default=1.0):
-    return float(sane_df[col].max()) if (col in sane_df.columns and not sane_df.empty) else _get_max(col, default)
-
-rating_series = df[df['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df.columns else pd.Series(dtype=float)
+rating_series = df_outfield[df_outfield['av_rating'] > 0]['av_rating'].dropna() if 'av_rating' in df_outfield.columns else pd.Series(dtype=float)
 r_min = float(rating_series.min()) if not rating_series.empty else 0.0
 r_max = float(rating_series.max()) if not rating_series.empty else 10.0
 
 
 GB = {
     'f_cost_ds':     _slider_bounds(_get_min('now_cost', 4.0), _get_max('now_cost', 15.0)),
-    'f_matches_ds':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 38)), int(_get_min('matches_played', 0)) + 1)),
-    'f_started_ds':  (int(_get_min('matches_started', 0)), max(int(_get_max('matches_started', 38)), int(_get_min('matches_started', 0)) + 1)),
+    'f_matches_ds':  (int(_get_min('matches_played', 0)), max(int(_get_max('matches_played', 45)), 1)),
+    'f_started_ds':  (int(_get_min('matches_started', 0)), max(int(_get_max('matches_started', 45)), 1)),
     'f_rating_ds':   _slider_bounds(r_min, r_max),
-    'f_avg_mins_ds': _slider_bounds(_get_min('avg_mins'), _get_max('avg_mins', 90.0)),
-    'f_60min_ds':    _slider_bounds(_get_min('60_min'), _get_max('60_min', 100.0)),
-    'f_selected_ds': _slider_bounds(_get_min('selected_by_percent'), _get_max('selected_by_percent', 100.0)),
+    'f_avg_mins_ds': _slider_bounds(_get_min('avg_mins', 0.0), _get_max('avg_mins', 90.0)),
+    'f_60min_ds':    _slider_bounds(_get_min('60_min', 0.0), _get_max('60_min', 100.0)),
+    'f_selected_ds': _slider_bounds(_get_min('selected_by_percent', 0.0), _get_max('selected_by_percent', 100.0)),
     'f_activity_ds': _slider_bounds(0.0, 100.0),
-    'f_cs_ds':       _slider_bounds(0.0, _get_max_sane('CS_90')),
-    'f_dc_ds':       _slider_bounds(0.0, _get_max_sane('DC_90')),
-    'f_clr_ds':      _slider_bounds(0.0, _get_max_sane('Clr_90')),
-    'f_blk_ds':      _slider_bounds(0.0, _get_max_sane('Blk_90')),
-    'f_int_ds':      _slider_bounds(0.0, _get_max_sane('Int_90')),
-    'f_tck_ds':      _slider_bounds(0.0, _get_max_sane('Tck_90')),
-    'f_rec_ds':      _slider_bounds(0.0, _get_max_sane('Rec_90')),
-    'f_pass90_ds':   _slider_bounds(0.0, _get_max_sane('Pass_90')),
+    'f_cs_ds':       _slider_bounds(0.0, _get_max('CS_90', 1.0)),
+    'f_dc_ds':       _slider_bounds(0.0, _get_max('DC_90', 10.0)),
+    'f_clr_ds':      _slider_bounds(0.0, _get_max('Clr_90', 10.0)),
+    'f_blk_ds':      _slider_bounds(0.0, _get_max('Blk_90', 5.0)),
+    'f_int_ds':      _slider_bounds(0.0, _get_max('Int_90', 5.0)),
+    'f_tck_ds':      _slider_bounds(0.0, _get_max('Tck_90', 8.0)),
+    'f_rec_ds':      _slider_bounds(0.0, _get_max('Rec_90', 15.0)),
+    'f_pass90_ds':   _slider_bounds(0.0, _get_max('Pass_90', 120.0)),
     'f_pass_ds':     _slider_bounds(0.0, _get_max('Pass_pct', 100.0)),
 }
 
@@ -280,30 +274,6 @@ def get_base_df(exclude_key=None):
             mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
         else:
             mask &= df['Play Pos'].isin(cv_pl_pos)
-
-    _slider_cols = {
-        'f_matches_ds':  ('matches_played',        DEFAULTS['f_matches_ds']),
-        'f_started_ds':  ('matches_started',       DEFAULTS['f_started_ds']),
-        'f_60min_ds':    ('60_min',                DEFAULTS['f_60min_ds']),
-        'f_cost_ds':     ('now_cost',              DEFAULTS['f_cost_ds']),
-        'f_avg_mins_ds': ('avg_mins',              DEFAULTS['f_avg_mins_ds']),
-        'f_rating_ds':   ('av_rating',             DEFAULTS['f_rating_ds']),
-        'f_selected_ds': ('selected_by_percent',   DEFAULTS['f_selected_ds']),
-        'f_activity_ds': ('transfer_activity_pct', DEFAULTS['f_activity_ds']),
-        'f_cs_ds':       ('CS_90',                 DEFAULTS['f_cs_ds']),
-        'f_dc_ds':       ('DC_90',                 DEFAULTS['f_dc_ds']),
-        'f_clr_ds':      ('Clr_90',                DEFAULTS['f_clr_ds']),
-        'f_blk_ds':      ('Blk_90',                DEFAULTS['f_blk_ds']),
-        'f_int_ds':      ('Int_90',                DEFAULTS['f_int_ds']),
-        'f_tck_ds':      ('Tck_90',                DEFAULTS['f_tck_ds']),
-        'f_rec_ds':      ('Rec_90',                DEFAULTS['f_rec_ds']),
-        'f_pass90_ds':   ('Pass_90',               DEFAULTS['f_pass90_ds']),
-        'f_pass_ds':     ('Pass_pct',              DEFAULTS['f_pass_ds']),
-    }
-    for k, (col_name, d) in _slider_cols.items():
-        if k != exclude_key and col_name in df.columns:
-            val = _safe_range(k, d)
-            mask &= (df[col_name] >= val[0]) & (df[col_name] <= val[1])
 
     return df[mask]
 

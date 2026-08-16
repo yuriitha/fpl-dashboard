@@ -201,11 +201,7 @@ def get_available(exclude_key=None):
 
 
 def get_base_df(exclude_key=None):
-    """
-    Базовий набір даних для розрахунку діапазонів слайдерів.
-    Застосовує: pills + search + DEFAULTS інших слайдерів (крім exclude_key).
-    Використовує DEFAULTS (не поточні значення) — це уникає циркулярних залежностей між слайдерами.
-    """
+    """Базовий набір даних для розрахунку діапазонів слайдерів."""
     cv_pos    = st.session_state.get('pills_pos',   sorted_positions) or []
     cv_teams  = st.session_state.get('pills_teams', all_teams) or []
     cv_search = st.session_state.get('search_name', '')
@@ -225,20 +221,6 @@ def get_base_df(exclude_key=None):
             mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
         else:
             mask &= df['Play Pos'].isin(cv_pl_pos)
-
-
-    _slider_cols = {
-        'f_matches':  ('matches_played',      DEFAULTS['f_matches']),
-        'f_60min':    ('60_min',              DEFAULTS['f_60min']),
-        'f_cost':     ('now_cost',            DEFAULTS['f_cost']),
-        'f_avg_mins': ('avg_mins',            DEFAULTS['f_avg_mins']),
-        'f_selected': ('selected_by_percent', DEFAULTS['f_selected']),
-        'f_activity': ('transfer_activity_pct', DEFAULTS['f_activity']),
-        'f_rating':   ('av_rating',           DEFAULTS['f_rating']),
-    }
-    for k, (col_name, d) in _slider_cols.items():
-        if k != exclude_key:
-            mask &= (df[col_name] >= d[0]) & (df[col_name] <= d[1])
 
     return df[mask]
 
