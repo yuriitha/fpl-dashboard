@@ -46,17 +46,23 @@ st.markdown("""
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
         
         /* Fixture projections compact selectboxes */
-        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) [data-baseweb="select"],
-        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) [data-baseweb="input"] {
+        div[data-testid="stSelectbox"]:has(label:contains("Table View")) [data-baseweb="select"],
+        div[data-testid="stSelectbox"]:has(label:contains("Table View")) [data-baseweb="input"] {
+            max-width: 105px !important;
+            min-width: 85px !important;
+        }
+        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) [data-baseweb="select"],
+        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) [data-baseweb="input"] {
             max-width: 95px !important;
-            min-width: 80px !important;
+            min-width: 75px !important;
         }
         div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="select"],
         div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="input"] {
             max-width: 120px !important;
-            min-width: 105px !important;
+            min-width: 95px !important;
         }
-        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) label p,
+        div[data-testid="stSelectbox"]:has(label:contains("Table View")) label p,
+        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) label p,
         div[data-testid="stSelectbox"]:has(label:contains("GW Range")) label p {
             font-size: 0.8rem !important;
             white-space: nowrap !important;
@@ -585,7 +591,7 @@ with col2:
         st.info("No current matches found.")
 
 
-def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), selected_teams=None, is_light=False):
+def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute', gws=range(1, 13), selected_teams=None, is_light=False):
     all_teams_short = sorted(list(set(df_model['team_h_short'].dropna()).union(set(df_model['team_a_short'].dropna()))))
     if selected_teams:
         teams_to_show = [t for t in all_teams_short if t in selected_teams or team_code_to_name.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)]
@@ -596,7 +602,8 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
 
     rows = []
     all_vals = []
-    
+    is_rel = (view_mode == 'Relative')
+
     for t in teams_to_show:
         row = {'Team': t, 'cells': {}}
         vals_list = []
@@ -609,16 +616,31 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
                 opps = []
                 for _, m in matches.iterrows():
                     if m['team_h_short'] == t:
-                        v = m['home_xg'] if metric_type == 'xg' else m['home_cs']
+                        if is_rel:
+                            v = m['home_xg_rel'] if (metric_type == 'xg' and 'home_xg_rel' in m) else (m['home_cs_rel'] if 'home_cs_rel' in m else 1.0)
+                        else:
+                            v = m['home_xg'] if metric_type == 'xg' else m['home_cs']
                         opp = f"{m['team_a_short']} (H)"
                     else:
-                        v = m['away_xg'] if metric_type == 'xg' else m['away_cs']
+                        if is_rel:
+                            v = m['away_xg_rel'] if (metric_type == 'xg' and 'away_xg_rel' in m) else (m['away_cs_rel'] if 'away_cs_rel' in m else 1.0)
+                        else:
+                            v = m['away_xg'] if metric_type == 'xg' else m['away_cs']
                         opp = f"{m['team_h_short']} (A)"
                     m_vals.append(v)
                     opps.append(opp)
                 
-                tot_val = sum(m_vals) if metric_type == 'xg' else (m_vals[0] if len(m_vals) == 1 else (np.prod([x/100 for x in m_vals])*100))
-                val_str = f"{tot_val:.2f}" if metric_type == 'xg' else f"{tot_val:.1f}%"
+                if metric_type == 'xg':
+                    tot_val = sum(m_vals)
+                    val_str = f"{tot_val:.2f}"
+                else:
+                    if is_rel:
+                        tot_val = m_vals[0] if len(m_vals) == 1 else (np.prod(m_vals))
+                        val_str = f"{tot_val:.2f}"
+                    else:
+                        tot_val = m_vals[0] if len(m_vals) == 1 else (np.prod([x/100 for x in m_vals])*100)
+                        val_str = f"{tot_val:.1f}%"
+                
                 opp_str = ", ".join(opps)
                 
                 vals_list.append(tot_val)
@@ -626,7 +648,11 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
                 row['cells'][gw] = {'val': tot_val, 'val_str': val_str, 'opp_str': opp_str}
         
         avg_val = np.mean(vals_list) if vals_list else 0.0
-        avg_str = f"{avg_val:.2f}" if metric_type == 'xg' else f"{avg_val:.1f}%"
+        if is_rel or metric_type == 'xg':
+            avg_str = f"{avg_val:.2f}"
+        else:
+            avg_str = f"{avg_val:.1f}%"
+            
         row['avg_val'] = avg_val
         row['avg_str'] = avg_str
         rows.append(row)
@@ -638,9 +664,12 @@ def build_projection_table_html(df_model, metric_type='xg', gws=range(1, 13), se
     if len(valid_vals) > 0 and np.max(valid_vals) > np.min(valid_vals):
         p5 = float(np.percentile(valid_vals, 5))
         p95 = float(np.percentile(valid_vals, 95))
-        median_val = float(np.median(valid_vals))
+        median_val = 1.00 if is_rel else float(np.median(valid_vals))
     else:
-        p5, p95, median_val = (0.8, 2.2, 1.4) if metric_type == 'xg' else (10.0, 40.0, 25.0)
+        if is_rel:
+            p5, p95, median_val = (0.6, 1.5, 1.00)
+        else:
+            p5, p95, median_val = (0.8, 2.2, 1.4) if metric_type == 'xg' else (10.0, 40.0, 25.0)
 
     def get_color(val):
         if val is None or pd.isna(val):
@@ -711,30 +740,42 @@ if not df_fixtures.empty:
     
     st.markdown("""
         <style>
-        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) > div,
-        div[data-testid="stSelectbox"]:has(label:contains("GWs to show")) [data-baseweb="select"] {
-            max-width: 90px !important;
+        div[data-testid="stSelectbox"]:has(label:contains("Table View")) > div,
+        div[data-testid="stSelectbox"]:has(label:contains("Table View")) [data-baseweb="select"] {
+            max-width: 105px !important;
+            min-width: 85px !important;
+        }
+        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) > div,
+        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) [data-baseweb="select"] {
+            max-width: 95px !important;
             min-width: 75px !important;
         }
         div[data-testid="stSelectbox"]:has(label:contains("GW Range")) > div,
         div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="select"] {
-            max-width: 115px !important;
+            max-width: 120px !important;
             min-width: 95px !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    hdr_c1, hdr_c2, hdr_c3 = st.columns([0.76, 0.11, 0.13], gap="small")
+    hdr_c1, hdr_c2, hdr_c3, hdr_c4 = st.columns([0.52, 0.16, 0.14, 0.18], gap="small")
     with hdr_c1:
         st.subheader("Expected Goals", anchor=False)
     with hdr_c2:
+        view_mode = st.selectbox(
+            "Table View",
+            options=["Absolute", "Relative"],
+            index=0,
+            key="ts_view_mode_select"
+        )
+    with hdr_c3:
         num_gws = st.selectbox(
-            "GWs to show",
+            "GWs To Show",
             options=list(range(4, 13)),
             index=8, # 12 default
             key="ts_gw_count_select"
         )
-    with hdr_c3:
+    with hdr_c4:
         max_start = 38 - num_gws + 1
         unplayed_gws = sorted([int(x) for x in df_fixtures[df_fixtures['finished'] == False]['event'].dropna().unique()])
         default_gw = unplayed_gws[0] if unplayed_gws else 1
@@ -752,11 +793,11 @@ if not df_fixtures.empty:
     end_gw = start_gw + num_gws - 1
     gws_window = list(range(start_gw, end_gw + 1))
     
-    html_xg = build_projection_table_html(df_fixtures, metric_type='xg', gws=gws_window, selected_teams=final_teams, is_light=is_light)
+    html_xg = build_projection_table_html(df_fixtures, metric_type='xg', view_mode=view_mode, gws=gws_window, selected_teams=final_teams, is_light=is_light)
     st.markdown(html_xg, unsafe_allow_html=True)
     
-    st.subheader("Clean Sheets %", anchor=False)
-    html_cs = build_projection_table_html(df_fixtures, metric_type='cs', gws=gws_window, selected_teams=final_teams, is_light=is_light)
+    st.subheader("Clean Sheets %" if view_mode == 'Absolute' else "Clean Sheets (Relative)", anchor=False)
+    html_cs = build_projection_table_html(df_fixtures, metric_type='cs', view_mode=view_mode, gws=gws_window, selected_teams=final_teams, is_light=is_light)
     st.markdown(html_cs, unsafe_allow_html=True)
 
 
