@@ -74,6 +74,11 @@ def load_data():
     elif 'Svs_90' not in df.columns:
         df['Svs_90'] = 0.0
 
+    if 'saves_box' in df.columns and 'min_played' in df.columns:
+        df['SvsB_90'] = np.where(df['min_played'] > 0, (df['saves_box'] / df['min_played'] * 90).round(2), 0.0)
+    elif 'SvsB_90' not in df.columns:
+        df['SvsB_90'] = 0.0
+
     if 'expected_goals_conceded_per_90' in df.columns:
         df['xGC_90'] = np.where(df.get('xGC_90', 0) > 0, df['xGC_90'], df['expected_goals_conceded_per_90'].fillna(0.0).round(2))
     elif 'xGC_90' not in df.columns:
@@ -81,7 +86,7 @@ def load_data():
 
     df['xGP_90'] = (df['xGC_90'] - df['GC_90']).round(2)
 
-    for gk_col in ['saves', 'penalties_saved', 'clean_sheets', 'goals_conceded', 'yellow_cards', 'red_cards', 'Svs_90', 'CS_90', 'GC_90', 'xGC_90', 'xGP_90', 'gk_value']:
+    for gk_col in ['saves', 'saves_box', 'penalties_saved', 'clean_sheets', 'goals_conceded', 'yellow_cards', 'red_cards', 'Svs_90', 'SvsB_90', 'CS_90', 'GC_90', 'xGC_90', 'xGP_90', 'gk_value']:
         if gk_col not in df.columns:
             df[gk_col] = 0.0
 
@@ -561,7 +566,7 @@ display_columns = [
     "selected_by_percent", "min_played", "matches_played", "matches_started",
     "avg_mins", "60_min", "av_rating",
     "CS_90", "xGC_90", "xGP_90",
-    "Svs_90", "penalties_saved",
+    "Svs_90", "SvsB_90", "penalties_saved",
     "Pass_90", "Pass_pct", "yellow_cards", "YC_90", "red_cards", "RC_90"
 ]
 
@@ -673,7 +678,7 @@ def soft_green_gradient(s, min_alpha=0.05, max_alpha=0.36, max_cap=None, reverse
 
 styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['avg_mins', 'av_rating', '60_min'] if c in existing_cols])\
-    .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'Svs_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])\
+    .apply(soft_green_gradient, subset=[c for c in ['CS_90', 'Svs_90', 'SvsB_90', 'penalties_saved', 'xGP_90'] if c in existing_cols])\
     .apply(soft_green_gradient, reverse=True, subset=[c for c in ['xGC_90'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['Pass_90', 'Pass_pct'] if c in existing_cols])\
     .format(precision=2)\
@@ -720,6 +725,7 @@ format_map = {
     "xGC_90":              ("NumberColumn", "%.2f", "xGC/90"),
     "xGP_90":              ("NumberColumn", "%.2f", "xGP/90"),
     "Svs_90":              ("NumberColumn", "%.2f", "Svs/90"),
+    "SvsB_90":             ("NumberColumn", "%.2f", "SvsB/90"),
     "penalties_saved":     ("NumberColumn", "%d", "PS"),
     "Pass_90":             ("NumberColumn", "%.2f", "Pass/90"),
     "Pass_pct":            ("NumberColumn", "%.1f", "Pass%"),
