@@ -45,6 +45,9 @@ st.markdown("""
 def load_data():
     url = "http://198.244.151.163:8000/fpl_players"
     df = pd.read_parquet(url)
+    for c in ['injury_name', 'expected_return']:
+        if c in df.columns:
+            df[c] = df[c].fillna("").astype(str).replace({'None': '', 'nan': '', 'NaN': ''})
     if 'av_rating' in df.columns:
         df['av_rating'] = pd.to_numeric(df['av_rating'], errors='coerce').fillna(0.0)
     sort_cols = [c for c in ['now_cost', 'M Price'] if c in df.columns]
