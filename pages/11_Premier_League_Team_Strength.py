@@ -680,40 +680,38 @@ except Exception:
 if not df_fixtures.empty:
     st.markdown("<hr style='margin: 1.8rem 0 1.2rem 0; opacity: 0.2;'>", unsafe_allow_html=True)
     
-    hdr_c1, hdr_c2, hdr_c3 = st.columns([0.46, 0.24, 0.30])
+    hdr_c1, hdr_c2, hdr_c3 = st.columns([0.62, 0.17, 0.21])
     with hdr_c1:
-        st.subheader("Expected Goals (xG)", anchor=False)
+        st.subheader("Expected Goals", anchor=False)
     with hdr_c2:
-        week_options = [f"{i} Weeks" for i in range(4, 13)]
-        selected_weeks_str = st.selectbox(
-            "Weeks to show",
-            options=week_options,
-            index=8, # 12 Weeks default
+        num_gws = st.selectbox(
+            "GWs to show",
+            options=list(range(4, 13)),
+            index=8, # 12 default
             key="ts_gw_count_select"
         )
-        num_gws = int(selected_weeks_str.split()[0])
     with hdr_c3:
         max_start = 38 - num_gws + 1
         unplayed_gws = sorted([int(x) for x in df_fixtures[df_fixtures['finished'] == False]['event'].dropna().unique()])
         default_gw = unplayed_gws[0] if unplayed_gws else 1
         default_gw_idx = max(0, min(default_gw - 1, max_start - 1))
-        gw_opts = [f"GW {i} – GW {i + num_gws - 1}" for i in range(1, max_start + 1)]
+        gw_opts = [f"GW {i}-{i + num_gws - 1}" for i in range(1, max_start + 1)]
         
         selected_gw_str = st.selectbox(
-            "Gameweek Range",
+            "GW Range",
             options=gw_opts,
             index=default_gw_idx,
             key=f"ts_gw_range_select_{num_gws}"
         )
         
-    start_gw = int(selected_gw_str.split()[1])
+    start_gw = int(selected_gw_str.split()[1].split('-')[0])
     end_gw = start_gw + num_gws - 1
     gws_window = list(range(start_gw, end_gw + 1))
     
     html_xg = build_projection_table_html(df_fixtures, metric_type='xg', gws=gws_window, selected_teams=final_teams, is_light=is_light)
     st.markdown(html_xg, unsafe_allow_html=True)
     
-    st.subheader("Clean Sheets (CS %)", anchor=False)
+    st.subheader("Clean Sheets %", anchor=False)
     html_cs = build_projection_table_html(df_fixtures, metric_type='cs', gws=gws_window, selected_teams=final_teams, is_light=is_light)
     st.markdown(html_cs, unsafe_allow_html=True)
 
