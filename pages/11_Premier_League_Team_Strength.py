@@ -780,7 +780,9 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
         if is_rel:
             decay_weights = np.array([0.95 ** i for i in range(len(vals_list))])
             sum_weights = float(np.sum(decay_weights)) if len(vals_list) > 0 else 1.0
-            avg_val = float(np.sum(np.array(vals_list) * decay_weights) / sum_weights) if vals_list else 1.0
+            clean_vals = np.maximum(1e-4, np.array(vals_list))
+            weighted_log = np.sum(np.log(clean_vals) * decay_weights) / sum_weights
+            avg_val = float(np.exp(weighted_log)) if len(vals_list) > 0 else 1.0
             avg_str = f"{avg_val:.2f}"
         else:
             avg_val = float(np.mean(vals_list)) if vals_list else 0.0
