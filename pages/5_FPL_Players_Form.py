@@ -69,7 +69,8 @@ def load_data():
         'pct_clearances_1y', 'pct_clearances_3y',
         'pct_blocks_1y', 'pct_blocks_3y',
         'pct_interceptions_1y', 'pct_interceptions_3y',
-        'pct_tackles_1y', 'pct_tackles_3y'
+        'pct_tackles_1y', 'pct_tackles_3y',
+        'pct_recoveries_1y', 'pct_recoveries_3y'
     ]
 
     for col in pct_cols:
@@ -583,9 +584,9 @@ if sort_cols:
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "selected_by_percent",
     "min_played_1y", "pct_mins_avail_1y", "pct_goals_1y", "pct_xg_1y", "pct_xgot_1y", "pct_assists_1y", "pct_xa_1y", "pct_shots_1y", "pct_bcc_1y",
-    "pct_clearances_1y", "pct_blocks_1y", "pct_interceptions_1y", "pct_tackles_1y",
+    "pct_clearances_1y", "pct_blocks_1y", "pct_interceptions_1y", "pct_tackles_1y", "pct_recoveries_1y",
     "min_played_3y", "pct_mins_avail_3y", "pct_goals_3y", "pct_xg_3y", "pct_xgot_3y", "pct_assists_3y", "pct_xa_3y", "pct_shots_3y", "pct_bcc_3y",
-    "pct_clearances_3y", "pct_blocks_3y", "pct_interceptions_3y", "pct_tackles_3y"
+    "pct_clearances_3y", "pct_blocks_3y", "pct_interceptions_3y", "pct_tackles_3y", "pct_recoveries_3y"
 ]
 
 existing_cols = [c for c in display_columns if c in filtered_df.columns]
@@ -692,7 +693,7 @@ def warm_honey_gradient(s, min_alpha=0.05, max_alpha=0.36, power=1.0, max_cap=No
 styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['pct_mins_avail_1y', 'pct_mins_avail_3y'] if c in existing_cols])\
     .apply(soft_green_gradient, subset=[c for c in ['pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols])\
-    .apply(soft_blue_gradient, subset=[c for c in ['pct_shots_1y', 'pct_bcc_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_shots_3y', 'pct_bcc_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y'] if c in existing_cols])
+    .apply(soft_blue_gradient, subset=[c for c in ['pct_shots_1y', 'pct_bcc_1y', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_shots_3y', 'pct_bcc_3y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols])
 
 st.subheader(f"FPL Players Form: {len(filtered_df)} players", anchor=False)
 
@@ -737,6 +738,7 @@ format_map = {
     "pct_blocks_1y":        ("NumberColumn", "%.1f", "Blk 1y"),
     "pct_interceptions_1y": ("NumberColumn", "%.1f", "Int 1y"),
     "pct_tackles_1y":       ("NumberColumn", "%.1f", "Tck 1y"),
+    "pct_recoveries_1y":    ("NumberColumn", "%.1f", "Rec 1y"),
     "min_played_3y":        ("NumberColumn", "%d", "Mins 3y"),
     "pct_mins_avail_3y":    ("NumberColumn", "%.1f", "Avail 3y"),
     "pct_goals_3y":         ("NumberColumn", "%.1f", "G 3y"),
@@ -750,6 +752,7 @@ format_map = {
     "pct_blocks_3y":        ("NumberColumn", "%.1f", "Blk 3y"),
     "pct_interceptions_3y": ("NumberColumn", "%.1f", "Int 3y"),
     "pct_tackles_3y":       ("NumberColumn", "%.1f", "Tck 3y"),
+    "pct_recoveries_3y":    ("NumberColumn", "%.1f", "Rec 3y"),
 }
 
 for col in existing_cols:
