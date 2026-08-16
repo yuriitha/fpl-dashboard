@@ -374,7 +374,7 @@ with col1:
             current_ratings.append({
                 'Team': team_code_to_name.get(t_code, t_code),
                 'Attack Rating': att,
-                'Defense Rating': def_rating,
+                'Defence Rating': def_rating,
                 'Overall Rating': att - def_rating
             })
 
@@ -382,16 +382,16 @@ with col1:
         df_ratings = pd.DataFrame(current_ratings).sort_values('Overall Rating', ascending=False).reset_index(drop=True)
         df_ratings.index = df_ratings.index + 1
         df_ratings.reset_index(inplace=True)
-        df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defense Rating': 'Defense', 'Overall Rating': 'Overall'}, inplace=True)
+        df_ratings.rename(columns={'index': 'Pos', 'Attack Rating': 'Attack', 'Defence Rating': 'Defence', 'Overall Rating': 'Overall'}, inplace=True)
 
         df_ratings_styled = df_ratings.style\
             .apply(soft_honey_blue_gradient, subset=['Attack'])\
-            .apply(soft_honey_blue_gradient, reverse=True, subset=['Defense'])\
+            .apply(soft_honey_blue_gradient, reverse=True, subset=['Defence'])\
             .apply(soft_honey_blue_gradient, subset=['Overall'])\
             .format(precision=2)
 
         # Smart widths for df_ratings
-        ratings_cols = ['Pos', 'Team', 'Attack', 'Defense', 'Overall']
+        ratings_cols = ['Pos', 'Team', 'Attack', 'Defence', 'Overall']
         base_widths_ratings = {}
         for c in ratings_cols:
             if not df_ratings.empty and c in df_ratings.columns:
@@ -424,8 +424,8 @@ with col1:
                 column_config_ratings[c] = st.column_config.TextColumn("Team", width=max(calc_w, 110))
             elif c == 'Attack':
                 column_config_ratings[c] = st.column_config.NumberColumn("Attack", format="%.2f", width=max(calc_w, 60))
-            elif c == 'Defense':
-                column_config_ratings[c] = st.column_config.NumberColumn("Defense", format="%.2f", width=max(calc_w, 60))
+            elif c == 'Defence':
+                column_config_ratings[c] = st.column_config.NumberColumn("Defence", format="%.2f", width=max(calc_w, 60))
             elif c == 'Overall':
                 column_config_ratings[c] = st.column_config.NumberColumn("Overall", format="%.2f", width=max(calc_w, 60))
 
@@ -615,7 +615,7 @@ if not df_hist.empty:
         all_annotations = []
 
 
-        is_defense = (title == "Defense Rating")
+        is_defense = (title in ["Defence Rating", "Defense Rating"])
         latest_ratings = {}
         for t in df['team_name'].unique():
             tdf_t = df[df['team_name'] == t].dropna(subset=[y_col]).sort_values('x_pos')
@@ -702,7 +702,7 @@ if not df_hist.empty:
 
             min_gap = max(0.015, y_span * 0.020)
             max_shift = min_gap * 2.5
-            is_reversed = (title == "Defense Rating")
+            is_reversed = (title in ["Defence Rating", "Defense Rating"])
 
             for x_val, group in ann_df.groupby('x'):
                 if len(group) == 1:
@@ -754,7 +754,7 @@ if not df_hist.empty:
             fig.add_vline(x=season_boundaries[-1], line_dash="dash", line_color="rgba(150, 150, 150, 0.5)", line_width=1)
 
         yaxis_config = dict(title="Rating", nticks=20)
-        if title == "Defense Rating":
+        if title in ["Defence Rating", "Defense Rating"]:
             yaxis_config['autorange'] = "reversed"
 
         fig.update_layout(
@@ -774,9 +774,9 @@ if not df_hist.empty:
         )
         return fig
 
-    st.plotly_chart(create_chart(df_hist, 'total', "Overall Rating (Attack - Defense)"), width="stretch")
+    st.plotly_chart(create_chart(df_hist, 'total', "Overall Rating (Attack - Defence)"), width="stretch")
     st.plotly_chart(create_chart(df_hist, 'att', "Attack Rating"), width="stretch")
-    st.plotly_chart(create_chart(df_hist, 'def', "Defense Rating"), width="stretch")
+    st.plotly_chart(create_chart(df_hist, 'def', "Defence Rating"), width="stretch")
 
     light_map = {code: team_colors_light.get(name, team_colors_dark.get(name, '#888888')) for code, name in team_code_to_name.items()}
     dark_map = {code: team_colors_dark.get(name, team_colors_light.get(name, '#888888')) for code, name in team_code_to_name.items()}
@@ -876,7 +876,7 @@ if not df_hist.empty:
                     var isDefense = false;
                     if (chartContainer) {{
                         var tEl = chartContainer.querySelector('.gtitle');
-                        if (tEl && tEl.textContent.includes('Defense Rating')) {{
+                        if (tEl && (tEl.textContent.includes('Defence Rating') || tEl.textContent.includes('Defense Rating'))) {{
                             isDefense = true;
                         }}
                     }}
