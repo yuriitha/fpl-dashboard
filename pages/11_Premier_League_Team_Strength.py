@@ -82,9 +82,9 @@ st.markdown("""
             font-weight: 600;
             font-size: 0.82rem;
             text-align: left;
-            width: 125px;
-            min-width: 125px;
-            max-width: 135px;
+            width: 140px;
+            min-width: 140px;
+            max-width: 150px;
             position: sticky;
             left: 0;
             z-index: 2;
@@ -116,9 +116,9 @@ st.markdown("""
             font-weight: 500;
             font-size: 0.84rem;
             text-align: left;
-            width: 125px;
-            min-width: 125px;
-            max-width: 135px;
+            width: 140px;
+            min-width: 140px;
+            max-width: 150px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
