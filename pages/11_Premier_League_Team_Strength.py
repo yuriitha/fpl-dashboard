@@ -1084,12 +1084,22 @@ if not df_fixtures.empty:
             transform: scale(1.36) rotate(90deg);
             transition: transform 0.25s ease !important;
         }
+
+        /* Expected Goals header title bottom alignment */
+        .xg-header-title {
+            margin-top: 22px !important;
+            margin-bottom: 2px !important;
+            font-size: 1.50rem !important;
+            font-weight: 600 !important;
+            line-height: 1.2 !important;
+            color: var(--text-color, inherit);
+        }
         </style>
     """, unsafe_allow_html=True)
 
     hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.69, 0.095, 0.065, 0.11, 0.04], gap="small")
     with hdr_c1:
-        st.subheader("Expected Goals", anchor=False)
+        st.markdown('<div class="xg-header-title">Expected Goals</div>', unsafe_allow_html=True)
     with hdr_c2:
         view_mode = st.selectbox(
             "Table View",
