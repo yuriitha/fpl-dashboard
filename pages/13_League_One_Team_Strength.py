@@ -474,11 +474,11 @@ with col1:
     curr_season_df = df[(df['league'] == 'League One') & (df['season'] == current_season)]
     current_season_teams = sorted(list(set(curr_season_df['home_team_code'].dropna()).union(set(curr_season_df['away_team_code'].dropna()))))
 
-    df_played = df.dropna(subset=['match_result'])
+    df_played = df[(df['league'] == 'League One')].dropna(subset=['match_result'])
     latest_home = df_played.sort_values('match_date').groupby('home_team_code').last()[['match_date', 'home_rating_att_post', 'home_rating_def_post', 'home_rating_att', 'home_rating_def']]
     latest_away = df_played.sort_values('match_date').groupby('away_team_code').last()[['match_date', 'away_rating_att_post', 'away_rating_def_post', 'away_rating_att', 'away_rating_def']]
 
-    df_unplayed = df[df['match_result'].isna()]
+    df_unplayed = df[(df['league'] == 'League One') & (df['match_result'].isna())]
     first_unplayed_home = df_unplayed.sort_values('match_date').groupby('home_team_code').first()[['match_date', 'home_rating_att', 'home_rating_def']]
     first_unplayed_away = df_unplayed.sort_values('match_date').groupby('away_team_code').first()[['match_date', 'away_rating_att', 'away_rating_def']]
 
