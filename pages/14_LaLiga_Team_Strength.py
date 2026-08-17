@@ -306,7 +306,7 @@ for _, row in df[['home_team_code', 'home_team']].dropna().drop_duplicates().ite
 for _, row in df[['away_team_code', 'away_team']].dropna().drop_duplicates().iterrows():
     if row['away_team_code'] not in team_code_to_name: team_code_to_name[row['away_team_code']] = row['away_team']
 
-all_seasons = sorted([s for s in df[df['league'] == 'LaLiga']['season'].dropna().unique() if s != "2009/10"])
+all_seasons = sorted([s for s in df[df['league'] == 'LaLiga']['season'].dropna().unique() if s >= "2014/15"])
 
 if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if k.startswith('ts_')]
@@ -703,7 +703,7 @@ hist_away = df_played[['match_date', 'season', 'league', 'away_team', 'away_team
 )
 
 df_hist = pd.concat([hist_home, hist_away]).sort_values('date')
-df_hist = df_hist[df_hist['season'] != "2009/10"]
+df_hist = df_hist[df_hist['season'] >= "2014/15"]
 df_hist = df_hist[df_hist['league'] == 'LaLiga']
 
 if season_range:
