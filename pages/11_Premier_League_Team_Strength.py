@@ -81,8 +81,8 @@ st.markdown("""
         .proj-table th.team-th {
             padding: 5px 8px;
             font-weight: 600;
-            font-size: 0.82rem;
-            text-align: left;
+            font-size: 0.88rem;
+            text-align: center;
             width: 200px;
             min-width: 200px;
             max-width: 200px;
@@ -115,9 +115,9 @@ st.markdown("""
         }
         .proj-table td.team-td {
             padding: 4px 8px;
-            font-weight: 500;
-            font-size: 0.84rem;
-            text-align: left;
+            font-weight: 550;
+            font-size: 0.97rem;
+            text-align: center;
             width: 200px;
             min-width: 200px;
             max-width: 200px;
