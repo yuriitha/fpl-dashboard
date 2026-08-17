@@ -1667,9 +1667,49 @@ if not df_hist.empty:
             }}
         }} catch(e) {{}}
 
+        function alignRefreshButton() {{
+            try {{
+                var doc = window.parent.document || document;
+                var btns = doc.querySelectorAll('.stButton button, [data-testid="stButton"] button');
+                btns.forEach(function(btn) {{
+                    if (btn.innerText && btn.innerText.includes('🔄')) {{
+                        var btnDiv = btn.closest('.stButton') || btn.closest('[data-testid="stButton"]');
+                        if (btnDiv) {{
+                            btnDiv.style.setProperty('margin-top', '24px', 'important');
+                            btnDiv.style.setProperty('margin-bottom', '0px', 'important');
+                            btnDiv.style.setProperty('padding-top', '0px', 'important');
+                            btnDiv.style.setProperty('padding-bottom', '0px', 'important');
+                        }}
+                        btn.style.setProperty('height', '38px', 'important');
+                        btn.style.setProperty('min-height', '38px', 'important');
+                        btn.style.setProperty('max-height', '38px', 'important');
+                        btn.style.setProperty('padding', '0px', 'important');
+                        btn.style.setProperty('margin', '0px', 'important');
+                        btn.style.setProperty('display', 'flex', 'important');
+                        btn.style.setProperty('align-items', 'center', 'important');
+                        btn.style.setProperty('justify-content', 'center', 'important');
+                        btn.style.setProperty('overflow', 'hidden', 'important');
+                        
+                        var pEl = btn.querySelector('p') || btn.querySelector('div') || btn.querySelector('span');
+                        if (pEl) {{
+                            pEl.style.setProperty('font-size', '1.70rem', 'important');
+                            pEl.style.setProperty('line-height', '1', 'important');
+                            pEl.style.setProperty('margin', '0px', 'important');
+                            pEl.style.setProperty('padding', '0px', 'important');
+                            pEl.style.setProperty('display', 'flex', 'important');
+                            pEl.style.setProperty('align-items', 'center', 'important');
+                            pEl.style.setProperty('justify-content', 'center', 'important');
+                            pEl.style.setProperty('transform', 'scale(1.22)', 'important');
+                        }}
+                    }}
+                }});
+            }} catch(e) {{}}
+        }}
+
         setInterval(function() {{
             sortHoverBoxes();
             updateChartColors();
+            alignRefreshButton();
         }}, 60);
     }})();
     </script>
