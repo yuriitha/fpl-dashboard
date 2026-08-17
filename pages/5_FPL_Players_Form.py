@@ -156,7 +156,7 @@ GB = {
     'f_xg3y_form':     _slider_bounds(0.0, _get_max('pct_xg_3y', 100.0)),
     'f_a3y_form':      _slider_bounds(0.0, _get_max('pct_assists_3y', 100.0)),
     'f_xa3y_form':     _slider_bounds(0.0, _get_max('pct_xa_3y', 100.0)),
-    'f_avail3y_form':  _slider_bounds(0.0, 100.0),
+    'f_avail3y_form':  _slider_bounds(15.0, 100.0),
     'f_bcc3y_form':    _slider_bounds(0.0, _get_max('pct_bcc_3y', 100.0)),
 }
 
