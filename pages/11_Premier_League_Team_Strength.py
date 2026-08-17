@@ -1052,8 +1052,11 @@ if not df_fixtures.empty:
             align-items: center !important;
             justify-content: center !important;
             border-radius: 6px !important;
-            border: 1px solid rgba(128, 128, 128, 0.3) !important;
+            border: none !important;
+            border-color: transparent !important;
             background: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
             box-sizing: border-box !important;
             overflow: hidden !important;
         }
@@ -1072,8 +1075,10 @@ if not df_fixtures.empty:
             transform: scale(1.28);
         }
         [data-testid="column"]:has(div[data-testid="stButton"]) button:hover {
-            border-color: rgba(0, 180, 255, 0.7) !important;
-            background: rgba(0, 180, 255, 0.08) !important;
+            border-color: transparent !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
         }
         [data-testid="column"]:has(div[data-testid="stButton"]) button:hover p {
             transform: scale(1.36) rotate(90deg);
@@ -1690,6 +1695,11 @@ if not df_hist.empty:
                         btn.style.setProperty('align-items', 'center', 'important');
                         btn.style.setProperty('justify-content', 'center', 'important');
                         btn.style.setProperty('overflow', 'hidden', 'important');
+                        btn.style.setProperty('border', 'none', 'important');
+                        btn.style.setProperty('border-color', 'transparent', 'important');
+                        btn.style.setProperty('background', 'transparent', 'important');
+                        btn.style.setProperty('box-shadow', 'none', 'important');
+                        btn.style.setProperty('outline', 'none', 'important');
                         
                         var pEl = btn.querySelector('p') || btn.querySelector('div') || btn.querySelector('span');
                         if (pEl) {{
