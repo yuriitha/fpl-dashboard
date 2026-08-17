@@ -1102,19 +1102,19 @@ if not df_fixtures.empty:
             visibility: hidden !important;
             user-select: none !important;
             pointer-events: none !important;
-            height: 18px !important;
+            height: 24px !important;
         }
         .xg-header-text {
             font-size: 1.75rem !important;
             font-weight: 600 !important;
-            line-height: 38px !important;
+            line-height: 1.15 !important;
             height: 38px !important;
             display: flex !important;
-            align-items: center !important;
+            align-items: flex-end !important;
+            padding-bottom: 2px !important;
             color: var(--text-color, inherit) !important;
             letter-spacing: -0.01em !important;
             margin: 0px !important;
-            padding: 0px !important;
         }
 
         .proj-table-container {
