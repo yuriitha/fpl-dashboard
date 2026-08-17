@@ -273,30 +273,21 @@ def apply_team_code_and_color_fallbacks(df):
     team_dict = {}
     base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
     for p in [
-        os.path.join(base_dir, '..', 'team_colors.json'),
-        os.path.join(base_dir, 'team_colors.json'),
         os.path.join(base_dir, '..', 'team_colors.csv'),
         os.path.join(base_dir, 'team_colors.csv'),
-        os.path.join(base_dir, '..', '..', 'streamlit', 'team_colors.json'),
         os.path.join(base_dir, '..', '..', 'streamlit', 'team_colors.csv'),
-        os.path.join(base_dir, '..', '..', 'Team Strength Model', 'team_colors.json'),
         os.path.join(base_dir, '..', '..', 'Team Strength Model', 'team_colors.csv'),
     ]:
         if os.path.exists(p):
             try:
-                if p.endswith('.json'):
-                    with open(p, 'r', encoding='utf-8') as f:
-                        team_dict = json.load(f)
-                elif p.endswith('.csv'):
-                    df_c = pd.read_csv(p)
-                    team_dict = {}
-                    for _, r in df_c.iterrows():
-                        t_name = str(r['team_name']).strip()
-                        team_dict[t_name] = {
-                            'abbr': str(r.get('abbr', t_name[:3])).strip().upper(),
-                            'color_light': str(r.get('color_light', r.get('color', '#888888'))).strip(),
-                            'color_dark': str(r.get('color_dark', r.get('color', '#888888'))).strip()
-                        }
+                df_c = pd.read_csv(p)
+                for _, r in df_c.iterrows():
+                    t_name = str(r['team_name']).strip()
+                    team_dict[t_name] = {
+                        'abbr': str(r.get('abbr', t_name[:3])).strip().upper(),
+                        'color_light': str(r.get('color_light', r.get('color', '#888888'))).strip(),
+                        'color_dark': str(r.get('color_dark', r.get('color', '#888888'))).strip()
+                    }
                 if team_dict:
                     break
             except Exception:
@@ -352,30 +343,21 @@ def apply_team_code_and_color_fallbacks(df):
     team_dict = {}
     base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
     for p in [
-        os.path.join(base_dir, '..', 'team_colors.json'),
-        os.path.join(base_dir, 'team_colors.json'),
         os.path.join(base_dir, '..', 'team_colors.csv'),
         os.path.join(base_dir, 'team_colors.csv'),
-        os.path.join(base_dir, '..', '..', 'streamlit', 'team_colors.json'),
         os.path.join(base_dir, '..', '..', 'streamlit', 'team_colors.csv'),
-        os.path.join(base_dir, '..', '..', 'Team Strength Model', 'team_colors.json'),
         os.path.join(base_dir, '..', '..', 'Team Strength Model', 'team_colors.csv'),
     ]:
         if os.path.exists(p):
             try:
-                if p.endswith('.json'):
-                    with open(p, 'r', encoding='utf-8') as f:
-                        team_dict = json.load(f)
-                elif p.endswith('.csv'):
-                    df_c = pd.read_csv(p)
-                    team_dict = {}
-                    for _, r in df_c.iterrows():
-                        t_name = str(r['team_name']).strip()
-                        team_dict[t_name] = {
-                            'abbr': str(r.get('abbr', t_name[:3])).strip().upper(),
-                            'color_light': str(r.get('color_light', r.get('color', '#888888'))).strip(),
-                            'color_dark': str(r.get('color_dark', r.get('color', '#888888'))).strip()
-                        }
+                df_c = pd.read_csv(p)
+                for _, r in df_c.iterrows():
+                    t_name = str(r['team_name']).strip()
+                    team_dict[t_name] = {
+                        'abbr': str(r.get('abbr', t_name[:3])).strip().upper(),
+                        'color_light': str(r.get('color_light', r.get('color', '#888888'))).strip(),
+                        'color_dark': str(r.get('color_dark', r.get('color', '#888888'))).strip()
+                    }
                 if team_dict:
                     break
             except Exception:
