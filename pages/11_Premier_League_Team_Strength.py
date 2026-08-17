@@ -1008,6 +1008,7 @@ if not df_fixtures.empty:
     
     st.markdown("""
         <style>
+        /* Compact selectboxes in header */
         [data-testid="column"]:has(div[data-testid="stSelectbox"]) {
             min-width: 0 !important;
         }
@@ -1016,15 +1017,71 @@ if not df_fixtures.empty:
         }
         [data-testid="column"] [data-baseweb="select"] {
             min-width: 0 !important;
+            height: 38px !important;
+        }
+        [data-testid="column"] [data-baseweb="select"] > div {
+            padding-left: 6px !important;
+            padding-right: 2px !important;
+            font-size: 0.81rem !important;
         }
         [data-testid="column"] label p {
-            font-size: 0.78rem !important;
+            font-size: 0.75rem !important;
             white-space: nowrap !important;
+            margin-bottom: 2px !important;
+            line-height: 1.2 !important;
+        }
+        
+        /* Refresh reset button styling & pixel-perfect alignment */
+        [data-testid="column"]:has(div[data-testid="stButton"]) {
+            min-width: 0 !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) div[data-testid="stButton"] {
+            margin-top: 23px !important;
+            margin-bottom: 0px !important;
+            padding: 0px !important;
+            width: 100% !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) button {
+            height: 38px !important;
+            min-height: 38px !important;
+            max-height: 38px !important;
+            padding: 0px !important;
+            margin: 0px !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            border: 1px solid rgba(128, 128, 128, 0.3) !important;
+            background: transparent !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) button p,
+        [data-testid="column"]:has(div[data-testid="stButton"]) button span,
+        [data-testid="column"]:has(div[data-testid="stButton"]) button div {
+            font-size: 1.65rem !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) button:hover {
+            border-color: rgba(0, 180, 255, 0.7) !important;
+            background: rgba(0, 180, 255, 0.08) !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) button:hover p {
+            transform: scale(1.15) rotate(90deg);
+            transition: transform 0.25s ease !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.63, 0.11, 0.09, 0.13, 0.04], gap="small")
+    hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.69, 0.095, 0.065, 0.11, 0.04], gap="small")
     with hdr_c1:
         st.subheader("Expected Goals", anchor=False)
     with hdr_c2:
