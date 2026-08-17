@@ -1087,19 +1087,34 @@ if not df_fixtures.empty:
             transition: transform 0.25s ease !important;
         }
 
-        /* Expected Goals header title bottom alignment */
-        .stColumn:first-child .stHeading,
-        .stColumn:first-child [data-testid="stHeadingWithActionElements"],
-        .stColumn:first-child h3,
-        .stColumn:first-child h2,
-        div[data-testid="stColumn"]:first-child .stHeading,
-        div[data-testid="stColumn"]:first-child h3,
-        div[data-testid="column"]:first-child h3 {
-            margin-top: 14px !important;
-            margin-bottom: 0px !important;
-            padding-top: 0px !important;
-            padding-bottom: 0px !important;
-            transform: none !important;
+        /* Expected Goals header title perfectly matching selectbox baseline */
+        .xg-header-container {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            margin: 0px !important;
+            padding: 0px !important;
+        }
+        .xg-header-spacer {
+            font-size: 0.75rem !important;
+            line-height: 1.2 !important;
+            margin-bottom: 2px !important;
+            visibility: hidden !important;
+            user-select: none !important;
+            pointer-events: none !important;
+            height: 18px !important;
+        }
+        .xg-header-text {
+            font-size: 1.75rem !important;
+            font-weight: 600 !important;
+            line-height: 38px !important;
+            height: 38px !important;
+            display: flex !important;
+            align-items: center !important;
+            color: var(--text-color, inherit) !important;
+            letter-spacing: -0.01em !important;
+            margin: 0px !important;
+            padding: 0px !important;
         }
 
         .proj-table-container {
@@ -1110,7 +1125,13 @@ if not df_fixtures.empty:
 
     hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.69, 0.095, 0.065, 0.11, 0.04], gap="small")
     with hdr_c1:
-        st.subheader("Expected Goals", anchor=False)
+        st.markdown(
+            '<div class="xg-header-container">'
+            '<div class="xg-header-spacer">&nbsp;</div>'
+            '<div class="xg-header-text">Expected Goals</div>'
+            '</div>',
+            unsafe_allow_html=True
+        )
     with hdr_c2:
         view_mode = st.selectbox(
             "Table View",
@@ -1697,16 +1718,6 @@ if not df_hist.empty:
         function alignHeaderControls() {{
             try {{
                 var doc = window.parent.document || document;
-
-                // Align Expected Goals heading cleanly without overlapping
-                var headings = doc.querySelectorAll('.stHeading, [data-testid="stHeadingWithActionElements"], h2, h3');
-                headings.forEach(function(h) {{
-                    if (h.innerText && h.innerText.trim() === 'Expected Goals') {{
-                        h.style.setProperty('margin-top', '14px', 'important');
-                        h.style.setProperty('margin-bottom', '0px', 'important');
-                        h.style.setProperty('transform', 'none', 'important');
-                    }}
-                }});
 
                 // Align Refresh button
                 var btns = doc.querySelectorAll('.stButton button, [data-testid="stButton"] button');
