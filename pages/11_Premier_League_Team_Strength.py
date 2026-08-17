@@ -204,50 +204,27 @@ st.markdown("""
             transform: scale(1.2);
         }
         
-        /* Fixture projections compact selectboxes */
-        div[data-testid="stSelectbox"]:has(label:contains("Table View")) [data-baseweb="select"],
-        div[data-testid="stSelectbox"]:has(label:contains("Table View")) [data-baseweb="input"] {
-            max-width: 105px !important;
-            min-width: 85px !important;
-        }
-        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) [data-baseweb="select"],
-        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) [data-baseweb="input"] {
-            max-width: 95px !important;
-            min-width: 75px !important;
-        }
-        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="select"],
-        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) [data-baseweb="input"] {
-            max-width: 120px !important;
-            min-width: 95px !important;
-        }
-        div[data-testid="stSelectbox"]:has(label:contains("Table View")) label p,
-        div[data-testid="stSelectbox"]:has(label:contains("GWs To Show")) label p,
-        div[data-testid="stSelectbox"]:has(label:contains("GW Range")) label p {
-            font-size: 0.8rem !important;
-            white-space: nowrap !important;
-        }
-
         /* Refresh reset button styling */
-        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) {
+        div[data-testid="column"]:has(div[data-testid="stButton"]) {
             display: flex !important;
             flex-direction: column !important;
             justify-content: flex-end !important;
+            min-width: 0 !important;
         }
-        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) div[data-testid="stVerticalBlock"] {
+        div[data-testid="column"]:has(div[data-testid="stButton"]) > div[data-testid="stVerticalBlock"] {
             display: flex !important;
             flex-direction: column !important;
             justify-content: flex-end !important;
+            height: 100% !important;
             gap: 0px !important;
         }
-        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) div[data-testid="stButton"],
-        div[data-testid="stButton"]:has(button p:contains("🔄")) {
+        div[data-testid="column"]:has(div[data-testid="stButton"]) div[data-testid="stButton"] {
             margin-top: auto !important;
             margin-bottom: 0px !important;
+            padding-bottom: 0px !important;
             width: 100% !important;
         }
-        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) button,
-        div[data-testid="stButton"] button:has(p:contains("🔄")),
-        button[key="ts_reset_gw_btn"] {
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button {
             height: 38px !important;
             min-height: 38px !important;
             max-height: 38px !important;
@@ -262,10 +239,10 @@ st.markdown("""
             background: transparent !important;
             transition: all 0.2s ease !important;
             box-sizing: border-box !important;
+            overflow: hidden !important;
         }
-        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) button p,
-        div[data-testid="stButton"] button:has(p:contains("🔄")) p {
-            font-size: 1.40rem !important;
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button * {
+            font-size: 1.60rem !important;
             line-height: 1 !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -274,17 +251,15 @@ st.markdown("""
             justify-content: center !important;
             width: 100% !important;
             height: 100% !important;
-            transform: scale(1.15);
+            transform: scale(1.22);
             transition: transform 0.25s ease !important;
         }
-        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) button:hover,
-        div[data-testid="stButton"] button:has(p:contains("🔄")):hover {
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button:hover {
             border-color: rgba(0, 180, 255, 0.7) !important;
             background: rgba(0, 180, 255, 0.08) !important;
         }
-        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) button:hover p,
-        div[data-testid="stButton"] button:has(p:contains("🔄")):hover p {
-            transform: scale(1.25) rotate(90deg);
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button:hover * {
+            transform: scale(1.35) rotate(90deg);
         }
     </style>
 """, unsafe_allow_html=True)
@@ -1049,7 +1024,7 @@ if not df_fixtures.empty:
         </style>
     """, unsafe_allow_html=True)
 
-    hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.62, 0.11, 0.09, 0.13, 0.05], gap="small")
+    hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.63, 0.11, 0.09, 0.13, 0.04], gap="small")
     with hdr_c1:
         st.subheader("Expected Goals", anchor=False)
     with hdr_c2:
@@ -1081,7 +1056,6 @@ if not df_fixtures.empty:
             key=f"ts_gw_range_select_{num_gws}_{active_start_gw}"
         )
     with hdr_c5:
-        st.markdown('<label style="display:block; font-size:0.78rem; line-height:1.2; margin-bottom:4px; opacity:0; user-select:none; pointer-events:none;">&nbsp;</label>', unsafe_allow_html=True)
         if st.button("🔄", help="Reset all removed Gameweeks", key="ts_reset_gw_btn"):
             st.rerun()
         
