@@ -228,22 +228,63 @@ st.markdown("""
         }
 
         /* Refresh reset button styling */
+        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+        }
+        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) div[data-testid="stVerticalBlock"] {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            gap: 0px !important;
+        }
+        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) div[data-testid="stButton"],
+        div[data-testid="stButton"]:has(button p:contains("🔄")) {
+            margin-top: auto !important;
+            margin-bottom: 0px !important;
+            width: 100% !important;
+        }
         div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) button,
+        div[data-testid="stButton"] button:has(p:contains("🔄")),
         button[key="ts_reset_gw_btn"] {
             height: 38px !important;
             min-height: 38px !important;
-            font-size: 1.05rem !important;
-            padding: 0 4px !important;
-            margin-top: 0px !important;
+            max-height: 38px !important;
+            padding: 0px !important;
+            margin: 0px !important;
             width: 100% !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             border-radius: 6px !important;
+            border: 1px solid rgba(128, 128, 128, 0.25) !important;
+            background: transparent !important;
             transition: all 0.2s ease !important;
+            box-sizing: border-box !important;
         }
-        button[key="ts_reset_gw_btn"]:hover {
-            transform: rotate(60deg) !important;
+        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) button p,
+        div[data-testid="stButton"] button:has(p:contains("🔄")) p {
+            font-size: 1.40rem !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+            transform: scale(1.15);
+            transition: transform 0.25s ease !important;
+        }
+        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) button:hover,
+        div[data-testid="stButton"] button:has(p:contains("🔄")):hover {
+            border-color: rgba(0, 180, 255, 0.7) !important;
+            background: rgba(0, 180, 255, 0.08) !important;
+        }
+        div[data-testid="column"]:has(button[key="ts_reset_gw_btn"]) button:hover p,
+        div[data-testid="stButton"] button:has(p:contains("🔄")):hover p {
+            transform: scale(1.25) rotate(90deg);
         }
     </style>
 """, unsafe_allow_html=True)
@@ -1040,7 +1081,7 @@ if not df_fixtures.empty:
             key=f"ts_gw_range_select_{num_gws}_{active_start_gw}"
         )
     with hdr_c5:
-        st.markdown('<div style="height: 23px;"></div>', unsafe_allow_html=True)
+        st.markdown('<label style="display:block; font-size:0.78rem; line-height:1.2; margin-bottom:4px; opacity:0; user-select:none; pointer-events:none;">&nbsp;</label>', unsafe_allow_html=True)
         if st.button("🔄", help="Reset all removed Gameweeks", key="ts_reset_gw_btn"):
             st.rerun()
         
