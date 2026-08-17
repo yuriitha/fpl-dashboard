@@ -49,6 +49,83 @@ st.markdown("""
 
 import requests
 
+KNOWN_SPANISH_TEAMS = {
+    'Real Madrid': ('RMA', '#41748D', '#FEBE10'),
+    'Barcelona': ('BAR', '#A50044', '#EDBB00'),
+    'Atl. Madrid': ('ATM', '#CB3524', '#0047AB'),
+    'Ath Bilbao': ('ATH', '#EE2524', '#EE2524'),
+    'Real Sociedad': ('RSO', '#0067B1', '#0067B1'),
+    'Betis': ('BET', '#0BB364', '#0BB364'),
+    'Sevilla': ('SEV', '#D4001F', '#D4001F'),
+    'Villarreal': ('VIL', '#E8B900', '#FFE633'),
+    'Valencia': ('VAL', '#FF6600', '#FF6600'),
+    'Osasuna': ('OSA', '#D91A2A', '#D91A2A'),
+    'Celta Vigo': ('CEL', '#8AC3EE', '#8AC3EE'),
+    'Getafe': ('GET', '#00509E', '#00509E'),
+    'Rayo Vallecano': ('RAY', '#DE2019', '#DE2019'),
+    'Mallorca': ('MLL', '#E20613', '#E20613'),
+    'Las Palmas': ('LPA', '#F4B400', '#FFE033'),
+    'Alaves': ('ALA', '#005BBB', '#005BBB'),
+    'Girona': ('GIR', '#CD2027', '#CD2027'),
+    'Espanyol': ('ESP', '#007FC8', '#007FC8'),
+    'Leganes': ('LEG', '#0055A5', '#0055A5'),
+    'Valladolid': ('VLL', '#6C2D82', '#9B59B6'),
+    'Cadiz': ('CAD', '#FBD000', '#FEE135'),
+    'Granada CF': ('GRA', '#C8102E', '#C8102E'),
+    'Almeria': ('ALM', '#E41B13', '#E41B13'),
+    'Elche': ('ELC', '#007A33', '#007A33'),
+    'Levante': ('LEV', '#8E1F2F', '#004B87'),
+    'Eibar': ('EIB', '#941B26', '#004D98'),
+    'Huesca': ('HUE', '#003366', '#A6192E'),
+    'Real Oviedo': ('OVI', '#003882', '#003882'),
+    'Gijon': ('GIJ', '#E30613', '#E30613'),
+    'Racing Santander': ('RAC', '#008542', '#008542'),
+    'Zaragoza': ('ZAR', '#005BAA', '#005BAA'),
+    'Tenerife': ('TEN', '#0055A5', '#0055A5'),
+    'Cordoba': ('COR', '#008754', '#008754'),
+    'Dep. A Coruna': ('DEP', '#005CA9', '#005CA9'),
+    'Malaga': ('MAL', '#5FA8E0', '#5FA8E0'),
+    'AD Ceuta': ('CEU', '#222222', '#FFFFFF'),
+    'Albacete': ('ALB', '#111111', '#FFFFFF'),
+    'Alcorcon': ('ALC', '#FEE000', '#FEE000'),
+    'Amorebieta': ('AMO', '#003366', '#004080'),
+    'Ath Bilbao B': ('ATB', '#EE2524', '#EE2524'),
+    'Barcelona B': ('FCB', '#A50044', '#EDBB00'),
+    'Burgos CF': ('BUR', '#111111', '#FFFFFF'),
+    'CF Fuenlabrada': ('FUE', '#004B9B', '#004B9B'),
+    'Castellon': ('CAS', '#111111', '#FFFFFF'),
+    'Celta Vigo B': ('CLB', '#8AC3EE', '#8AC3EE'),
+    'Eldense': ('ELD', '#0A3A82', '#8E1F2F'),
+    'Extremadura UD': ('EXT', '#8E1F2F', '#003366'),
+    'FC Andorra': ('AND', '#ED1C24', '#ED1C24'),
+    'FC Cartagena SAD': ('CAR', '#111111', '#FFFFFF'),
+    'Gimnastic de Tarragona': ('GIM', '#D31126', '#D31126'),
+    'Guadalajara': ('GUA', '#660099', '#660099'),
+    'Hercules': ('HER', '#003399', '#003399'),
+    'Jaen': ('JAE', '#660099', '#660099'),
+    'Leonesa': ('LEO', '#990000', '#990000'),
+    'Lorca FC': ('LOR', '#003366', '#003366'),
+    'Lugo': ('LUG', '#C8102E', '#C8102E'),
+    'Mirandes': ('MIR', '#DE0028', '#DE0028'),
+    'Murcia': ('MUR', '#C8102E', '#C8102E'),
+    'Numancia': ('NUM', '#DE0028', '#DE0028'),
+    'Ponferradina': ('PON', '#00509E', '#00509E'),
+    'Racing Club Ferrol': ('FER', '#007A33', '#007A33'),
+    'Rayo Majadahonda': ('MAJ', '#DE2019', '#DE2019'),
+    'Real Madrid B': ('RMB', '#41748D', '#FEBE10'),
+    'Real Sociedad B': ('RSB', '#0067B1', '#0067B1'),
+    'Recreativo Huelva': ('REC', '#005BAA', '#005BAA'),
+    'Reus FC Reddis': ('REU', '#DE0028', '#DE0028'),
+    'Sabadell': ('SAB', '#005BAA', '#005BAA'),
+    'Sevilla B': ('SVB', '#D4001F', '#D4001F'),
+    'Som Maresme': ('SMM', '#005BAA', '#005BAA'),
+    'UCAM Murcia': ('UCM', '#002B49', '#FDB813'),
+    'UD Ibiza': ('IBI', '#65BBE9', '#65BBE9'),
+    'UD Logrones': ('LOG', '#D31126', '#D31126'),
+    'Villarreal B': ('VLB', '#E8B900', '#FFE633'),
+    'Xerez CD': ('XER', '#003399', '#003399'),
+}
+
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://198.244.151.163:8000/team_strength_model"
@@ -61,6 +138,49 @@ def load_data():
             df = pd.read_parquet(local_path)
         else:
             raise
+
+    # Ensure team codes and colors are populated
+    code_map = {t: v[0] for t, v in KNOWN_SPANISH_TEAMS.items()}
+    light_map = {t: v[1] for t, v in KNOWN_SPANISH_TEAMS.items()}
+    dark_map = {t: v[2] for t, v in KNOWN_SPANISH_TEAMS.items()}
+
+    h_code_new = df['home_team'].map(code_map)
+    a_code_new = df['away_team'].map(code_map)
+
+    if 'home_team_code' not in df.columns:
+        df['home_team_code'] = h_code_new.fillna(df['home_team'].str[:3].str.upper())
+    else:
+        df['home_team_code'] = df['home_team_code'].fillna('').replace('', pd.NA).combine_first(h_code_new).fillna(df['home_team'].str[:3].str.upper())
+
+    if 'away_team_code' not in df.columns:
+        df['away_team_code'] = a_code_new.fillna(df['away_team'].str[:3].str.upper())
+    else:
+        df['away_team_code'] = df['away_team_code'].fillna('').replace('', pd.NA).combine_first(a_code_new).fillna(df['away_team'].str[:3].str.upper())
+
+    h_light = df['home_team'].map(light_map)
+    h_dark = df['home_team'].map(dark_map)
+    a_light = df['away_team'].map(light_map)
+    a_dark = df['away_team'].map(dark_map)
+
+    if 'home_color_light' not in df.columns:
+        df['home_color_light'] = h_light.fillna('#888888')
+    else:
+        df['home_color_light'] = df['home_color_light'].replace('#CCCCCC', pd.NA).combine_first(h_light).fillna('#888888')
+
+    if 'home_color_dark' not in df.columns:
+        df['home_color_dark'] = h_dark.fillna('#888888')
+    else:
+        df['home_color_dark'] = df['home_color_dark'].replace('#CCCCCC', pd.NA).combine_first(h_dark).fillna('#888888')
+
+    if 'away_color_light' not in df.columns:
+        df['away_color_light'] = a_light.fillna('#888888')
+    else:
+        df['away_color_light'] = df['away_color_light'].replace('#CCCCCC', pd.NA).combine_first(a_light).fillna('#888888')
+
+    if 'away_color_dark' not in df.columns:
+        df['away_color_dark'] = a_dark.fillna('#888888')
+    else:
+        df['away_color_dark'] = df['away_color_dark'].replace('#CCCCCC', pd.NA).combine_first(a_dark).fillna('#888888')
 
     last_update_str = ""
     try:
