@@ -83,9 +83,9 @@ st.markdown("""
             font-weight: 600;
             font-size: 0.82rem;
             text-align: left;
-            width: 135px;
-            min-width: 135px;
-            max-width: 135px;
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
             position: sticky;
             left: 0;
             z-index: 2;
@@ -94,9 +94,9 @@ st.markdown("""
         .proj-table th.avg-th {
             padding: 5px 4px;
             font-weight: 600;
-            width: 65px;
-            min-width: 65px;
-            max-width: 65px;
+            width: 98px;
+            min-width: 98px;
+            max-width: 98px;
             font-size: 0.78rem;
         }
         .proj-table tbody tr {
@@ -118,9 +118,9 @@ st.markdown("""
             font-weight: 500;
             font-size: 0.84rem;
             text-align: left;
-            width: 135px;
-            min-width: 135px;
-            max-width: 135px;
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -137,9 +137,9 @@ st.markdown("""
             padding: 4px 4px;
             font-weight: 600;
             font-size: 0.80rem;
-            width: 65px;
-            min-width: 65px;
-            max-width: 65px;
+            width: 98px;
+            min-width: 98px;
+            max-width: 98px;
             background: var(--secondary-background-color, inherit);
             line-height: 1.15;
         }
@@ -903,11 +903,11 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
         '<div class="proj-table-container">',
         f'<table class="proj-table" data-metric-type="{metric_type}" data-view-mode="{view_mode}" style="table-layout: fixed; width: 100%;">',
         '<colgroup>',
-        '<col style="width: 135px;">',
+        '<col style="width: 200px;">',
     ]
     for gw in gws:
         html.append(f'<col data-gw="{gw}">')
-    html.append('<col style="width: 65px;">')
+    html.append('<col style="width: 98px;">')
     html.append('</colgroup>')
     html.append('<thead><tr>')
     html.append('<th class="team-th">Team</th>')
