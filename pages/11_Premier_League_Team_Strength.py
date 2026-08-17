@@ -1036,7 +1036,7 @@ if not df_fixtures.empty:
             min-width: 0 !important;
         }
         [data-testid="column"]:has(div[data-testid="stButton"]) div[data-testid="stButton"] {
-            margin-top: 23px !important;
+            margin-top: 27px !important;
             margin-bottom: 0px !important;
             padding: 0px !important;
             width: 100% !important;
@@ -1060,7 +1060,7 @@ if not df_fixtures.empty:
         [data-testid="column"]:has(div[data-testid="stButton"]) button p,
         [data-testid="column"]:has(div[data-testid="stButton"]) button span,
         [data-testid="column"]:has(div[data-testid="stButton"]) button div {
-            font-size: 1.65rem !important;
+            font-size: 1.85rem !important;
             line-height: 1 !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -1069,13 +1069,14 @@ if not df_fixtures.empty:
             justify-content: center !important;
             width: 100% !important;
             height: 100% !important;
+            transform: scale(1.28);
         }
         [data-testid="column"]:has(div[data-testid="stButton"]) button:hover {
             border-color: rgba(0, 180, 255, 0.7) !important;
             background: rgba(0, 180, 255, 0.08) !important;
         }
         [data-testid="column"]:has(div[data-testid="stButton"]) button:hover p {
-            transform: scale(1.15) rotate(90deg);
+            transform: scale(1.36) rotate(90deg);
             transition: transform 0.25s ease !important;
         }
         </style>
@@ -1675,7 +1676,7 @@ if not df_hist.empty:
                     if (btn.innerText && btn.innerText.includes('🔄')) {{
                         var btnDiv = btn.closest('.stButton') || btn.closest('[data-testid="stButton"]');
                         if (btnDiv) {{
-                            btnDiv.style.setProperty('margin-top', '24px', 'important');
+                            btnDiv.style.setProperty('margin-top', '27px', 'important');
                             btnDiv.style.setProperty('margin-bottom', '0px', 'important');
                             btnDiv.style.setProperty('padding-top', '0px', 'important');
                             btnDiv.style.setProperty('padding-bottom', '0px', 'important');
@@ -1692,14 +1693,14 @@ if not df_hist.empty:
                         
                         var pEl = btn.querySelector('p') || btn.querySelector('div') || btn.querySelector('span');
                         if (pEl) {{
-                            pEl.style.setProperty('font-size', '1.70rem', 'important');
+                            pEl.style.setProperty('font-size', '1.85rem', 'important');
                             pEl.style.setProperty('line-height', '1', 'important');
                             pEl.style.setProperty('margin', '0px', 'important');
                             pEl.style.setProperty('padding', '0px', 'important');
                             pEl.style.setProperty('display', 'flex', 'important');
                             pEl.style.setProperty('align-items', 'center', 'important');
                             pEl.style.setProperty('justify-content', 'center', 'important');
-                            pEl.style.setProperty('transform', 'scale(1.22)', 'important');
+                            pEl.style.setProperty('transform', 'scale(1.28)', 'important');
                         }}
                     }}
                 }});
