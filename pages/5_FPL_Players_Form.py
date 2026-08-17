@@ -557,7 +557,7 @@ display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost", "selected_by_percent",
     "scoring_potential",
     "creative_potential",
-    "defensive_potential",
+    "defensive_potential", "nxP_90",
     "min_played_1y", "pct_mins_avail_1y", "pct_goals_1y", "pct_xg_1y", "pct_xgot_1y", "pct_assists_1y", "pct_xa_1y",
     "pct_clearances_1y", "pct_blocks_1y", "pct_interceptions_1y", "pct_tackles_1y", "pct_recoveries_1y",
     "min_played_3y", "pct_mins_avail_3y", "pct_goals_3y", "pct_xg_3y", "pct_xgot_3y", "pct_assists_3y", "pct_xa_3y",
@@ -667,7 +667,7 @@ def warm_honey_gradient(s, min_alpha=0.05, max_alpha=0.36, power=1.0, max_cap=No
 
 styled_df = filtered_df[existing_cols].style\
     .apply(warm_honey_gradient, subset=[c for c in ['pct_mins_avail_1y', 'pct_mins_avail_3y'] if c in existing_cols])\
-    .apply(soft_green_gradient, subset=[c for c in ['scoring_potential', 'creative_potential', 'pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols])\
+    .apply(soft_green_gradient, subset=[c for c in ['scoring_potential', 'creative_potential', 'nxP_90', 'pct_goals_1y', 'pct_xg_1y', 'pct_xgot_1y', 'pct_assists_1y', 'pct_xa_1y', 'pct_goals_3y', 'pct_xg_3y', 'pct_xgot_3y', 'pct_assists_3y', 'pct_xa_3y'] if c in existing_cols])\
     .apply(soft_blue_gradient, subset=[c for c in ['defensive_potential', 'pct_clearances_1y', 'pct_blocks_1y', 'pct_interceptions_1y', 'pct_tackles_1y', 'pct_recoveries_1y', 'pct_clearances_3y', 'pct_blocks_3y', 'pct_interceptions_3y', 'pct_tackles_3y', 'pct_recoveries_3y'] if c in existing_cols])
 
 st.subheader(f"FPL Players Form: {len(filtered_df)} players", anchor=False)
@@ -703,6 +703,7 @@ format_map = {
     "scoring_potential":      ("NumberColumn", "%.1f",    "SP"),
     "creative_potential":     ("NumberColumn", "%.1f",    "CP"),
     "defensive_potential":    ("NumberColumn", "%.1f",    "DCP"),
+    "nxP_90":                 ("NumberColumn", "%.2f",    "nxP/90"),
     "min_played_1y":          ("NumberColumn", "%d",       "Mins 1y"),
     "pct_mins_avail_1y":      ("NumberColumn", "%.1f",    "Avail 1y"),
     "pct_goals_1y":           ("NumberColumn", "%.1f",    "G 1y"),
