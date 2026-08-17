@@ -1086,20 +1086,25 @@ if not df_fixtures.empty:
         }
 
         /* Expected Goals header title bottom alignment */
-        .xg-header-title {
-            margin-top: 22px !important;
-            margin-bottom: 2px !important;
-            font-size: 1.50rem !important;
-            font-weight: 600 !important;
-            line-height: 1.2 !important;
-            color: var(--text-color, inherit);
+        .stColumn:first-child .stHeading,
+        .stColumn:first-child [data-testid="stHeadingWithActionElements"],
+        .stColumn:first-child h3,
+        .stColumn:first-child h2,
+        div[data-testid="stColumn"]:first-child .stHeading,
+        div[data-testid="stColumn"]:first-child h3,
+        div[data-testid="column"]:first-child h3 {
+            margin-top: 24px !important;
+            margin-bottom: 0px !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            transform: translateY(22px) !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
     hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.69, 0.095, 0.065, 0.11, 0.04], gap="small")
     with hdr_c1:
-        st.markdown('<div class="xg-header-title">Expected Goals</div>', unsafe_allow_html=True)
+        st.subheader("Expected Goals", anchor=False)
     with hdr_c2:
         view_mode = st.selectbox(
             "Table View",
@@ -1683,9 +1688,21 @@ if not df_hist.empty:
             }}
         }} catch(e) {{}}
 
-        function alignRefreshButton() {{
+        function alignHeaderControls() {{
             try {{
                 var doc = window.parent.document || document;
+
+                // Align Expected Goals heading downwards
+                var headings = doc.querySelectorAll('.stHeading, [data-testid="stHeadingWithActionElements"], h2, h3');
+                headings.forEach(function(h) {{
+                    if (h.innerText && h.innerText.trim() === 'Expected Goals') {{
+                        h.style.setProperty('margin-top', '24px', 'important');
+                        h.style.setProperty('margin-bottom', '0px', 'important');
+                        h.style.setProperty('transform', 'translateY(22px)', 'important');
+                    }}
+                }});
+
+                // Align Refresh button
                 var btns = doc.querySelectorAll('.stButton button, [data-testid="stButton"] button');
                 btns.forEach(function(btn) {{
                     if (btn.innerText && btn.innerText.includes('🔄')) {{
@@ -1730,7 +1747,7 @@ if not df_hist.empty:
         setInterval(function() {{
             sortHoverBoxes();
             updateChartColors();
-            alignRefreshButton();
+            alignHeaderControls();
         }}, 60);
     }})();
     </script>
