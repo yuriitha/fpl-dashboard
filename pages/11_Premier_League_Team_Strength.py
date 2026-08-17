@@ -97,7 +97,8 @@ st.markdown("""
             width: 98px;
             min-width: 98px;
             max-width: 98px;
-            font-size: 0.78rem;
+            font-size: 0.88rem;
+            text-align: center;
         }
         .proj-table tbody tr {
             background: var(--secondary-background-color, transparent);
@@ -136,7 +137,8 @@ st.markdown("""
         .proj-table td.avg-td {
             padding: 4px 4px;
             font-weight: 600;
-            font-size: 0.80rem;
+            font-size: 0.97rem;
+            text-align: center;
             width: 98px;
             min-width: 98px;
             max-width: 98px;
@@ -1093,11 +1095,15 @@ if not df_fixtures.empty:
         div[data-testid="stColumn"]:first-child .stHeading,
         div[data-testid="stColumn"]:first-child h3,
         div[data-testid="column"]:first-child h3 {
-            margin-top: 24px !important;
+            margin-top: 14px !important;
             margin-bottom: 0px !important;
             padding-top: 0px !important;
             padding-bottom: 0px !important;
-            transform: translateY(22px) !important;
+            transform: none !important;
+        }
+
+        .proj-table-container {
+            margin-top: 8px !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -1692,13 +1698,13 @@ if not df_hist.empty:
             try {{
                 var doc = window.parent.document || document;
 
-                // Align Expected Goals heading downwards
+                // Align Expected Goals heading cleanly without overlapping
                 var headings = doc.querySelectorAll('.stHeading, [data-testid="stHeadingWithActionElements"], h2, h3');
                 headings.forEach(function(h) {{
                     if (h.innerText && h.innerText.trim() === 'Expected Goals') {{
-                        h.style.setProperty('margin-top', '24px', 'important');
+                        h.style.setProperty('margin-top', '14px', 'important');
                         h.style.setProperty('margin-bottom', '0px', 'important');
-                        h.style.setProperty('transform', 'translateY(22px)', 'important');
+                        h.style.setProperty('transform', 'none', 'important');
                     }}
                 }});
 
