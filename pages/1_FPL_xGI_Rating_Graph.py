@@ -612,13 +612,13 @@ if not plot_df.empty:
     )
 
 
-    r_start = 6.55
+    r_start = 6.40
     r_min, r_max = plot_df['av_rating'].min(), plot_df['av_rating'].max()
     if pd.isna(r_max) or r_max < r_start:
         r_max = 10.0
     r_end = np.ceil(r_max * 10) / 10
     if r_end < r_start: r_end = r_start + 0.5
-    r_ticks = np.arange(6.6, r_end + 0.05, 0.1).round(1)
+    r_ticks = np.arange(6.4, r_end + 0.05, 0.1).round(1)
 
     mins_col = 'min_played' if 'min_played' in plot_df.columns else ('min_played_1y' if 'min_played_1y' in plot_df.columns else 'avg_mins')
     df_200 = plot_df[plot_df[mins_col] > 200]
@@ -736,13 +736,13 @@ if not plot_df.empty:
             marker=dict(opacity=0.75, line=dict(width=0.8, color='white'))
         )
 
-        r_start2 = 6.55
+        r_start2 = 6.40
         r_min2, r_max2 = plot_df_h2['av_rating_h2'].min(), plot_df_h2['av_rating_h2'].max()
         if pd.isna(r_max2) or r_max2 < r_start2:
             r_max2 = 10.0
         r_end2 = np.ceil(r_max2 * 10) / 10
         if r_end2 < r_start2: r_end2 = r_start2 + 0.5
-        r_ticks2 = np.arange(6.6, r_end2 + 0.05, 0.1).round(1)
+        r_ticks2 = np.arange(6.4, r_end2 + 0.05, 0.1).round(1)
 
         mins_col2 = 'min_played_h2' if 'min_played_h2' in plot_df_h2.columns else ('min_played' if 'min_played' in plot_df_h2.columns else 'avg_mins_h2')
         df_200_2 = plot_df_h2[plot_df_h2[mins_col2] > 200]
