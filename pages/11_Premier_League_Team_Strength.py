@@ -1152,6 +1152,11 @@ def get_current_active_gw(df_fix):
 # ========================== FIXTURES PROJECTIONS (xG & CLEAN SHEETS) ==========================
 try:
     df_fixtures = load_fixtures_model()
+    if not df_fixtures.empty and "kickoff_time" in df_fixtures.columns:
+        now_utc = datetime.now(timezone.utc)
+        df_fixtures["kickoff_dt"] = pd.to_datetime(df_fixtures["kickoff_time"], errors="coerce")
+        df_fixtures["kickoff_dt"] = df_fixtures["kickoff_dt"].apply(lambda x: x.tz_localize("UTC") if (pd.notnull(x) and x.tzinfo is None) else x)
+        df_fixtures = df_fixtures[df_fixtures["kickoff_dt"] > now_utc].copy()
 except Exception:
     df_fixtures = pd.DataFrame()
 
@@ -1922,3 +1927,4 @@ if not df_hist.empty:
     st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
 else:
     st.info("No historical data available for selected filters.")
+

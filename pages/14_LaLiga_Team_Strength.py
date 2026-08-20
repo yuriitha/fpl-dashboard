@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import json
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from datetime import datetime, timezone, timedelta
 
 st.set_page_config(
     page_title="LaLiga Team Strength",
@@ -693,6 +694,414 @@ with col2:
         st.info("No current matches found.")
 
 
+@st.cache_data(ttl=300)
+def load_fixtures_model():
+    url = "http://198.244.151.163:8000/laliga_fixtures_model"
+    try:
+        df_fix = pd.read_parquet(url)
+        return df_fix
+    except Exception:
+        import os
+        local_path = os.path.join(os.path.dirname(__file__), "..", "..", "streamlit", "laliga_fixtures_model.parquet")
+        if os.path.exists(local_path):
+            return pd.read_parquet(local_path)
+        return pd.DataFrame()
+
+def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute', gws=range(1, 13), selected_teams=None):
+    # Mapping between short code and model name
+    short_to_model = {}
+    model_to_short = {}
+    for _, r in df_model[['team_h_short', 'team_h_model']].drop_duplicates().iterrows():
+        short_to_model[r['team_h_short']] = r['team_h_model']
+        model_to_short[r['team_h_model']] = r['team_h_short']
+    for _, r in df_model[['team_a_short', 'team_a_model']].drop_duplicates().iterrows():
+        short_to_model[r['team_a_short']] = r['team_a_model']
+        model_to_short[r['team_a_model']] = r['team_a_short']
+
+    all_teams_model = sorted(list(set(df_model['team_h_model'].dropna()).union(set(df_model['team_a_model'].dropna()))))
+    
+    if selected_teams:
+        teams_to_show = [
+            t for t in all_teams_model 
+            if t in selected_teams or model_to_short.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)
+        ]
+        if not teams_to_show:
+            teams_to_show = all_teams_model
+    else:
+        teams_to_show = all_teams_model
+
+    rows = []
+    all_vals = []
+    is_rel = (view_mode == 'Relative')
+
+    for t_model in teams_to_show:
+        t_short = model_to_short.get(t_model, t_model)
+        row = {'Team': t_model, 'TeamShort': t_short, 'cells': {}}
+        vals_list = []
+        for gw in gws:
+            matches = df_model[(df_model['event'] == gw) & ((df_model['team_h_model'] == t_model) | (df_model['team_a_model'] == t_model))]
+            if matches.empty:
+                row['cells'][gw] = {'val': None, 'val_str': '—', 'opp_str': '-'}
+            else:
+                m_vals = []
+                opps = []
+                for _, m in matches.iterrows():
+                    if m['team_h_model'] == t_model:
+                        if is_rel:
+                            v = m['home_xg_rel'] if (metric_type == 'xg' and 'home_xg_rel' in m) else (m['home_cs_rel'] if 'home_cs_rel' in m else 1.0)
+                        else:
+                            v = m['home_xg'] if metric_type == 'xg' else m['home_cs']
+                        opp = f"{m['team_a_short']} (H)"
+                    else:
+                        if is_rel:
+                            v = m['away_xg_rel'] if (metric_type == 'xg' and 'away_xg_rel' in m) else (m['away_cs_rel'] if 'away_cs_rel' in m else 1.0)
+                        else:
+                            v = m['away_xg'] if metric_type == 'xg' else m['away_cs']
+                        opp = f"{m['team_h_short']} (A)"
+                    m_vals.append(v)
+                    opps.append(opp)
+                
+                if metric_type == 'xg':
+                    tot_val = sum(m_vals)
+                    val_str = f"{tot_val:.2f}"
+                else:
+                    if is_rel:
+                        tot_val = m_vals[0] if len(m_vals) == 1 else (np.prod(m_vals))
+                        val_str = f"{tot_val:.2f}"
+                    else:
+                        tot_val = m_vals[0] if len(m_vals) == 1 else (np.prod([x/100 for x in m_vals])*100)
+                        val_str = f"{tot_val:.1f}%"
+                
+                opp_str = ", ".join(opps)
+                
+                vals_list.append(tot_val)
+                all_vals.append(tot_val)
+                row['cells'][gw] = {'val': tot_val, 'val_str': val_str, 'opp_str': opp_str}
+        
+        if is_rel:
+            decay_weights = np.array([0.95 ** i for i in range(len(vals_list))])
+            sum_weights = float(np.sum(decay_weights)) if len(vals_list) > 0 else 1.0
+            avg_val = float(np.sum(np.array(vals_list) * decay_weights) / sum_weights) if len(vals_list) > 0 else 1.0
+            avg_str = f"{avg_val:.2f}"
+        else:
+            avg_val = float(np.mean(vals_list)) if vals_list else 0.0
+            avg_str = f"{avg_val:.2f}" if metric_type == 'xg' else f"{avg_val:.1f}%"
+            
+        row['avg_val'] = avg_val
+        row['avg_str'] = avg_str
+        rows.append(row)
+
+    rows = sorted(rows, key=lambda x: x['avg_val'], reverse=True)
+
+    # Unified global table scaling across all cells in the entire table
+    valid_vals = np.array([v for v in all_vals if v is not None])
+    if len(valid_vals) > 0 and np.max(valid_vals) > np.min(valid_vals):
+        p5 = float(np.percentile(valid_vals, 5))
+        p95 = float(np.percentile(valid_vals, 95))
+        median_val = 1.00 if is_rel else float(np.median(valid_vals))
+    else:
+        if is_rel:
+            p5, p95, median_val = (0.6, 1.5, 1.00)
+        else:
+            p5, p95, median_val = (0.8, 2.2, 1.4) if metric_type == 'xg' else (10.0, 40.0, 25.0)
+
+    def get_color(val):
+        if val is None or pd.isna(val):
+            return "transparent"
+        if val >= median_val:
+            denom = (p95 - median_val) if p95 > median_val else 1.0
+            t = min(1.0, max(0.0, (val - median_val) / denom))
+            alpha = 0.08 + (t ** 0.85) * 0.62
+            return f"rgba(0, 180, 255, {alpha:.2f})"
+        else:
+            denom = (median_val - p5) if median_val > p5 else 1.0
+            t = min(1.0, max(0.0, (median_val - val) / denom))
+            alpha = 0.08 + (t ** 0.85) * 0.56
+            return f"rgba(245, 140, 25, {alpha:.2f})"
+
+    avg_header = "W.Avg" if is_rel else "Avg"
+
+    html = [
+        '<div class="proj-table-container">',
+        f'<table class="proj-table" data-metric-type="{metric_type}" data-view-mode="{view_mode}" style="table-layout: fixed; width: 100%;">',
+        '<colgroup>',
+        '<col style="width: 200px;">',
+    ]
+    for gw in gws:
+        html.append(f'<col data-gw="{gw}">')
+    html.append('<col style="width: 98px;">')
+    html.append('</colgroup>')
+    html.append('<thead><tr>')
+    html.append('<th class="team-th">Team</th>')
+    for gw in gws:
+        html.append(
+            f'<th class="gw-th" data-gw="{gw}">'
+            f'<div class="gw-th-content">'
+            f'<span class="gw-title">GW {gw}</span>'
+            f'<button type="button" class="gw-remove-btn" data-gw="{gw}" title="Hide GW {gw}">&times;</button>'
+            f'</div>'
+            f'</th>'
+        )
+    html.append(f'<th class="avg-th">{avg_header}</th>')
+    html.append('</tr></thead><tbody>')
+
+    for r in rows:
+        avg_val_formatted = f"{r['avg_val']:.4f}"
+        html.append(f'<tr data-team="{r["Team"]}" data-avg-val="{avg_val_formatted}">')
+        html.append(f'<td class="team-td">{r["Team"]}</td>')
+        
+        for gw in gws:
+            cell = r['cells'][gw]
+            cell_bg = get_color(cell['val'])
+            val_attr = f"{cell['val']:.4f}" if cell['val'] is not None else ""
+            html.append(f'<td data-gw="{gw}" data-val="{val_attr}" style="background-color: {cell_bg};">')
+            html.append(f'<div class="cell-val">{cell["val_str"]}</div>')
+            html.append(f'<div class="cell-opp">{cell["opp_str"]}</div>')
+            html.append('</td>')
+            
+        html.append(f'<td class="avg-td">{r["avg_str"]}</td>')
+        html.append('</tr>')
+
+    html.append('</tbody></table></div>')
+    return "\n".join(html)
+
+
+def get_current_active_gw(df_fix):
+    """
+    Dynamically determines the current active/upcoming Gameweek based on kickoff_time and match status.
+    """
+    try:
+        now_utc = datetime.now(timezone.utc)
+        if df_fix is None or df_fix.empty or 'kickoff_time' not in df_fix.columns:
+            return 1
+        
+        df_temp = df_fix.dropna(subset=['event', 'kickoff_time']).copy()
+        if df_temp.empty:
+            return 1
+            
+        df_temp['kickoff_dt'] = pd.to_datetime(df_temp['kickoff_time'], errors='coerce')
+        df_temp = df_temp.dropna(subset=['kickoff_dt'])
+        if df_temp.empty:
+            return 1
+            
+        if 'finished' in df_temp.columns:
+            gw_agg = df_temp.groupby('event').agg(
+                last_ko=('kickoff_dt', 'max'),
+                all_finished=('finished', 'all')
+            ).reset_index()
+        else:
+            gw_agg = df_temp.groupby('event').agg(
+                last_ko=('kickoff_dt', 'max')
+            ).reset_index()
+            gw_agg['all_finished'] = False
+            
+        gw_agg['event'] = gw_agg['event'].astype(int)
+        gw_agg = gw_agg.sort_values('event')
+        
+        for _, row in gw_agg.iterrows():
+            gw = int(row['event'])
+            last_ko = row['last_ko']
+            if pd.isna(last_ko.tzinfo):
+                last_ko = last_ko.replace(tzinfo=timezone.utc)
+                
+            gw_end_estimate = last_ko + timedelta(hours=2.5)
+            if not row['all_finished'] and now_utc <= gw_end_estimate:
+                return gw
+            if now_utc <= gw_end_estimate:
+                return gw
+                
+        unfinished = gw_agg[gw_agg['all_finished'] == False]
+        if not unfinished.empty:
+            return int(unfinished['event'].min())
+            
+        return 1
+    except Exception:
+        return 1
+
+
+# ========================== FIXTURES PROJECTIONS (xG & CLEAN SHEETS) ==========================
+try:
+    df_fixtures = load_fixtures_model()
+    if not df_fixtures.empty and "kickoff_time" in df_fixtures.columns:
+        now_utc = datetime.now(timezone.utc)
+        df_fixtures["kickoff_dt"] = pd.to_datetime(df_fixtures["kickoff_time"], errors="coerce")
+        df_fixtures["kickoff_dt"] = df_fixtures["kickoff_dt"].apply(lambda x: x.tz_localize("UTC") if (pd.notnull(x) and x.tzinfo is None) else x)
+        df_fixtures = df_fixtures[df_fixtures["kickoff_dt"] > now_utc].copy()
+except Exception:
+    df_fixtures = pd.DataFrame()
+
+if not df_fixtures.empty:
+    st.markdown("<hr style='margin: 1.8rem 0 1.2rem 0; opacity: 0.2;'>", unsafe_allow_html=True)
+    
+    st.markdown("""
+        <style>
+        /* Compact selectboxes in header */
+        [data-testid="column"]:has(div[data-testid="stSelectbox"]) {
+            min-width: 0 !important;
+        }
+        [data-testid="column"] [data-testid="stSelectbox"] {
+            min-width: 0 !important;
+        }
+        [data-testid="column"] [data-baseweb="select"] {
+            min-width: 0 !important;
+            height: 38px !important;
+        }
+        [data-testid="column"] [data-baseweb="select"] > div {
+            padding-left: 6px !important;
+            padding-right: 2px !important;
+            font-size: 0.81rem !important;
+        }
+        [data-testid="column"] label p {
+            font-size: 0.75rem !important;
+            white-space: nowrap !important;
+            margin-bottom: 2px !important;
+            line-height: 1.2 !important;
+        }
+        
+        /* Refresh reset button styling & pixel-perfect alignment */
+        [data-testid="column"]:has(div[data-testid="stButton"]) {
+            min-width: 0 !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) div[data-testid="stButton"] {
+            margin-top: 27px !important;
+            margin-bottom: 0px !important;
+            padding: 0px !important;
+            width: 100% !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) button {
+            height: 38px !important;
+            min-height: 38px !important;
+            max-height: 38px !important;
+            padding: 0px !important;
+            margin: 0px !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            border: none !important;
+            border-color: transparent !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) button p,
+        [data-testid="column"]:has(div[data-testid="stButton"]) button span,
+        [data-testid="column"]:has(div[data-testid="stButton"]) button div {
+            font-size: 1.85rem !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+            transform: scale(1.28);
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) button:hover {
+            border-color: transparent !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        [data-testid="column"]:has(div[data-testid="stButton"]) button:hover p {
+            transform: scale(1.36) rotate(90deg);
+            transition: transform 0.25s ease !important;
+        }
+
+        /* Expected Goals header title perfectly matching selectbox baseline */
+        .xg-header-container {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            margin: 0px !important;
+            padding: 0px !important;
+        }
+        .xg-header-spacer {
+            font-size: 0.75rem !important;
+            line-height: 1.2 !important;
+            margin-bottom: 2px !important;
+            visibility: hidden !important;
+            user-select: none !important;
+            pointer-events: none !important;
+            height: 24px !important;
+        }
+        .xg-header-text {
+            font-size: 1.75rem !important;
+            font-weight: 600 !important;
+            line-height: 1.15 !important;
+            height: 38px !important;
+            display: flex !important;
+            align-items: flex-end !important;
+            padding-bottom: 2px !important;
+            color: var(--text-color, inherit) !important;
+            letter-spacing: -0.01em !important;
+            margin: 0px !important;
+        }
+
+        .proj-table-container {
+            margin-top: 8px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.69, 0.095, 0.065, 0.11, 0.04], gap="small")
+    with hdr_c1:
+        st.markdown(
+            '<div class="xg-header-container">'
+            '<div class="xg-header-spacer">&nbsp;</div>'
+            '<div class="xg-header-text">Expected Goals</div>'
+            '</div>',
+            unsafe_allow_html=True
+        )
+    with hdr_c2:
+        view_mode = st.selectbox(
+            "Table View",
+            options=["Absolute", "Relative"],
+            index=0,
+            key="ts_view_mode_select"
+        )
+    with hdr_c3:
+        gw_count_options = list(range(3, 17))
+        default_count_idx = gw_count_options.index(12) if 12 in gw_count_options else len(gw_count_options) - 1
+        num_gws = st.selectbox(
+            "GWs To Show",
+            options=gw_count_options,
+            index=default_count_idx,
+            key="ts_gw_count_select"
+        )
+    with hdr_c4:
+        active_start_gw = get_current_active_gw(df_fixtures)
+        max_start = 38 - num_gws + 1
+        default_gw_idx = max(0, min(active_start_gw - 1, max_start - 1))
+        gw_opts = [f"GW {i}-{i + num_gws - 1}" for i in range(1, max_start + 1)]
+        
+        selected_gw_str = st.selectbox(
+            "GW Range",
+            options=gw_opts,
+            index=default_gw_idx,
+            key=f"ts_gw_range_select_{num_gws}_{active_start_gw}"
+        )
+    with hdr_c5:
+        if st.button("🔄", help="Reset all removed Gameweeks", key="ts_reset_gw_btn"):
+            st.rerun()
+        
+    start_gw = int(selected_gw_str.split()[1].split('-')[0])
+    end_gw = start_gw + num_gws - 1
+    gws_window = list(range(start_gw, end_gw + 1))
+    
+    html_xg = build_projection_table_html(df_fixtures, metric_type='xg', view_mode=view_mode, gws=gws_window, selected_teams=final_teams)
+    st.markdown(html_xg, unsafe_allow_html=True)
+    
+    st.subheader("Clean Sheets %" if view_mode == 'Absolute' else "Clean Sheets (Relative)", anchor=False)
+    html_cs = build_projection_table_html(df_fixtures, metric_type='cs', view_mode=view_mode, gws=gws_window, selected_teams=final_teams)
+    st.markdown(html_cs, unsafe_allow_html=True)
+
+
+
 st.subheader("Historical Ratings", anchor=False)
 
 hist_home = df_played[['match_date', 'season', 'league', 'home_team', 'home_team_code', 'home_rating_att_post', 'home_rating_def_post']].rename(
@@ -1091,3 +1500,5 @@ if not df_hist.empty:
     st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
 else:
     st.info("No historical data available for selected filters.")
+
+
