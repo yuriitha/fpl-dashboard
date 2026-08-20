@@ -45,7 +45,227 @@ st.markdown("""
             padding: 0px !important; line-height: 1 !important; border: none !important;
         }
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] { gap: 0.1rem !important; }
-    </style>
+    
+/* Real-time Theme-Reactive Fixture Projection Tables */
+        .proj-table-container {
+            overflow-x: auto;
+            width: 100%;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            border-radius: 8px;
+            margin-bottom: 1.4rem;
+            background: var(--secondary-background-color, transparent);
+        }
+        .proj-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            font-size: 0.78rem;
+            text-align: center;
+            color: var(--text-color, inherit);
+        }
+        .proj-table thead tr {
+            background: var(--background-color, transparent);
+            border-bottom: 2px solid rgba(128, 128, 128, 0.25);
+        }
+        .proj-table th {
+            padding: 5px 2px;
+            font-weight: 600;
+            min-width: 50px;
+            background: var(--background-color, inherit);
+            color: var(--text-color, inherit);
+            border-right: 1px solid rgba(128, 128, 128, 0.2);
+            border-bottom: 2px solid rgba(128, 128, 128, 0.25);
+            font-size: 0.76rem;
+        }
+        .proj-table th.team-th {
+            padding: 5px 8px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-align: center;
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: var(--background-color, inherit);
+        }
+        .proj-table th.avg-th {
+            padding: 5px 4px;
+            font-weight: 600;
+            width: 98px;
+            min-width: 98px;
+            max-width: 98px;
+            font-size: 0.88rem;
+            text-align: center;
+        }
+        .proj-table tbody tr {
+            background: var(--secondary-background-color, transparent);
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+        }
+        .proj-table tbody tr:nth-child(even) {
+            background: var(--background-color, transparent);
+        }
+        .proj-table td {
+            padding: 3px 2px;
+            min-width: 50px;
+            border-right: 1px solid rgba(128, 128, 128, 0.15);
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+            color: var(--text-color, inherit);
+        }
+        .proj-table td.team-td {
+            padding: 4px 8px;
+            font-weight: 550;
+            font-size: 0.97rem;
+            text-align: center;
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: var(--secondary-background-color, inherit);
+            line-height: 1.2;
+        }
+        .proj-table tbody tr:nth-child(even) td.team-td {
+            background: var(--background-color, inherit);
+        }
+        .proj-table td.avg-td {
+            padding: 4px 4px;
+            font-weight: 600;
+            font-size: 0.97rem;
+            text-align: center;
+            width: 98px;
+            min-width: 98px;
+            max-width: 98px;
+            background: var(--secondary-background-color, inherit);
+            line-height: 1.15;
+        }
+        .proj-table tbody tr:nth-child(even) td.avg-td {
+            background: var(--background-color, inherit);
+        }
+        .proj-table .cell-val {
+            font-weight: 600;
+            font-size: 0.80rem;
+            line-height: 1.1;
+            color: var(--text-color, inherit);
+        }
+        .proj-table .cell-opp {
+            font-size: 0.63rem;
+            opacity: 0.72;
+            margin-top: 1.5px;
+            line-height: 1.05;
+            color: var(--text-color, inherit);
+        }
+        
+        .proj-table th.gw-th {
+            position: relative;
+            padding: 4px 2px !important;
+            user-select: none;
+        }
+        .proj-table .gw-th-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            gap: 2px;
+        }
+        .proj-table .gw-title {
+            font-weight: 600;
+        }
+        .proj-table .gw-remove-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--text-color, inherit);
+            opacity: 0;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            line-height: 1;
+            padding: 0;
+            margin: 0;
+            transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        }
+        .proj-table th.gw-th:hover .gw-remove-btn {
+            opacity: 0.55;
+        }
+        .proj-table .gw-remove-btn:hover {
+            opacity: 1 !important;
+            background: rgba(255, 77, 79, 0.25) !important;
+            color: #ff4d4f !important;
+            transform: scale(1.2);
+        }
+        
+        /* Refresh reset button styling */
+        div[data-testid="column"]:has(div[data-testid="stButton"]) {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            min-width: 0 !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) > div[data-testid="stVerticalBlock"] {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            height: 100% !important;
+            gap: 0px !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) div[data-testid="stButton"] {
+            margin-top: auto !important;
+            margin-bottom: 0px !important;
+            padding-bottom: 0px !important;
+            width: 100% !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button {
+            height: 38px !important;
+            min-height: 38px !important;
+            max-height: 38px !important;
+            padding: 0px !important;
+            margin: 0px !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            border: 1px solid rgba(128, 128, 128, 0.25) !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button * {
+            font-size: 1.60rem !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+            transform: scale(1.22);
+            transition: transform 0.25s ease !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button:hover {
+            border-color: rgba(0, 180, 255, 0.7) !important;
+            background: rgba(0, 180, 255, 0.08) !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button:hover * {
+            transform: scale(1.35) rotate(90deg);
+        }
+    
+
+</style>
 """, unsafe_allow_html=True)
 
 import requests
@@ -723,7 +943,7 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
     if selected_teams:
         teams_to_show = [
             t for t in all_teams_model 
-            if t in selected_teams or model_to_short.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)
+            if t in selected_teams or model_to_short.get(t, '') in selected_teams or name_to_team_code.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)
         ]
         if not teams_to_show:
             teams_to_show = all_teams_model
@@ -751,13 +971,15 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
                             v = m['home_xg_rel'] if (metric_type == 'xg' and 'home_xg_rel' in m) else (m['home_cs_rel'] if 'home_cs_rel' in m else 1.0)
                         else:
                             v = m['home_xg'] if metric_type == 'xg' else m['home_cs']
-                        opp = f"{m['team_a_short']} (H)"
+                        opp_code = name_to_team_code.get(m['team_a_model'], m['team_a_short'])
+                        opp = f"{opp_code} (H)"
                     else:
                         if is_rel:
                             v = m['away_xg_rel'] if (metric_type == 'xg' and 'away_xg_rel' in m) else (m['away_cs_rel'] if 'away_cs_rel' in m else 1.0)
                         else:
                             v = m['away_xg'] if metric_type == 'xg' else m['away_cs']
-                        opp = f"{m['team_h_short']} (A)"
+                        opp_code = name_to_team_code.get(m['team_h_model'], m['team_h_short'])
+                        opp = f"{opp_code} (A)"
                     m_vals.append(v)
                     opps.append(opp)
                 
@@ -927,6 +1149,10 @@ try:
         df_fixtures["kickoff_dt"] = pd.to_datetime(df_fixtures["kickoff_time"], errors="coerce")
         df_fixtures["kickoff_dt"] = df_fixtures["kickoff_dt"].apply(lambda x: x.tz_localize("UTC") if (pd.notnull(x) and x.tzinfo is None) else x)
         df_fixtures = df_fixtures[df_fixtures["kickoff_dt"] > now_utc].copy()
+        
+        # Переносимо перенесені матчі 1-го туру (після 24 серпня) до 3-го туру
+        postponed_mask = (df_fixtures["event"] == 1) & (df_fixtures["kickoff_dt"] > pd.Timestamp("2026-08-24", tz="UTC"))
+        df_fixtures.loc[postponed_mask, "event"] = 3
 except Exception:
     df_fixtures = pd.DataFrame()
 
@@ -1045,7 +1271,227 @@ if not df_fixtures.empty:
         .proj-table-container {
             margin-top: 8px !important;
         }
-        </style>
+        
+/* Real-time Theme-Reactive Fixture Projection Tables */
+        .proj-table-container {
+            overflow-x: auto;
+            width: 100%;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            border-radius: 8px;
+            margin-bottom: 1.4rem;
+            background: var(--secondary-background-color, transparent);
+        }
+        .proj-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            font-size: 0.78rem;
+            text-align: center;
+            color: var(--text-color, inherit);
+        }
+        .proj-table thead tr {
+            background: var(--background-color, transparent);
+            border-bottom: 2px solid rgba(128, 128, 128, 0.25);
+        }
+        .proj-table th {
+            padding: 5px 2px;
+            font-weight: 600;
+            min-width: 50px;
+            background: var(--background-color, inherit);
+            color: var(--text-color, inherit);
+            border-right: 1px solid rgba(128, 128, 128, 0.2);
+            border-bottom: 2px solid rgba(128, 128, 128, 0.25);
+            font-size: 0.76rem;
+        }
+        .proj-table th.team-th {
+            padding: 5px 8px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-align: center;
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: var(--background-color, inherit);
+        }
+        .proj-table th.avg-th {
+            padding: 5px 4px;
+            font-weight: 600;
+            width: 98px;
+            min-width: 98px;
+            max-width: 98px;
+            font-size: 0.88rem;
+            text-align: center;
+        }
+        .proj-table tbody tr {
+            background: var(--secondary-background-color, transparent);
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+        }
+        .proj-table tbody tr:nth-child(even) {
+            background: var(--background-color, transparent);
+        }
+        .proj-table td {
+            padding: 3px 2px;
+            min-width: 50px;
+            border-right: 1px solid rgba(128, 128, 128, 0.15);
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+            color: var(--text-color, inherit);
+        }
+        .proj-table td.team-td {
+            padding: 4px 8px;
+            font-weight: 550;
+            font-size: 0.97rem;
+            text-align: center;
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: var(--secondary-background-color, inherit);
+            line-height: 1.2;
+        }
+        .proj-table tbody tr:nth-child(even) td.team-td {
+            background: var(--background-color, inherit);
+        }
+        .proj-table td.avg-td {
+            padding: 4px 4px;
+            font-weight: 600;
+            font-size: 0.97rem;
+            text-align: center;
+            width: 98px;
+            min-width: 98px;
+            max-width: 98px;
+            background: var(--secondary-background-color, inherit);
+            line-height: 1.15;
+        }
+        .proj-table tbody tr:nth-child(even) td.avg-td {
+            background: var(--background-color, inherit);
+        }
+        .proj-table .cell-val {
+            font-weight: 600;
+            font-size: 0.80rem;
+            line-height: 1.1;
+            color: var(--text-color, inherit);
+        }
+        .proj-table .cell-opp {
+            font-size: 0.63rem;
+            opacity: 0.72;
+            margin-top: 1.5px;
+            line-height: 1.05;
+            color: var(--text-color, inherit);
+        }
+        
+        .proj-table th.gw-th {
+            position: relative;
+            padding: 4px 2px !important;
+            user-select: none;
+        }
+        .proj-table .gw-th-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            gap: 2px;
+        }
+        .proj-table .gw-title {
+            font-weight: 600;
+        }
+        .proj-table .gw-remove-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--text-color, inherit);
+            opacity: 0;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            line-height: 1;
+            padding: 0;
+            margin: 0;
+            transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        }
+        .proj-table th.gw-th:hover .gw-remove-btn {
+            opacity: 0.55;
+        }
+        .proj-table .gw-remove-btn:hover {
+            opacity: 1 !important;
+            background: rgba(255, 77, 79, 0.25) !important;
+            color: #ff4d4f !important;
+            transform: scale(1.2);
+        }
+        
+        /* Refresh reset button styling */
+        div[data-testid="column"]:has(div[data-testid="stButton"]) {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            min-width: 0 !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) > div[data-testid="stVerticalBlock"] {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            height: 100% !important;
+            gap: 0px !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) div[data-testid="stButton"] {
+            margin-top: auto !important;
+            margin-bottom: 0px !important;
+            padding-bottom: 0px !important;
+            width: 100% !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button {
+            height: 38px !important;
+            min-height: 38px !important;
+            max-height: 38px !important;
+            padding: 0px !important;
+            margin: 0px !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            border: 1px solid rgba(128, 128, 128, 0.25) !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button * {
+            font-size: 1.60rem !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+            transform: scale(1.22);
+            transition: transform 0.25s ease !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button:hover {
+            border-color: rgba(0, 180, 255, 0.7) !important;
+            background: rgba(0, 180, 255, 0.08) !important;
+        }
+        div[data-testid="column"]:has(div[data-testid="stButton"]) button:hover * {
+            transform: scale(1.35) rotate(90deg);
+        }
+    
+
+</style>
     """, unsafe_allow_html=True)
 
     hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.69, 0.095, 0.065, 0.11, 0.04], gap="small")
@@ -1500,5 +1946,10 @@ if not df_hist.empty:
     st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
 else:
     st.info("No historical data available for selected filters.")
+
+
+
+
+
 
 
