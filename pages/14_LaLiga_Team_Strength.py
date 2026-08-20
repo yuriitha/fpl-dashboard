@@ -927,7 +927,23 @@ def load_fixtures_model():
             return pd.read_parquet(local_path)
         return pd.DataFrame()
 
-def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute', gws=range(1, 13), selected_teams=None):
+def get_name_to_team_code():
+    import os, csv
+    mapping = {}
+    base_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+    for back_steps in ["", "..", "../..", "../../.."]:
+        csv_path = os.path.normpath(os.path.join(base_dir, back_steps, "team_colors.csv"))
+        if os.path.exists(csv_path):
+            with open(csv_path, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    mapping[str(r["team_name"]).strip()] = str(r.get("abbr", r["team_name"][:3])).strip().upper()
+            break
+    return mapping
+
+name_to_team_code = get_name_to_team_code()
+
+def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute", gws=range(1, 13), selected_teams=None):
     # Mapping between short code and model name
     short_to_model = {}
     model_to_short = {}
@@ -1946,6 +1962,7 @@ if not df_hist.empty:
     st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
 else:
     st.info("No historical data available for selected filters.")
+
 
 
 
