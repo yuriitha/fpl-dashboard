@@ -927,26 +927,6 @@ def load_fixtures_model():
             return pd.read_parquet(local_path)
         return pd.DataFrame()
 
-def get_name_to_team_code():
-    import os, csv
-    mapping = {}
-    base_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
-    for p in [
-        os.path.join(base_dir, "..", "team_colors.csv"),
-        os.path.join(base_dir, "team_colors.csv"),
-        os.path.join(base_dir, "..", "..", "streamlit", "team_colors.csv"),
-        os.path.join(base_dir, "..", "..", "Team Strength Model", "team_colors.csv")
-    ]:
-        if os.path.exists(p):
-            with open(p, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                for r in reader:
-                    mapping[str(r["team_name"]).strip()] = str(r.get("abbr", r["team_name"][:3])).strip().upper()
-            break
-    return mapping
-
-name_to_team_code = get_name_to_team_code()
-
 def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute", gws=range(1, 13), selected_teams=None):
     # Mapping between short code and model name
     short_to_model = {}
@@ -963,7 +943,7 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
     if selected_teams:
         teams_to_show = [
             t for t in all_teams_model 
-            if t in selected_teams or model_to_short.get(t, '') in selected_teams or name_to_team_code.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)
+            if t in selected_teams or model_to_short.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)
         ]
         if not teams_to_show:
             teams_to_show = all_teams_model
@@ -981,7 +961,7 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
         for gw in gws:
             matches = df_model[(df_model['event'] == gw) & ((df_model['team_h_model'] == t_model) | (df_model['team_a_model'] == t_model))]
             if matches.empty:
-                row['cells'][gw] = {'val': None, 'val_str': '—', 'opp_str': '-'}
+                row['cells'][gw] = {'val': None, 'val_str': '', 'opp_str': ''}
             else:
                 m_vals = []
                 opps = []
@@ -991,15 +971,13 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
                             v = m['home_xg_rel'] if (metric_type == 'xg' and 'home_xg_rel' in m) else (m['home_cs_rel'] if 'home_cs_rel' in m else 1.0)
                         else:
                             v = m['home_xg'] if metric_type == 'xg' else m['home_cs']
-                        opp_code = name_to_team_code.get(m['team_a_model'], m['team_a_short'])
-                        opp = f"{opp_code} (H)"
+                        opp = f"{m['team_a_short']} (H)"
                     else:
                         if is_rel:
                             v = m['away_xg_rel'] if (metric_type == 'xg' and 'away_xg_rel' in m) else (m['away_cs_rel'] if 'away_cs_rel' in m else 1.0)
                         else:
                             v = m['away_xg'] if metric_type == 'xg' else m['away_cs']
-                        opp_code = name_to_team_code.get(m['team_h_model'], m['team_h_short'])
-                        opp = f"{opp_code} (A)"
+                        opp = f"{m['team_h_short']} (A)"
                     m_vals.append(v)
                     opps.append(opp)
                 
@@ -1110,52 +1088,15 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
 
 def get_current_active_gw(df_fix):
     """
-    Dynamically determines the current active/upcoming Gameweek based on kickoff_time and match status.
+    Dynamically determines the current active/upcoming Gameweek based on unplayed matches.
+    Returns the earliest gameweek that has at least one unplayed match.
     """
     try:
-        now_utc = datetime.now(timezone.utc)
-        if df_fix is None or df_fix.empty or 'kickoff_time' not in df_fix.columns:
+        if df_fix is None or df_fix.empty or 'event' not in df_fix.columns:
             return 1
-        
-        df_temp = df_fix.dropna(subset=['event', 'kickoff_time']).copy()
-        if df_temp.empty:
-            return 1
-            
-        df_temp['kickoff_dt'] = pd.to_datetime(df_temp["kickoff_time"], errors="coerce", utc=True, format="mixed")
-        df_temp = df_temp.dropna(subset=['kickoff_dt'])
-        if df_temp.empty:
-            return 1
-            
-        if 'finished' in df_temp.columns:
-            gw_agg = df_temp.groupby('event').agg(
-                last_ko=('kickoff_dt', 'max'),
-                all_finished=('finished', 'all')
-            ).reset_index()
-        else:
-            gw_agg = df_temp.groupby('event').agg(
-                last_ko=('kickoff_dt', 'max')
-            ).reset_index()
-            gw_agg['all_finished'] = False
-            
-        gw_agg['event'] = gw_agg['event'].astype(int)
-        gw_agg = gw_agg.sort_values('event')
-        
-        for _, row in gw_agg.iterrows():
-            gw = int(row['event'])
-            last_ko = row['last_ko']
-            if pd.isna(last_ko.tzinfo):
-                last_ko = last_ko.replace(tzinfo=timezone.utc)
-                
-            gw_end_estimate = last_ko + timedelta(hours=2.5)
-            if not row['all_finished'] and now_utc <= gw_end_estimate:
-                return gw
-            if now_utc <= gw_end_estimate:
-                return gw
-                
-        unfinished = gw_agg[gw_agg['all_finished'] == False]
-        if not unfinished.empty:
-            return int(unfinished['event'].min())
-            
+        events = df_fix['event'].dropna().astype(int)
+        if not events.empty:
+            return int(events.min())
         return 1
     except Exception:
         return 1
@@ -1169,10 +1110,6 @@ try:
         df_fixtures["kickoff_dt"] = pd.to_datetime(df_fixtures["kickoff_time"], errors="coerce", utc=True, format="mixed")
         df_fixtures["kickoff_dt"] = df_fixtures["kickoff_dt"].apply(lambda x: x.tz_localize("UTC") if (pd.notnull(x) and x.tzinfo is None) else x)
         df_fixtures = df_fixtures[df_fixtures["kickoff_dt"] > now_utc].copy()
-        
-        # Переносимо перенесені матчі 1-го туру (після 24 серпня) до 3-го туру
-        postponed_mask = (df_fixtures["event"] == 1) & (df_fixtures["kickoff_dt"] > pd.Timestamp("2026-08-24", tz="UTC"))
-        df_fixtures.loc[postponed_mask, "event"] = 3
 except Exception:
     df_fixtures = pd.DataFrame()
 

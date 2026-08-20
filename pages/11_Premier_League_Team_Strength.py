@@ -971,7 +971,7 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
         for gw in gws:
             matches = df_model[(df_model['event'] == gw) & ((df_model['team_h_model'] == t_model) | (df_model['team_a_model'] == t_model))]
             if matches.empty:
-                row['cells'][gw] = {'val': None, 'val_str': '—', 'opp_str': '-'}
+                row['cells'][gw] = {'val': None, 'val_str': '', 'opp_str': ''}
             else:
                 m_vals = []
                 opps = []
@@ -1098,52 +1098,15 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
 
 def get_current_active_gw(df_fix):
     """
-    Dynamically determines the current active/upcoming Gameweek based on kickoff_time and match status.
+    Dynamically determines the current active/upcoming Gameweek based on unplayed matches.
+    Returns the earliest gameweek that has at least one unplayed match.
     """
     try:
-        now_utc = datetime.now(timezone.utc)
-        if df_fix is None or df_fix.empty or 'kickoff_time' not in df_fix.columns:
+        if df_fix is None or df_fix.empty or 'event' not in df_fix.columns:
             return 1
-        
-        df_temp = df_fix.dropna(subset=['event', 'kickoff_time']).copy()
-        if df_temp.empty:
-            return 1
-            
-        df_temp['kickoff_dt'] = pd.to_datetime(df_temp["kickoff_time"], errors="coerce", utc=True, format="mixed")
-        df_temp = df_temp.dropna(subset=['kickoff_dt'])
-        if df_temp.empty:
-            return 1
-            
-        if 'finished' in df_temp.columns:
-            gw_agg = df_temp.groupby('event').agg(
-                last_ko=('kickoff_dt', 'max'),
-                all_finished=('finished', 'all')
-            ).reset_index()
-        else:
-            gw_agg = df_temp.groupby('event').agg(
-                last_ko=('kickoff_dt', 'max')
-            ).reset_index()
-            gw_agg['all_finished'] = False
-            
-        gw_agg['event'] = gw_agg['event'].astype(int)
-        gw_agg = gw_agg.sort_values('event')
-        
-        for _, row in gw_agg.iterrows():
-            gw = int(row['event'])
-            last_ko = row['last_ko']
-            if pd.isna(last_ko.tzinfo):
-                last_ko = last_ko.replace(tzinfo=timezone.utc)
-                
-            gw_end_estimate = last_ko + timedelta(hours=2.5)
-            if not row['all_finished'] and now_utc <= gw_end_estimate:
-                return gw
-            if now_utc <= gw_end_estimate:
-                return gw
-                
-        unfinished = gw_agg[gw_agg['all_finished'] == False]
-        if not unfinished.empty:
-            return int(unfinished['event'].min())
-            
+        events = df_fix['event'].dropna().astype(int)
+        if not events.empty:
+            return int(events.min())
         return 1
     except Exception:
         return 1
