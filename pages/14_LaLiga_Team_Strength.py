@@ -1058,7 +1058,7 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
             f'<th class="gw-th" data-gw="{gw}">'
             f'<div class="gw-th-content">'
             f'<span class="gw-title">GW {gw}</span>'
-            f'<button type="button" class="gw-remove-btn" data-gw="{gw}" title="Hide GW {gw}">&times;</button>'
+            f'<button type="button" class="gw-remove-btn" data-gw="{gw}" onclick="(window.__removeGwColumn || (window.parent && window.parent.__removeGwColumn)) && (window.__removeGwColumn || window.parent.__removeGwColumn)(\'{gw}\')" title="Hide GW {gw}">&times;</button>'
             f'</div>'
             f'</th>'
         )
@@ -1228,227 +1228,7 @@ if not df_fixtures.empty:
         .proj-table-container {
             margin-top: 8px !important;
         }
-        
-/* Real-time Theme-Reactive Fixture Projection Tables */
-        .proj-table-container {
-            overflow-x: auto;
-            width: 100%;
-            border: 1px solid rgba(128, 128, 128, 0.2);
-            border-radius: 8px;
-            margin-bottom: 1.4rem;
-            background: var(--secondary-background-color, transparent);
-        }
-        .proj-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-            font-size: 0.78rem;
-            text-align: center;
-            color: var(--text-color, inherit);
-        }
-        .proj-table thead tr {
-            background: var(--background-color, transparent);
-            border-bottom: 2px solid rgba(128, 128, 128, 0.25);
-        }
-        .proj-table th {
-            padding: 5px 2px;
-            font-weight: 600;
-            min-width: 50px;
-            background: var(--background-color, inherit);
-            color: var(--text-color, inherit);
-            border-right: 1px solid rgba(128, 128, 128, 0.2);
-            border-bottom: 2px solid rgba(128, 128, 128, 0.25);
-            font-size: 0.76rem;
-        }
-        .proj-table th.team-th {
-            padding: 5px 8px;
-            font-weight: 600;
-            font-size: 0.88rem;
-            text-align: center;
-            width: 200px;
-            min-width: 200px;
-            max-width: 200px;
-            position: sticky;
-            left: 0;
-            z-index: 2;
-            background: var(--background-color, inherit);
-        }
-        .proj-table th.avg-th {
-            padding: 5px 4px;
-            font-weight: 600;
-            width: 98px;
-            min-width: 98px;
-            max-width: 98px;
-            font-size: 0.88rem;
-            text-align: center;
-        }
-        .proj-table tbody tr {
-            background: var(--secondary-background-color, transparent);
-            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
-        }
-        .proj-table tbody tr:nth-child(even) {
-            background: var(--background-color, transparent);
-        }
-        .proj-table td {
-            padding: 3px 2px;
-            min-width: 50px;
-            border-right: 1px solid rgba(128, 128, 128, 0.15);
-            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
-            color: var(--text-color, inherit);
-        }
-        .proj-table td.team-td {
-            padding: 4px 8px;
-            font-weight: 550;
-            font-size: 0.97rem;
-            text-align: center;
-            width: 200px;
-            min-width: 200px;
-            max-width: 200px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            position: sticky;
-            left: 0;
-            z-index: 1;
-            background: var(--secondary-background-color, inherit);
-            line-height: 1.2;
-        }
-        .proj-table tbody tr:nth-child(even) td.team-td {
-            background: var(--background-color, inherit);
-        }
-        .proj-table td.avg-td {
-            padding: 4px 4px;
-            font-weight: 600;
-            font-size: 0.97rem;
-            text-align: center;
-            width: 98px;
-            min-width: 98px;
-            max-width: 98px;
-            background: var(--secondary-background-color, inherit);
-            line-height: 1.15;
-        }
-        .proj-table tbody tr:nth-child(even) td.avg-td {
-            background: var(--background-color, inherit);
-        }
-        .proj-table .cell-val {
-            font-weight: 600;
-            font-size: 0.80rem;
-            line-height: 1.1;
-            color: var(--text-color, inherit);
-        }
-        .proj-table .cell-opp {
-            font-size: 0.63rem;
-            opacity: 0.72;
-            margin-top: 1.5px;
-            line-height: 1.05;
-            color: var(--text-color, inherit);
-        }
-        
-        .proj-table th.gw-th {
-            position: relative;
-            padding: 4px 2px !important;
-            user-select: none;
-        }
-        .proj-table .gw-th-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            gap: 2px;
-        }
-        .proj-table .gw-title {
-            font-weight: 600;
-        }
-        .proj-table .gw-remove-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            border: none;
-            background: transparent;
-            color: var(--text-color, inherit);
-            opacity: 0;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-            line-height: 1;
-            padding: 0;
-            margin: 0;
-            transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.15s ease;
-        }
-        .proj-table th.gw-th:hover .gw-remove-btn {
-            opacity: 0.55;
-        }
-        .proj-table .gw-remove-btn:hover {
-            opacity: 1 !important;
-            background: rgba(255, 77, 79, 0.25) !important;
-            color: #ff4d4f !important;
-            transform: scale(1.2);
-        }
-        
-        /* Refresh reset button styling */
-        div[data-testid="column"]:has(div[data-testid="stButton"]) {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: flex-end !important;
-            min-width: 0 !important;
-        }
-        div[data-testid="column"]:has(div[data-testid="stButton"]) > div[data-testid="stVerticalBlock"] {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: flex-end !important;
-            height: 100% !important;
-            gap: 0px !important;
-        }
-        div[data-testid="column"]:has(div[data-testid="stButton"]) div[data-testid="stButton"] {
-            margin-top: auto !important;
-            margin-bottom: 0px !important;
-            padding-bottom: 0px !important;
-            width: 100% !important;
-        }
-        div[data-testid="column"]:has(div[data-testid="stButton"]) button {
-            height: 38px !important;
-            min-height: 38px !important;
-            max-height: 38px !important;
-            padding: 0px !important;
-            margin: 0px !important;
-            width: 100% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            border-radius: 6px !important;
-            border: 1px solid rgba(128, 128, 128, 0.25) !important;
-            background: transparent !important;
-            transition: all 0.2s ease !important;
-            box-sizing: border-box !important;
-            overflow: hidden !important;
-        }
-        div[data-testid="column"]:has(div[data-testid="stButton"]) button * {
-            font-size: 1.60rem !important;
-            line-height: 1 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            width: 100% !important;
-            height: 100% !important;
-            transform: scale(1.22);
-            transition: transform 0.25s ease !important;
-        }
-        div[data-testid="column"]:has(div[data-testid="stButton"]) button:hover {
-            border-color: rgba(0, 180, 255, 0.7) !important;
-            background: rgba(0, 180, 255, 0.08) !important;
-        }
-        div[data-testid="column"]:has(div[data-testid="stButton"]) button:hover * {
-            transform: scale(1.35) rotate(90deg);
-        }
-    
-
-</style>
+        </style>
     """, unsafe_allow_html=True)
 
     hdr_c1, hdr_c2, hdr_c3, hdr_c4, hdr_c5 = st.columns([0.69, 0.095, 0.065, 0.11, 0.04], gap="small")
@@ -1502,6 +1282,162 @@ if not df_fixtures.empty:
     st.subheader("Clean Sheets %" if view_mode == 'Absolute' else "Clean Sheets (Relative)", anchor=False)
     html_cs = build_projection_table_html(df_fixtures, metric_type='cs', view_mode=view_mode, gws=gws_window, selected_teams=final_teams)
     st.markdown(html_cs, unsafe_allow_html=True)
+
+    js_proj_tables = """
+    <script>
+    (function() {
+        try {
+            var pWin = window.parent || window;
+            var pDoc = pWin.document || document;
+
+            pWin.__removeGwColumn = function(gw) {
+                try {
+                    var tables = pDoc.querySelectorAll('.proj-table');
+                    tables.forEach(function(table) {
+                        var cols = table.querySelectorAll('colgroup col[data-gw="' + gw + '"]');
+                        cols.forEach(function(c) { c.style.display = 'none'; });
+                        
+                        var ths = table.querySelectorAll('thead th[data-gw="' + gw + '"]');
+                        ths.forEach(function(th) { th.style.display = 'none'; });
+                        
+                        var tds = table.querySelectorAll('tbody td[data-gw="' + gw + '"]');
+                        tds.forEach(function(td) { td.style.display = 'none'; });
+                        
+                        if (pWin.__recalculateTable) {
+                            pWin.__recalculateTable(table);
+                        }
+                    });
+                } catch(err) {
+                    console.error("Error removing GW column:", err);
+                }
+            };
+
+            pWin.__resetAllGwColumns = function() {
+                try {
+                    var tables = pDoc.querySelectorAll('.proj-table');
+                    tables.forEach(function(table) {
+                        var cols = table.querySelectorAll('colgroup col[data-gw]');
+                        cols.forEach(function(c) { c.style.display = ''; });
+                        
+                        var ths = table.querySelectorAll('thead th[data-gw]');
+                        ths.forEach(function(th) { th.style.display = ''; });
+                        
+                        var tds = table.querySelectorAll('tbody td[data-gw]');
+                        tds.forEach(function(td) { td.style.display = ''; });
+                        
+                        if (pWin.__recalculateTable) {
+                            pWin.__recalculateTable(table);
+                        }
+                    });
+                } catch(err) {
+                    console.error("Error resetting GW columns:", err);
+                }
+            };
+
+            pWin.__recalculateTable = function(table) {
+                var isRel = (table.getAttribute('data-view-mode') === 'Relative');
+                var isXg = (table.getAttribute('data-metric-type') === 'xg');
+                var tbody = table.querySelector('tbody');
+                if (!tbody) return;
+                var rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                var ths = Array.from(table.querySelectorAll('thead th.gw-th'));
+                var visibleGws = ths.filter(function(th) {
+                    return th.style.display !== 'none';
+                }).map(function(th) {
+                    return th.getAttribute('data-gw');
+                });
+                
+                rows.forEach(function(row) {
+                    var vals = [];
+                    visibleGws.forEach(function(gw) {
+                        var td = row.querySelector('td[data-gw="' + gw + '"]');
+                        if (td) {
+                            var valAttr = td.getAttribute('data-val');
+                            if (valAttr !== null && valAttr !== '' && valAttr !== 'null') {
+                                var num = parseFloat(valAttr);
+                                if (!isNaN(num)) {
+                                    vals.push(num);
+                                }
+                            }
+                        }
+                    });
+                    
+                    var avgVal = 0.0;
+                    var avgStr = '—';
+                    
+                    if (vals.length > 0) {
+                        if (isRel) {
+                            var sumWeighted = 0.0;
+                            var sumWeights = 0.0;
+                            for (var i = 0; i < vals.length; i++) {
+                                var w = Math.pow(0.95, i);
+                                sumWeighted += vals[i] * w;
+                                sumWeights += w;
+                            }
+                            avgVal = sumWeights > 0 ? (sumWeighted / sumWeights) : 1.0;
+                            avgStr = avgVal.toFixed(2);
+                        } else {
+                            var sum = 0.0;
+                            for (var i = 0; i < vals.length; i++) {
+                                sum += vals[i];
+                            }
+                            avgVal = sum / vals.length;
+                            if (isXg) {
+                                avgStr = avgVal.toFixed(2);
+                            } else {
+                                avgStr = avgVal.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                    
+                    row.setAttribute('data-avg-val', avgVal.toFixed(4));
+                    var avgTd = row.querySelector('.avg-td');
+                    if (avgTd) {
+                        avgTd.textContent = avgStr;
+                    }
+                });
+                
+                rows.sort(function(a, b) {
+                    var vA = parseFloat(a.getAttribute('data-avg-val')) || 0;
+                    var vB = parseFloat(b.getAttribute('data-avg-val')) || 0;
+                    return vB - vA;
+                });
+                
+                rows.forEach(function(r) {
+                    tbody.appendChild(r);
+                });
+            };
+
+            if (!pDoc.__gwTableListenerAttached) {
+                pDoc.__gwTableListenerAttached = true;
+                pDoc.addEventListener('click', function(e) {
+                    var removeBtn = e.target.closest('.gw-remove-btn');
+                    if (removeBtn) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var gw = removeBtn.getAttribute('data-gw') || (removeBtn.closest('th') && removeBtn.closest('th').getAttribute('data-gw'));
+                        if (gw && pWin.__removeGwColumn) {
+                            pWin.__removeGwColumn(gw);
+                        }
+                        return;
+                    }
+
+                    var resetBtn = e.target.closest('button[key="ts_reset_gw_btn"]') || e.target.closest('button');
+                    if (resetBtn && ((resetBtn.innerText && resetBtn.innerText.includes('🔄')) || resetBtn.getAttribute('key') === 'ts_reset_gw_btn')) {
+                        if (pWin.__resetAllGwColumns) {
+                            pWin.__resetAllGwColumns();
+                        }
+                    }
+                }, true);
+            }
+        } catch(e) {
+            console.error("Error setting up GW table listeners:", e);
+        }
+    })();
+    </script>
+    """
+    st.components.v1.html(js_proj_tables, height=0, scrolling=False)
 
 
 
@@ -1893,9 +1829,56 @@ if not df_hist.empty:
             }} catch(e) {{}}
         }}
 
+        function alignHeaderControls() {{
+            try {{
+                var doc = window.parent.document || document;
+
+                // Align Refresh button
+                var btns = doc.querySelectorAll('.stButton button, [data-testid="stButton"] button');
+                btns.forEach(function(btn) {{
+                    if (btn.innerText && btn.innerText.includes('🔄')) {{
+                        var btnDiv = btn.closest('.stButton') || btn.closest('[data-testid="stButton"]');
+                        if (btnDiv) {{
+                            btnDiv.style.setProperty('margin-top', '27px', 'important');
+                            btnDiv.style.setProperty('margin-bottom', '0px', 'important');
+                            btnDiv.style.setProperty('padding-top', '0px', 'important');
+                            btnDiv.style.setProperty('padding-bottom', '0px', 'important');
+                        }}
+                        btn.style.setProperty('height', '38px', 'important');
+                        btn.style.setProperty('min-height', '38px', 'important');
+                        btn.style.setProperty('max-height', '38px', 'important');
+                        btn.style.setProperty('padding', '0px', 'important');
+                        btn.style.setProperty('margin', '0px', 'important');
+                        btn.style.setProperty('display', 'flex', 'important');
+                        btn.style.setProperty('align-items', 'center', 'important');
+                        btn.style.setProperty('justify-content', 'center', 'important');
+                        btn.style.setProperty('overflow', 'hidden', 'important');
+                        btn.style.setProperty('border', 'none', 'important');
+                        btn.style.setProperty('border-color', 'transparent', 'important');
+                        btn.style.setProperty('background', 'transparent', 'important');
+                        btn.style.setProperty('box-shadow', 'none', 'important');
+                        btn.style.setProperty('outline', 'none', 'important');
+                        
+                        var pEl = btn.querySelector('p') || btn.querySelector('div') || btn.querySelector('span');
+                        if (pEl) {{
+                            pEl.style.setProperty('font-size', '1.85rem', 'important');
+                            pEl.style.setProperty('line-height', '1', 'important');
+                            pEl.style.setProperty('margin', '0px', 'important');
+                            pEl.style.setProperty('padding', '0px', 'important');
+                            pEl.style.setProperty('display', 'flex', 'important');
+                            pEl.style.setProperty('align-items', 'center', 'important');
+                            pEl.style.setProperty('justify-content', 'center', 'important');
+                            pEl.style.setProperty('transform', 'scale(1.28)', 'important');
+                        }}
+                    }}
+                }});
+            }} catch(e) {{}}
+        }}
+
         setInterval(function() {{
             sortHoverBoxes();
             updateChartColors();
+            alignHeaderControls();
         }}, 60);
     }})();
     </script>

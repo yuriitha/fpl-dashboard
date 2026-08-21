@@ -1068,7 +1068,7 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
             f'<th class="gw-th" data-gw="{gw}">'
             f'<div class="gw-th-content">'
             f'<span class="gw-title">GW {gw}</span>'
-            f'<button type="button" class="gw-remove-btn" data-gw="{gw}" title="Hide GW {gw}">&times;</button>'
+            f'<button type="button" class="gw-remove-btn" data-gw="{gw}" onclick="(window.__removeGwColumn || (window.parent && window.parent.__removeGwColumn)) && (window.__removeGwColumn || window.parent.__removeGwColumn)(\'{gw}\')" title="Hide GW {gw}">&times;</button>'
             f'</div>'
             f'</th>'
         )
@@ -1292,6 +1292,162 @@ if not df_fixtures.empty:
     st.subheader("Clean Sheets %" if view_mode == 'Absolute' else "Clean Sheets (Relative)", anchor=False)
     html_cs = build_projection_table_html(df_fixtures, metric_type='cs', view_mode=view_mode, gws=gws_window, selected_teams=final_teams)
     st.markdown(html_cs, unsafe_allow_html=True)
+
+    js_proj_tables = """
+    <script>
+    (function() {
+        try {
+            var pWin = window.parent || window;
+            var pDoc = pWin.document || document;
+
+            pWin.__removeGwColumn = function(gw) {
+                try {
+                    var tables = pDoc.querySelectorAll('.proj-table');
+                    tables.forEach(function(table) {
+                        var cols = table.querySelectorAll('colgroup col[data-gw="' + gw + '"]');
+                        cols.forEach(function(c) { c.style.display = 'none'; });
+                        
+                        var ths = table.querySelectorAll('thead th[data-gw="' + gw + '"]');
+                        ths.forEach(function(th) { th.style.display = 'none'; });
+                        
+                        var tds = table.querySelectorAll('tbody td[data-gw="' + gw + '"]');
+                        tds.forEach(function(td) { td.style.display = 'none'; });
+                        
+                        if (pWin.__recalculateTable) {
+                            pWin.__recalculateTable(table);
+                        }
+                    });
+                } catch(err) {
+                    console.error("Error removing GW column:", err);
+                }
+            };
+
+            pWin.__resetAllGwColumns = function() {
+                try {
+                    var tables = pDoc.querySelectorAll('.proj-table');
+                    tables.forEach(function(table) {
+                        var cols = table.querySelectorAll('colgroup col[data-gw]');
+                        cols.forEach(function(c) { c.style.display = ''; });
+                        
+                        var ths = table.querySelectorAll('thead th[data-gw]');
+                        ths.forEach(function(th) { th.style.display = ''; });
+                        
+                        var tds = table.querySelectorAll('tbody td[data-gw]');
+                        tds.forEach(function(td) { td.style.display = ''; });
+                        
+                        if (pWin.__recalculateTable) {
+                            pWin.__recalculateTable(table);
+                        }
+                    });
+                } catch(err) {
+                    console.error("Error resetting GW columns:", err);
+                }
+            };
+
+            pWin.__recalculateTable = function(table) {
+                var isRel = (table.getAttribute('data-view-mode') === 'Relative');
+                var isXg = (table.getAttribute('data-metric-type') === 'xg');
+                var tbody = table.querySelector('tbody');
+                if (!tbody) return;
+                var rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                var ths = Array.from(table.querySelectorAll('thead th.gw-th'));
+                var visibleGws = ths.filter(function(th) {
+                    return th.style.display !== 'none';
+                }).map(function(th) {
+                    return th.getAttribute('data-gw');
+                });
+                
+                rows.forEach(function(row) {
+                    var vals = [];
+                    visibleGws.forEach(function(gw) {
+                        var td = row.querySelector('td[data-gw="' + gw + '"]');
+                        if (td) {
+                            var valAttr = td.getAttribute('data-val');
+                            if (valAttr !== null && valAttr !== '' && valAttr !== 'null') {
+                                var num = parseFloat(valAttr);
+                                if (!isNaN(num)) {
+                                    vals.push(num);
+                                }
+                            }
+                        }
+                    });
+                    
+                    var avgVal = 0.0;
+                    var avgStr = '—';
+                    
+                    if (vals.length > 0) {
+                        if (isRel) {
+                            var sumWeighted = 0.0;
+                            var sumWeights = 0.0;
+                            for (var i = 0; i < vals.length; i++) {
+                                var w = Math.pow(0.95, i);
+                                sumWeighted += vals[i] * w;
+                                sumWeights += w;
+                            }
+                            avgVal = sumWeights > 0 ? (sumWeighted / sumWeights) : 1.0;
+                            avgStr = avgVal.toFixed(2);
+                        } else {
+                            var sum = 0.0;
+                            for (var i = 0; i < vals.length; i++) {
+                                sum += vals[i];
+                            }
+                            avgVal = sum / vals.length;
+                            if (isXg) {
+                                avgStr = avgVal.toFixed(2);
+                            } else {
+                                avgStr = avgVal.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                    
+                    row.setAttribute('data-avg-val', avgVal.toFixed(4));
+                    var avgTd = row.querySelector('.avg-td');
+                    if (avgTd) {
+                        avgTd.textContent = avgStr;
+                    }
+                });
+                
+                rows.sort(function(a, b) {
+                    var vA = parseFloat(a.getAttribute('data-avg-val')) || 0;
+                    var vB = parseFloat(b.getAttribute('data-avg-val')) || 0;
+                    return vB - vA;
+                });
+                
+                rows.forEach(function(r) {
+                    tbody.appendChild(r);
+                });
+            };
+
+            if (!pDoc.__gwTableListenerAttached) {
+                pDoc.__gwTableListenerAttached = true;
+                pDoc.addEventListener('click', function(e) {
+                    var removeBtn = e.target.closest('.gw-remove-btn');
+                    if (removeBtn) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var gw = removeBtn.getAttribute('data-gw') || (removeBtn.closest('th') && removeBtn.closest('th').getAttribute('data-gw'));
+                        if (gw && pWin.__removeGwColumn) {
+                            pWin.__removeGwColumn(gw);
+                        }
+                        return;
+                    }
+
+                    var resetBtn = e.target.closest('button[key="ts_reset_gw_btn"]') || e.target.closest('button');
+                    if (resetBtn && ((resetBtn.innerText && resetBtn.innerText.includes('🔄')) || resetBtn.getAttribute('key') === 'ts_reset_gw_btn')) {
+                        if (pWin.__resetAllGwColumns) {
+                            pWin.__resetAllGwColumns();
+                        }
+                    }
+                }, true);
+            }
+        } catch(e) {
+            console.error("Error setting up GW table listeners:", e);
+        }
+    })();
+    </script>
+    """
+    st.components.v1.html(js_proj_tables, height=0, scrolling=False)
 
 
 st.subheader("Historical Ratings", anchor=False)
@@ -1689,149 +1845,6 @@ if not df_hist.empty:
                 }});
             }} catch(e) {{}}
         }}
-
-        // ========================== LIVE PROJECTION TABLES GW REMOVAL & RESET ==========================
-        function removeGwColumn(gw) {{
-            try {{
-                var doc = window.parent.document || document;
-                var tables = doc.querySelectorAll('.proj-table');
-                tables.forEach(function(table) {{
-                    var cols = table.querySelectorAll('colgroup col[data-gw="' + gw + '"]');
-                    cols.forEach(function(c) {{ c.style.display = 'none'; }});
-                    
-                    var ths = table.querySelectorAll('thead th[data-gw="' + gw + '"]');
-                    ths.forEach(function(th) {{ th.style.display = 'none'; }});
-                    
-                    var tds = table.querySelectorAll('tbody td[data-gw="' + gw + '"]');
-                    tds.forEach(function(td) {{ td.style.display = 'none'; }});
-                    
-                    recalculateTable(table);
-                }});
-            }} catch(e) {{
-                console.error("Error removing GW column:", e);
-            }}
-        }}
-
-        function resetAllGwColumns() {{
-            try {{
-                var doc = window.parent.document || document;
-                var tables = doc.querySelectorAll('.proj-table');
-                tables.forEach(function(table) {{
-                    var cols = table.querySelectorAll('colgroup col[data-gw]');
-                    cols.forEach(function(c) {{ c.style.display = ''; }});
-                    
-                    var ths = table.querySelectorAll('thead th[data-gw]');
-                    ths.forEach(function(th) {{ th.style.display = ''; }});
-                    
-                    var tds = table.querySelectorAll('tbody td[data-gw]');
-                    tds.forEach(function(td) {{ td.style.display = ''; }});
-                    
-                    recalculateTable(table);
-                }});
-            }} catch(e) {{
-                console.error("Error resetting GW columns:", e);
-            }}
-        }}
-
-        function recalculateTable(table) {{
-            var isRel = (table.getAttribute('data-view-mode') === 'Relative');
-            var isXg = (table.getAttribute('data-metric-type') === 'xg');
-            var tbody = table.querySelector('tbody');
-            if (!tbody) return;
-            var rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            var ths = Array.from(table.querySelectorAll('thead th.gw-th'));
-            var visibleGws = ths.filter(function(th) {{
-                return th.style.display !== 'none';
-            }}).map(function(th) {{
-                return th.getAttribute('data-gw');
-            }});
-            
-            rows.forEach(function(row) {{
-                var vals = [];
-                visibleGws.forEach(function(gw) {{
-                    var td = row.querySelector('td[data-gw="' + gw + '"]');
-                    if (td) {{
-                        var valAttr = td.getAttribute('data-val');
-                        if (valAttr !== null && valAttr !== '' && valAttr !== 'null') {{
-                            var num = parseFloat(valAttr);
-                            if (!isNaN(num)) {{
-                                vals.push(num);
-                            }}
-                        }}
-                    }}
-                }});
-                
-                var avgVal = 0.0;
-                var avgStr = '—';
-                
-                if (vals.length > 0) {{
-                    if (isRel) {{
-                        var sumWeighted = 0.0;
-                        var sumWeights = 0.0;
-                        for (var i = 0; i < vals.length; i++) {{
-                            var w = Math.pow(0.95, i);
-                            sumWeighted += vals[i] * w;
-                            sumWeights += w;
-                        }}
-                        avgVal = sumWeights > 0 ? (sumWeighted / sumWeights) : 1.0;
-                        avgStr = avgVal.toFixed(2);
-                    }} else {{
-                        var sum = 0.0;
-                        for (var i = 0; i < vals.length; i++) {{
-                            sum += vals[i];
-                        }}
-                        avgVal = sum / vals.length;
-                        if (isXg) {{
-                            avgStr = avgVal.toFixed(2);
-                        }} else {{
-                            avgStr = avgVal.toFixed(1) + '%';
-                        }}
-                    }}
-                }}
-                
-                row.setAttribute('data-avg-val', avgVal.toFixed(4));
-                var avgTd = row.querySelector('.avg-td');
-                if (avgTd) {{
-                    avgTd.textContent = avgStr;
-                }}
-            }});
-            
-            rows.sort(function(a, b) {{
-                var vA = parseFloat(a.getAttribute('data-avg-val')) || 0;
-                var vB = parseFloat(b.getAttribute('data-avg-val')) || 0;
-                return vB - vA;
-            }});
-            
-            rows.forEach(function(r) {{
-                tbody.appendChild(r);
-            }});
-        }}
-
-        // Attach delegated listener on parent document
-        try {{
-            var doc = window.parent.document || document;
-            if (!doc.__gwTableListenersAttached) {{
-                doc.__gwTableListenersAttached = true;
-                doc.addEventListener('click', function(e) {{
-                    var removeBtn = e.target.closest('.gw-remove-btn');
-                    if (removeBtn) {{
-                        e.preventDefault();
-                        e.stopPropagation();
-                        var gw = removeBtn.getAttribute('data-gw') || removeBtn.closest('th')?.getAttribute('data-gw');
-                        if (gw) {{
-                            removeGwColumn(gw);
-                        }}
-                        return;
-                    }}
-
-                    var resetBtn = e.target.closest('button[key="ts_reset_gw_btn"]') || e.target.closest('button');
-                    if (resetBtn && (resetBtn.innerText.includes('🔄') || resetBtn.getAttribute('key') === 'ts_reset_gw_btn')) {{
-                        resetAllGwColumns();
-                    }}
-                }});
-            }}
-        }} catch(e) {{}}
 
         function alignHeaderControls() {{
             try {{
