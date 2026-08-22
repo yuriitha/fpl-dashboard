@@ -937,7 +937,7 @@ with col2:
         st.info("No current matches found.")
 
 
-def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute', gws=range(1, 13), selected_teams=None):
+def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute', gws=range(1, 13), selected_teams=None, code_to_name=None):
     # Mapping between short code and model name
     short_to_model = {}
     model_to_short = {}
@@ -950,11 +950,27 @@ def build_projection_table_html(df_model, metric_type='xg', view_mode='Absolute'
 
     all_teams_model = sorted(list(set(df_model['team_h_model'].dropna()).union(set(df_model['team_a_model'].dropna()))))
     
+    if code_to_name is None and 'team_code_to_name' in globals():
+        code_to_name = team_code_to_name
+    elif code_to_name is None:
+        code_to_name = {}
+
     if selected_teams:
-        teams_to_show = [
-            t for t in all_teams_model 
-            if t in selected_teams or model_to_short.get(t, '') in selected_teams or any(t.lower() in str(st_name).lower() for st_name in selected_teams)
-        ]
+        sel_lookup = set(
+            [str(s).strip().lower() for s in selected_teams] + 
+            [str(code_to_name.get(s, s)).strip().lower() for s in selected_teams]
+        )
+        teams_to_show = []
+        for t in all_teams_model:
+            t_str = str(t).strip()
+            t_low = t_str.lower()
+            t_short = model_to_short.get(t, '')
+            t_short_low = str(t_short).strip().lower()
+            
+            if t_low in sel_lookup or (t_short_low and t_short_low in sel_lookup):
+                teams_to_show.append(t)
+            elif any(t_low == s or t_low in s or s in t_low for s in sel_lookup if len(s) > 3):
+                teams_to_show.append(t)
         if not teams_to_show:
             teams_to_show = all_teams_model
     else:
