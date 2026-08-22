@@ -44,7 +44,54 @@ st.markdown("""
 @st.cache_data(ttl=300)
 def load_data():
     url = "http://198.244.151.163:8000/fpl_players"
-    df = pd.read_parquet(url)
+    try:
+        df = pd.read_parquet(url)
+    except Exception:
+        import os
+        local_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "streamlit", "fpl_players.parquet")
+        if os.path.exists(local_path):
+            df = pd.read_parquet(local_path)
+        else:
+            raise
+
+    # Fallback to load ownership if missing or zeroed
+    needs_ownership = False
+    if 'top_10k' not in df.columns or 'top_100k' not in df.columns:
+        needs_ownership = True
+    elif (df['top_10k'] == 0).all() and (df['top_100k'] == 0).all():
+        needs_ownership = True
+
+    if needs_ownership:
+        import os
+        ownership_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "streamlit", "fpl_ownership.csv"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "fpl_ownership.csv"),
+            "fpl_ownership.csv",
+            "streamlit/fpl_ownership.csv"
+        ]
+        for op in ownership_paths:
+            if os.path.exists(op):
+                try:
+                    df_own = pd.read_csv(op)
+                    if 'fpl_id' in df_own.columns and 'id' in df.columns:
+                        d10 = dict(zip(df_own['fpl_id'], df_own['top_10k']))
+                        d100 = dict(zip(df_own['fpl_id'], df_own['top_100k']))
+                        df['top_10k'] = df['id'].map(d10).fillna(0.0)
+                        df['top_100k'] = df['id'].map(d100).fillna(0.0)
+                except Exception:
+                    pass
+                break
+
+    if 'top_10k' in df.columns:
+        df['top_10k'] = pd.to_numeric(df['top_10k'], errors='coerce').fillna(0.0)
+    else:
+        df['top_10k'] = 0.0
+
+    if 'top_100k' in df.columns:
+        df['top_100k'] = pd.to_numeric(df['top_100k'], errors='coerce').fillna(0.0)
+    else:
+        df['top_100k'] = 0.0
+
     for c in ['injury_name', 'expected_return']:
         if c in df.columns:
             df[c] = df[c].fillna("").astype(str).replace({'None': '', 'nan': '', 'NaN': ''})
@@ -77,7 +124,7 @@ except Exception as e:
 
 display_columns = [
     "full_name", "Age", "element_type", "Play Pos", "team_short_name", "now_cost",
-    "M Price", "Foot", "selected_by_percent", "min_played",
+    "M Price", "Foot", "selected_by_percent", "top_10k", "top_100k", "min_played",
     "matches_played", "matches_started", "avg_mins", "60_min", "goals_scored",
     "assists", "av_rating", "points_per_game", "transfers_in_event",
     "transfers_out_event", "transfers_in_24", "transfers_out_24", "injury_name", "expected_return"
@@ -483,6 +530,8 @@ format_map = {
     "M Price":             ("NumberColumn", "%.1f", "TM Price"),
     "Foot":                ("TextColumn", None, "Foot"),
     "selected_by_percent": ("NumberColumn", "%.1f%%", "Sel %"),
+    "top_10k":             ("NumberColumn", "%.1f%%", "Top10K"),
+    "top_100k":            ("NumberColumn", "%.1f%%", "Top100K"),
     "min_played":          ("NumberColumn", None, "Mins"),
     "matches_played":      ("NumberColumn", None, "MP"),
     "matches_started":     ("NumberColumn", None, "GS"),
@@ -518,6 +567,8 @@ for col in existing_display_cols:
         bw = min(bw, 130)
     elif col == "expected_return":
         bw = min(bw, 110)
+    elif col in ["top_10k", "top_100k"]:
+        bw = max(bw, 54)
     else:
         bw = min(bw, 48)
     base_widths[col] = max(bw, 12)
@@ -541,6 +592,8 @@ for col in existing_display_cols:
         calc_w = max(calc_w, 135)
     elif col == "expected_return":
         calc_w = max(calc_w, 120)
+    elif col in ["top_10k", "top_100k"]:
+        calc_w = max(calc_w, 54)
     else:
         calc_w = max(calc_w, 48)
 
