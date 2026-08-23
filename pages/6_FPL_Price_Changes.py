@@ -576,7 +576,7 @@ for col in existing_display_cols:
 
     bw = max_val_len * 6
     if col == "full_name":
-        bw = min(bw, 130)
+        bw = 160
     elif col == "price_change_locked_until":
         bw = min(bw, 100)
     elif col == "price_change_calibrating":
@@ -605,7 +605,7 @@ for col in existing_display_cols:
     calc_w = int(round(bw + bonus))
 
     if col == "full_name":
-        calc_w = max(calc_w, 130)
+        calc_w = 160
     elif col == "price_change_locked_until":
         calc_w = max(calc_w, 95)
     elif col == "price_change_calibrating":
