@@ -332,35 +332,27 @@ def inject_sidebar_layout(inactive_all: list):
                         b.style.setProperty('min-width', '48px', 'important');
                         b.style.setProperty('max-width', '48px', 'important');
                     }}
-
-                    if (inactiveList.indexOf(txt) !== -1) {{
-                        b.style.setProperty('opacity', '0.2', 'important');
-                        b.style.setProperty('filter', 'grayscale(100%)', 'important');
-                    }} else {{
-                        b.style.removeProperty('opacity');
-                        b.style.removeProperty('filter');
+                    var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
+                    if (b.style.opacity !== expectedOpacity) {{
+                        b.style.opacity = expectedOpacity;
                     }}
-                }});
+                }} );
             }} catch(e) {{}}
         }}
 
-        forceLayout();
-        setTimeout(forceLayout, 50);
-        setTimeout(forceLayout, 150);
-        setTimeout(forceLayout, 300);
-        setTimeout(forceLayout, 600);
-    }})();
+        setInterval(forceLayout, 300);
+    }} )();
     </script>
     '''
-    st.components.v1.html(js, height=0, width=0)
+    st.components.v1.html(js, height=0, scrolling=False)
 
 
 # ========================== САЙДБАР ==========================
 
-if st.sidebar.button("Reset All Filters", kind="primary", use_container_width=True):
-    for key in list(st.session_state.keys()):
-        if key.endswith("_pc") or key.startswith("pills_") or key.startswith("f_") or key.startswith("search_"):
-            del st.session_state[key]
+if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
+    keys_to_delete = [k for k in st.session_state.keys() if '_pc' in k]
+    for key in keys_to_delete:
+        del st.session_state[key]
     st.session_state.pills_teams_pc = all_teams
     st.session_state.pills_pos_pc = sorted_positions
     st.session_state.pills_pl_pos_pc = all_pl_pos
