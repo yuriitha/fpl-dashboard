@@ -178,6 +178,8 @@ GB = {
     'f_progress_pc': _slider_bounds(_get_min('price_change_percent', -100.0), _get_max('price_change_percent', 100.0)),
     'f_hrate_pc':    _slider_bounds(_get_min('price_change_hourly_rate', -50.0), _get_max('price_change_hourly_rate', 50.0)),
     'f_proj1_pc':    _slider_bounds(_get_min('pp1', -100.0), _get_max('pp1', 100.0)),
+    'f_proj2_pc':    _slider_bounds(_get_min('pp2', -100.0), _get_max('pp2', 100.0)),
+    'f_proj3_pc':    _slider_bounds(_get_min('pp3', -100.0), _get_max('pp3', 100.0)),
 }
 
 DEFAULTS = {
@@ -188,6 +190,8 @@ DEFAULTS = {
     'f_progress_pc': GB['f_progress_pc'],
     'f_hrate_pc':    GB['f_hrate_pc'],
     'f_proj1_pc':    GB['f_proj1_pc'],
+    'f_proj2_pc':    GB['f_proj2_pc'],
+    'f_proj3_pc':    GB['f_proj3_pc'],
 }
 
 if 'pills_teams_pc' not in st.session_state:
@@ -229,6 +233,8 @@ def get_available(exclude_key=None):
     cv_progress = _safe_range('f_progress_pc', DEFAULTS['f_progress_pc'])
     cv_hrate = _safe_range('f_hrate_pc', DEFAULTS['f_hrate_pc'])
     cv_proj1 = _safe_range('f_proj1_pc', DEFAULTS['f_proj1_pc'])
+    cv_proj2 = _safe_range('f_proj2_pc', DEFAULTS['f_proj2_pc'])
+    cv_proj3 = _safe_range('f_proj3_pc', DEFAULTS['f_proj3_pc'])
 
     cv_pl_pos = []
     for i, line in enumerate(pl_lines):
@@ -260,6 +266,10 @@ def get_available(exclude_key=None):
         mask &= (df['price_change_hourly_rate'] >= cv_hrate[0]) & (df['price_change_hourly_rate'] <= cv_hrate[1])
     if exclude_key != 'f_proj1_pc':
         mask &= (df['pp1'] >= cv_proj1[0]) & (df['pp1'] <= cv_proj1[1])
+    if exclude_key != 'f_proj2_pc':
+        mask &= (df['pp2'] >= cv_proj2[0]) & (df['pp2'] <= cv_proj2[1])
+    if exclude_key != 'f_proj3_pc':
+        mask &= (df['pp3'] >= cv_proj3[0]) & (df['pp3'] <= cv_proj3[1])
     if exclude_key != 'search_name_pc':
         mask &= df['full_name'].str.contains(cv_search, case=False, na=False)
     return df[mask]
@@ -416,6 +426,8 @@ auto_update_slider('f_top100k_pc', 'top_100k', cast=float)
 auto_update_slider('f_progress_pc', 'price_change_percent', cast=float)
 auto_update_slider('f_hrate_pc', 'price_change_hourly_rate', cast=float)
 auto_update_slider('f_proj1_pc', 'pp1', cast=float)
+auto_update_slider('f_proj2_pc', 'pp2', cast=float)
+auto_update_slider('f_proj3_pc', 'pp3', cast=float)
 
 
 # ========================== САЙДБАР ==========================
@@ -483,11 +495,13 @@ with st.sidebar.expander("Ownership", expanded=False):
     f_top10k = st.slider("Top 10K %", GB['f_top10k_pc'][0], GB['f_top10k_pc'][1], _safe_range('f_top10k_pc', DEFAULTS['f_top10k_pc']), step=0.1, key="f_top10k_pc")
     f_top100k = st.slider("Top 100K %", GB['f_top100k_pc'][0], GB['f_top100k_pc'][1], _safe_range('f_top100k_pc', DEFAULTS['f_top100k_pc']), step=0.1, key="f_top100k_pc")
 
-# 7. Price Changes Block (Progress, HRate, Proj1 %)
+# 7. Price Changes Block (Progress, HRate, Proj1 %, Proj2 %, Proj3 %)
 with st.sidebar.expander("Price Projections", expanded=False):
     f_progress = st.slider("Progress %", GB['f_progress_pc'][0], GB['f_progress_pc'][1], _safe_range('f_progress_pc', DEFAULTS['f_progress_pc']), step=0.5, key="f_progress_pc")
     f_hrate = st.slider("Hourly Rate (HRate)", GB['f_hrate_pc'][0], GB['f_hrate_pc'][1], _safe_range('f_hrate_pc', DEFAULTS['f_hrate_pc']), step=1.0, key="f_hrate_pc")
     f_proj1 = st.slider("Proj1 %", GB['f_proj1_pc'][0], GB['f_proj1_pc'][1], _safe_range('f_proj1_pc', DEFAULTS['f_proj1_pc']), step=0.5, key="f_proj1_pc")
+    f_proj2 = st.slider("Proj2 %", GB['f_proj2_pc'][0], GB['f_proj2_pc'][1], _safe_range('f_proj2_pc', DEFAULTS['f_proj2_pc']), step=0.5, key="f_proj2_pc")
+    f_proj3 = st.slider("Proj3 %", GB['f_proj3_pc'][0], GB['f_proj3_pc'][1], _safe_range('f_proj3_pc', DEFAULTS['f_proj3_pc']), step=0.5, key="f_proj3_pc")
 
 
 # ========================== ФІЛЬТРАЦІЯ ==========================
@@ -508,6 +522,8 @@ mask = (
     (df['price_change_percent'] >= f_progress[0]) & (df['price_change_percent'] <= f_progress[1]) &
     (df['price_change_hourly_rate'] >= f_hrate[0]) & (df['price_change_hourly_rate'] <= f_hrate[1]) &
     (df['pp1'] >= f_proj1[0]) & (df['pp1'] <= f_proj1[1]) &
+    (df['pp2'] >= f_proj2[0]) & (df['pp2'] <= f_proj2[1]) &
+    (df['pp3'] >= f_proj3[0]) & (df['pp3'] <= f_proj3[1]) &
     (df['selected_by_percent'] >= f_selected[0]) & (df['selected_by_percent'] <= f_selected[1]) &
     (df['top_10k'] >= f_top10k[0]) & (df['top_10k'] <= f_top10k[1]) &
     (df['top_100k'] >= f_top100k[0]) & (df['top_100k'] <= f_top100k[1]) &
@@ -558,26 +574,26 @@ for col in existing_display_cols:
     else:
         max_val_len = len(col_label)
 
-    bw = max_val_len * 7
+    bw = max_val_len * 6
     if col == "full_name":
-        bw = min(bw, 140)
+        bw = min(bw, 130)
     elif col == "price_change_locked_until":
-        bw = min(bw, 115)
+        bw = min(bw, 100)
     elif col == "price_change_calibrating":
-        bw = min(bw, 70)
+        bw = min(bw, 55)
     elif col in ["top_10k", "top_100k", "selected_by_percent"]:
-        bw = max(bw, 54)
+        bw = max(bw, 44)
     elif col in ["transfers_in_24", "transfers_out_24"]:
-        bw = max(bw, 48)
+        bw = max(bw, 38)
     elif col in ["price_change_percent", "pp1", "pp2", "pp3"]:
-        bw = max(bw, 56)
+        bw = max(bw, 44)
     else:
-        bw = min(bw, 48)
-    base_widths[col] = max(bw, 12)
+        bw = min(bw, 36)
+    base_widths[col] = max(bw, 10)
 
 inv_weights = {col: 1.0 / (w ** 0.5) for col, w in base_widths.items()}
 sum_inv_weights = sum(inv_weights.values())
-TOTAL_PADDING_BUDGET = 650
+TOTAL_PADDING_BUDGET = 150
 
 smart_column_config = {}
 
@@ -589,19 +605,19 @@ for col in existing_display_cols:
     calc_w = int(round(bw + bonus))
 
     if col == "full_name":
-        calc_w = max(calc_w, 140)
+        calc_w = max(calc_w, 130)
     elif col == "price_change_locked_until":
-        calc_w = max(calc_w, 115)
+        calc_w = max(calc_w, 95)
     elif col == "price_change_calibrating":
-        calc_w = max(calc_w, 70)
+        calc_w = max(calc_w, 55)
     elif col in ["top_10k", "top_100k", "selected_by_percent"]:
-        calc_w = max(calc_w, 54)
+        calc_w = max(calc_w, 44)
     elif col in ["transfers_in_24", "transfers_out_24"]:
-        calc_w = max(calc_w, 48)
+        calc_w = max(calc_w, 38)
     elif col in ["price_change_percent", "pp1", "pp2", "pp3"]:
-        calc_w = max(calc_w, 56)
+        calc_w = max(calc_w, 46)
     else:
-        calc_w = max(calc_w, 48)
+        calc_w = max(calc_w, 36)
 
     kwargs = {"label": col_label, "width": calc_w}
     if col == "full_name":
