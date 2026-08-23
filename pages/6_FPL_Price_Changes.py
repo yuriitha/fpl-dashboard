@@ -86,7 +86,8 @@ def load_data():
                     pass
                 break
 
-    for c in ['top_10k', 'top_100k', 'price_change_percent', 'price_change_hourly_rate',
+    for c in ['top_10k', 'top_100k', 'transfers_in_24', 'transfers_out_24',
+              'price_change_percent', 'price_change_hourly_rate',
               'pp1', 'likelihood1', 'pp2', 'likelihood2', 'pp3', 'likelihood3']:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors='coerce').fillna(0.0)
@@ -125,6 +126,8 @@ display_columns = [
     "selected_by_percent",
     "top_10k",
     "top_100k",
+    "transfers_in_24",
+    "transfers_out_24",
     "price_change_percent",
     "price_change_hourly_rate",
     "pp1",
@@ -213,6 +216,53 @@ def _safe_range(key, default):
         if val[0] < val[1]:
             return val
     return default
+
+
+def get_available(exclude_key=None):
+    cv_pos = st.session_state.get('pills_pos_pc', sorted_positions) or []
+    cv_teams = st.session_state.get('pills_teams_pc', all_teams) or []
+    cv_search = st.session_state.get('search_name_pc', '')
+    cv_cost = _safe_range('f_cost_pc', DEFAULTS['f_cost_pc'])
+    cv_selected = _safe_range('f_selected_pc', DEFAULTS['f_selected_pc'])
+    cv_top10k = _safe_range('f_top10k_pc', DEFAULTS['f_top10k_pc'])
+    cv_top100k = _safe_range('f_top100k_pc', DEFAULTS['f_top100k_pc'])
+    cv_progress = _safe_range('f_progress_pc', DEFAULTS['f_progress_pc'])
+    cv_hrate = _safe_range('f_hrate_pc', DEFAULTS['f_hrate_pc'])
+    cv_proj1 = _safe_range('f_proj1_pc', DEFAULTS['f_proj1_pc'])
+
+    cv_pl_pos = []
+    for i, line in enumerate(pl_lines):
+        avail = [p for p in line if p in actual_pl_pos]
+        cv_pl_pos.extend(st.session_state.get(f'pills_pl_line_pc_{i}', avail))
+
+    mask = pd.Series([True] * len(df), index=df.index)
+    if exclude_key != 'pills_pos_pc':
+        mask &= df['element_type'].isin(cv_pos)
+    if exclude_key != 'pills_teams_pc':
+        mask &= df['team_short_name'].isin(cv_teams)
+    if exclude_key != 'pills_pl_pc':
+        if cv_pl_pos:
+            if len(cv_pl_pos) == len(all_pl_pos):
+                mask &= (df['Play Pos'].isin(cv_pl_pos) | df['Play Pos'].isna())
+            else:
+                mask &= df['Play Pos'].isin(cv_pl_pos)
+    if exclude_key != 'f_cost_pc':
+        mask &= (df['now_cost'] >= cv_cost[0]) & (df['now_cost'] <= cv_cost[1])
+    if exclude_key != 'f_selected_pc':
+        mask &= (df['selected_by_percent'] >= cv_selected[0]) & (df['selected_by_percent'] <= cv_selected[1])
+    if exclude_key != 'f_top10k_pc':
+        mask &= (df['top_10k'] >= cv_top10k[0]) & (df['top_10k'] <= cv_top10k[1])
+    if exclude_key != 'f_top100k_pc':
+        mask &= (df['top_100k'] >= cv_top100k[0]) & (df['top_100k'] <= cv_top100k[1])
+    if exclude_key != 'f_progress_pc':
+        mask &= (df['price_change_percent'] >= cv_progress[0]) & (df['price_change_percent'] <= cv_progress[1])
+    if exclude_key != 'f_hrate_pc':
+        mask &= (df['price_change_hourly_rate'] >= cv_hrate[0]) & (df['price_change_hourly_rate'] <= cv_hrate[1])
+    if exclude_key != 'f_proj1_pc':
+        mask &= (df['pp1'] >= cv_proj1[0]) & (df['pp1'] <= cv_proj1[1])
+    if exclude_key != 'search_name_pc':
+        mask &= df['full_name'].str.contains(cv_search, case=False, na=False)
+    return df[mask]
 
 
 def get_base_df(exclude_key=None):
@@ -326,12 +376,23 @@ def inject_sidebar_layout(inactive_all: list):
                         }}
                     }}
 
-                    var rect = b.getBoundingClientRect();
-                    if (rect.top > headerBottom - 5) {{
+                    if (b.getBoundingClientRect().top > headerBottom) {{
                         b.style.setProperty('width', '48px', 'important');
                         b.style.setProperty('min-width', '48px', 'important');
                         b.style.setProperty('max-width', '48px', 'important');
+                        var stPills = b.closest('[data-testid="stPills"]');
+                        if (stPills) {{
+                            var wrapper = stPills.closest('.stElementContainer') || stPills.closest('[data-testid="stElementContainer"]');
+                            if (wrapper && !wrapper.classList.contains('playing-pos-wrapper')) {{
+                                wrapper.classList.add('playing-pos-wrapper');
+                            }}
+                        }}
+                    }} else {{
+                        b.style.setProperty('width', '60px', 'important');
+                        b.style.setProperty('min-width', '60px', 'important');
+                        b.style.setProperty('max-width', '60px', 'important');
                     }}
+
                     var expectedOpacity = inactiveList.includes(txt) ? '0.3' : '';
                     if (b.style.opacity !== expectedOpacity) {{
                         b.style.opacity = expectedOpacity;
@@ -347,45 +408,6 @@ def inject_sidebar_layout(inactive_all: list):
     st.components.v1.html(js, height=0, scrolling=False)
 
 
-# ========================== САЙДБАР ==========================
-
-if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
-    keys_to_delete = [k for k in st.session_state.keys() if '_pc' in k]
-    for key in keys_to_delete:
-        del st.session_state[key]
-    st.session_state.pills_teams_pc = all_teams
-    st.session_state.pills_pos_pc = sorted_positions
-    st.session_state.pills_pl_pos_pc = all_pl_pos
-    st.rerun()
-
-st.sidebar.markdown("<p style='font-size:0.875rem;margin-bottom:0'>Player Search</p>", unsafe_allow_html=True)
-search_name = st.sidebar.text_input("Player Search", value="", placeholder="Search by name...", label_visibility="collapsed", key="search_name_pc")
-
-filter_header("Position", sorted_positions, "pos_pc")
-selected_positions = st.sidebar.pills("Position", sorted_positions, default=st.session_state.pills_pos_pc, selection_mode="multi", label_visibility="collapsed", key="pills_pos_pc")
-
-filter_header("Playing Position", all_pl_pos, "pl_pos_pc")
-selected_pl_pos = []
-for i, line in enumerate(pl_lines):
-    avail = [p for p in line if p in actual_pl_pos]
-    if avail:
-        line_key = f"pills_pl_line_pc_{i}"
-        if line_key not in st.session_state:
-            st.session_state[line_key] = avail
-        sel = st.sidebar.pills(
-            f"Playing Position Line {i}",
-            avail,
-            default=st.session_state[line_key],
-            selection_mode="multi",
-            label_visibility="collapsed",
-            key=line_key
-        )
-        if sel:
-            selected_pl_pos.extend(sel)
-
-filter_header("Team", all_teams, "teams_pc")
-selected_teams = st.sidebar.pills("Team", all_teams, default=st.session_state.pills_teams_pc, selection_mode="multi", label_visibility="collapsed", key="pills_teams_pc")
-
 # Автооновлення слайдерів
 auto_update_slider('f_cost_pc', 'now_cost', cast=float)
 auto_update_slider('f_selected_pc', 'selected_by_percent', cast=float)
@@ -395,21 +417,77 @@ auto_update_slider('f_progress_pc', 'price_change_percent', cast=float)
 auto_update_slider('f_hrate_pc', 'price_change_hourly_rate', cast=float)
 auto_update_slider('f_proj1_pc', 'pp1', cast=float)
 
-st.sidebar.markdown("---")
 
-f_cost = st.sidebar.slider("Price", GB['f_cost_pc'][0], GB['f_cost_pc'][1], _safe_range('f_cost_pc', DEFAULTS['f_cost_pc']), step=0.1, key="f_cost_pc")
-f_progress = st.sidebar.slider("Progress %", GB['f_progress_pc'][0], GB['f_progress_pc'][1], _safe_range('f_progress_pc', DEFAULTS['f_progress_pc']), step=0.5, key="f_progress_pc")
-f_hrate = st.sidebar.slider("Hourly Rate (HRate)", GB['f_hrate_pc'][0], GB['f_hrate_pc'][1], _safe_range('f_hrate_pc', DEFAULTS['f_hrate_pc']), step=1.0, key="f_hrate_pc")
-f_proj1 = st.sidebar.slider("Proj1 %", GB['f_proj1_pc'][0], GB['f_proj1_pc'][1], _safe_range('f_proj1_pc', DEFAULTS['f_proj1_pc']), step=0.5, key="f_proj1_pc")
-f_selected = st.sidebar.slider("Selected %", GB['f_selected_pc'][0], GB['f_selected_pc'][1], _safe_range('f_selected_pc', DEFAULTS['f_selected_pc']), step=0.1, key="f_selected_pc")
-f_top10k = st.sidebar.slider("Top 10K %", GB['f_top10k_pc'][0], GB['f_top10k_pc'][1], _safe_range('f_top10k_pc', DEFAULTS['f_top10k_pc']), step=0.1, key="f_top10k_pc")
-f_top100k = st.sidebar.slider("Top 100K %", GB['f_top100k_pc'][0], GB['f_top100k_pc'][1], _safe_range('f_top100k_pc', DEFAULTS['f_top100k_pc']), step=0.1, key="f_top100k_pc")
+# ========================== САЙДБАР ==========================
 
-# Підсвітка неактивних пігулок
-inactive_teams = [t for t in all_teams if t not in (selected_teams or [])]
-inactive_pos = [p for p in sorted_positions if p not in (selected_positions or [])]
-inactive_pl = [p for p in all_pl_pos if p not in (selected_pl_pos or [])]
-inject_sidebar_layout(inactive_teams + inactive_pos + inactive_pl)
+if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
+
+# 1. Search Player
+search_name = st.sidebar.text_input("Search Player", placeholder="Enter name...", key="search_name_pc")
+
+# 2. FPL Position
+avail_pos = set(get_available('pills_pos_pc')['element_type'].unique())
+filter_header("FPL Position", sorted_positions, "pos_pc")
+selected_positions = st.sidebar.pills(
+    "FPL Position", options=sorted_positions, key="pills_pos_pc",
+    selection_mode="multi", label_visibility="collapsed"
+)
+
+# 3. FPL Price
+f_cost = st.sidebar.slider(
+    "FPL Price", GB['f_cost_pc'][0], GB['f_cost_pc'][1],
+    _safe_range('f_cost_pc', DEFAULTS['f_cost_pc']),
+    step=0.1, format="%.1f", key="f_cost_pc"
+)
+
+# 4. Team
+avail_teams = set(get_available('pills_teams_pc')['team_short_name'].unique())
+filter_header("Team", all_teams, "teams_pc")
+selected_teams = st.sidebar.pills(
+    "Team", options=all_teams, key="pills_teams_pc",
+    selection_mode="multi", label_visibility="collapsed"
+)
+
+# 5. Playing Position
+avail_pl = set(get_available('pills_pl_pc')['Play Pos'].dropna().unique())
+filter_header("Playing Position", all_pl_pos, "pl_pos_pc")
+selected_pl_pos = []
+
+for idx, line in enumerate(pl_lines):
+    available_in_line = [p for p in line if p in actual_pl_pos]
+    if not available_in_line:
+        continue
+    line_key = f"pills_pl_line_pc_{idx}"
+    if line_key not in st.session_state:
+        st.session_state[line_key] = [p for p in st.session_state.pills_pl_pos_pc if p in available_in_line]
+
+    line_res = st.sidebar.pills(
+        label=f"pl_line_pc_{idx}", options=available_in_line, key=line_key,
+        selection_mode="multi", label_visibility="collapsed"
+    )
+    if line_res:
+        selected_pl_pos.extend(line_res)
+
+all_inactive = []
+all_inactive.extend([p for p in sorted_positions if p not in avail_pos])
+all_inactive.extend([t for t in all_teams if t not in avail_teams])
+all_inactive.extend([p for p in all_pl_pos if p not in avail_pl])
+inject_sidebar_layout(all_inactive)
+
+# 6. Ownership Block (Selected %, Top 10K %, Top 100K %)
+with st.sidebar.expander("Ownership", expanded=False):
+    f_selected = st.slider("Selected %", GB['f_selected_pc'][0], GB['f_selected_pc'][1], _safe_range('f_selected_pc', DEFAULTS['f_selected_pc']), step=0.1, key="f_selected_pc")
+    f_top10k = st.slider("Top 10K %", GB['f_top10k_pc'][0], GB['f_top10k_pc'][1], _safe_range('f_top10k_pc', DEFAULTS['f_top10k_pc']), step=0.1, key="f_top10k_pc")
+    f_top100k = st.slider("Top 100K %", GB['f_top100k_pc'][0], GB['f_top100k_pc'][1], _safe_range('f_top100k_pc', DEFAULTS['f_top100k_pc']), step=0.1, key="f_top100k_pc")
+
+# 7. Price Changes Block (Progress, HRate, Proj1 %)
+with st.sidebar.expander("Price Projections", expanded=False):
+    f_progress = st.slider("Progress %", GB['f_progress_pc'][0], GB['f_progress_pc'][1], _safe_range('f_progress_pc', DEFAULTS['f_progress_pc']), step=0.5, key="f_progress_pc")
+    f_hrate = st.slider("Hourly Rate (HRate)", GB['f_hrate_pc'][0], GB['f_hrate_pc'][1], _safe_range('f_hrate_pc', DEFAULTS['f_hrate_pc']), step=1.0, key="f_hrate_pc")
+    f_proj1 = st.slider("Proj1 %", GB['f_proj1_pc'][0], GB['f_proj1_pc'][1], _safe_range('f_proj1_pc', DEFAULTS['f_proj1_pc']), step=0.5, key="f_proj1_pc")
 
 
 # ========================== ФІЛЬТРАЦІЯ ==========================
@@ -455,6 +533,8 @@ format_map = {
     "selected_by_percent":      ("NumberColumn", "%.1f%%", "Sel %"),
     "top_10k":                  ("NumberColumn", "%.1f%%", "Top10K"),
     "top_100k":                 ("NumberColumn", "%.1f%%", "Top100K"),
+    "transfers_in_24":          ("NumberColumn", None, "In 24"),
+    "transfers_out_24":         ("NumberColumn", None, "Out 24"),
     "price_change_percent":     ("NumberColumn", "%.1f", "Progress"),
     "price_change_hourly_rate": ("NumberColumn", "%d", "HRate"),
     "pp1":                      ("NumberColumn", "%.1f", "Proj1 %"),
@@ -487,6 +567,8 @@ for col in existing_display_cols:
         bw = min(bw, 70)
     elif col in ["top_10k", "top_100k", "selected_by_percent"]:
         bw = max(bw, 54)
+    elif col in ["transfers_in_24", "transfers_out_24"]:
+        bw = max(bw, 48)
     elif col in ["price_change_percent", "pp1", "pp2", "pp3"]:
         bw = max(bw, 56)
     else:
@@ -514,6 +596,8 @@ for col in existing_display_cols:
         calc_w = max(calc_w, 70)
     elif col in ["top_10k", "top_100k", "selected_by_percent"]:
         calc_w = max(calc_w, 54)
+    elif col in ["transfers_in_24", "transfers_out_24"]:
+        calc_w = max(calc_w, 48)
     elif col in ["price_change_percent", "pp1", "pp2", "pp3"]:
         calc_w = max(calc_w, 56)
     else:
