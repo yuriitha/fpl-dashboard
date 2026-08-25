@@ -4,7 +4,7 @@ on:
   schedule:
     # Запуск кожні 4 години (6 разів на добу: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
     - cron: '0 */4 * * *'
-  workflow_dispatch: # Дозволяє запустити вручну через вкладку Actions
+  workflow_dispatch: # Дозволяє запуск вручну
 
 jobs:
   wake-streamlit:
@@ -17,8 +17,8 @@ jobs:
 
       - name: Install Playwright
         run: |
-          pip install playwright
-          playwright install --with-deps chromium
+          pip install --no-cache-dir playwright
+          python -m playwright install chromium
 
       - name: Open App and Auto-Wake if Sleeping
         run: |
@@ -31,25 +31,25 @@ jobs:
           with sync_playwright() as p:
               browser = p.chromium.launch(headless=True)
               page = browser.new_page()
-              print(f"Opening {APP_URL}...")
+              print(f"Connecting to {APP_URL}...")
               
               try:
-                  page.goto(APP_URL, wait_until="load", timeout=45000)
-                  time.sleep(5)
+                  page.goto(APP_URL, wait_until="domcontentloaded", timeout=30000)
+                  time.sleep(4)
                   
-                  # Перевіряємо, чи є кнопка "Wake app up"
+                  # Шукаємо кнопку пробудження, якщо додаток спить
                   wake_button = page.locator("button:has-text('Wake app up'), button:has-text('Wake')")
                   
                   if wake_button.count() > 0 and wake_button.first.is_visible():
                       print("App was sleeping! Clicking 'Wake app up' button...")
                       wake_button.first.click()
-                      print("Waiting 20 seconds for container to start...")
-                      time.sleep(20)
+                      time.sleep(10)
                       print("App woke up successfully!")
                   else:
                       print("App is already awake and active!")
               except Exception as e:
-                  print(f"Note: {e}")
+                  print(f"Check finished: {e}")
               finally:
                   browser.close()
+                  print("Done!")
           EOF
