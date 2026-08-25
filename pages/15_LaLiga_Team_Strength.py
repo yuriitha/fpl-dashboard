@@ -527,6 +527,8 @@ for _, row in df[['home_team_code', 'home_team']].dropna().drop_duplicates().ite
 for _, row in df[['away_team_code', 'away_team']].dropna().drop_duplicates().iterrows():
     if row['away_team_code'] not in team_code_to_name: team_code_to_name[row['away_team_code']] = row['away_team']
 
+team_name_to_code = {name: code for code, name in team_code_to_name.items()}
+
 all_seasons = sorted([s for s in df[df['league'] == 'LaLiga']['season'].dropna().unique() if s >= "2010/11"])
 
 if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
@@ -931,22 +933,32 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
     # Mapping between short code and model name
     short_to_model = {}
     model_to_short = {}
-    if 'team_dict' in globals():
-        for t_name, info in team_dict.items():
-            abbr = info.get('abbr')
-            if abbr:
-                model_to_short[t_name] = abbr
-                short_to_model[abbr] = t_name
+    if 'team_name_to_code' in globals() and team_name_to_code:
+        for t_name, code in team_name_to_code.items():
+            if t_name and code:
+                model_to_short[t_name] = code
+                short_to_model[code] = t_name
+    elif 'team_code_to_name' in globals() and team_code_to_name:
+        for code, t_name in team_code_to_name.items():
+            if t_name and code:
+                model_to_short[t_name] = code
+                short_to_model[code] = t_name
+
     for _, r in df_model[['team_h_short', 'team_h_model']].drop_duplicates().iterrows():
-        if r['team_h_model'] not in model_to_short:
-            model_to_short[r['team_h_model']] = r['team_h_short']
-        if r['team_h_short'] not in short_to_model:
-            short_to_model[r['team_h_short']] = r['team_h_model']
+        t_model = r['team_h_model']
+        t_short = r['team_h_short']
+        if t_model not in model_to_short:
+            model_to_short[t_model] = t_short
+        if t_short not in short_to_model:
+            short_to_model[t_short] = t_model
+
     for _, r in df_model[['team_a_short', 'team_a_model']].drop_duplicates().iterrows():
-        if r['team_a_model'] not in model_to_short:
-            model_to_short[r['team_a_model']] = r['team_a_short']
-        if r['team_a_short'] not in short_to_model:
-            short_to_model[r['team_a_short']] = r['team_a_model']
+        t_model = r['team_a_model']
+        t_short = r['team_a_short']
+        if t_model not in model_to_short:
+            model_to_short[t_model] = t_short
+        if t_short not in short_to_model:
+            short_to_model[t_short] = t_model
 
     all_teams_model = sorted(list(set(df_model['team_h_model'].dropna()).union(set(df_model['team_a_model'].dropna()))))
     
