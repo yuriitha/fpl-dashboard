@@ -501,7 +501,7 @@ with col1:
             df_ratings_styled,
             hide_index=True,
             width="stretch",
-            height=808,
+            height=738,
             column_config=column_config_ratings
         )
     else:
