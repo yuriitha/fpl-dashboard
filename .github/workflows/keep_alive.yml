@@ -2,32 +2,54 @@ name: Keep Streamlit App Alive
 
 on:
   schedule:
-    # Запуск двічі на добу (кожні 12 годин: о 00:00 та 12:00 UTC)
-    - cron: '0 0,12 * * *'
+    # Запуск кожні 4 години (6 разів на добу: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
+    - cron: '0 */4 * * *'
   workflow_dispatch: # Дозволяє запустити вручну через вкладку Actions
 
 jobs:
-  ping-streamlit:
+  wake-streamlit:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Streamlit Dashboard
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright
         run: |
-          APP_URL="https://yuriith-fantasy.streamlit.app"
-          
-          echo "Pinging $APP_URL..."
-          STATUS_CODE=$(curl -s -L \
-            -c /tmp/cookies.txt \
-            -b /tmp/cookies.txt \
-            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
-            -o /dev/null \
-            -w "%{http_code}" \
-            "$APP_URL")
-            
-          echo "HTTP Response code: $STATUS_CODE"
-          
-          if [ "$STATUS_CODE" -eq 200 ] || [ "$STATUS_CODE" -eq 304 ]; then
-            echo "Success: App is awake and responding!"
-          else
-            echo "Warning: Response code was $STATUS_CODE"
-            exit 1
-          fi
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Open App and Auto-Wake if Sleeping
+        run: |
+          python - << 'EOF'
+          from playwright.sync_api import sync_playwright
+          import time
+
+          APP_URL = "https://yuriith-fantasy.streamlit.app"
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page()
+              print(f"Opening {APP_URL}...")
+              
+              try:
+                  page.goto(APP_URL, wait_until="load", timeout=45000)
+                  time.sleep(5)
+                  
+                  # Перевіряємо, чи є кнопка "Wake app up"
+                  wake_button = page.locator("button:has-text('Wake app up'), button:has-text('Wake')")
+                  
+                  if wake_button.count() > 0 and wake_button.first.is_visible():
+                      print("App was sleeping! Clicking 'Wake app up' button...")
+                      wake_button.first.click()
+                      print("Waiting 20 seconds for container to start...")
+                      time.sleep(20)
+                      print("App woke up successfully!")
+                  else:
+                      print("App is already awake and active!")
+              except Exception as e:
+                  print(f"Note: {e}")
+              finally:
+                  browser.close()
+          EOF
