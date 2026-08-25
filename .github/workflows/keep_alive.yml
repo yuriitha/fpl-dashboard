@@ -1,0 +1,26 @@
+name: Keep Streamlit App Alive
+
+on:
+  schedule:
+    # Запуск двічі на добу (кожні 12 годин: о 00:00 та 12:00 UTC)
+    - cron: '0 0,12 * * *'
+  workflow_dispatch: # Дозволяє запустити вручну через вкладку Actions
+
+jobs:
+  ping-streamlit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit Dashboard
+        run: |
+          # Вкажіть тут точне посилання на ваш додаток у Streamlit Cloud
+          APP_URL="https://yuriith-fantasy.streamlit.app"
+          
+          echo "Pinging $APP_URL..."
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L "$APP_URL")
+          echo "HTTP Response code: $STATUS_CODE"
+          
+          if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 400 ]; then
+            echo "Success: App is awake and responding!"
+          else
+            echo "Warning: Response code was $STATUS_CODE"
+          fi
