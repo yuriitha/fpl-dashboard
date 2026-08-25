@@ -527,7 +527,7 @@ for _, row in df[['home_team_code', 'home_team']].dropna().drop_duplicates().ite
 for _, row in df[['away_team_code', 'away_team']].dropna().drop_duplicates().iterrows():
     if row['away_team_code'] not in team_code_to_name: team_code_to_name[row['away_team_code']] = row['away_team']
 
-all_seasons = sorted([s for s in df[df['league'] == 'LaLiga']['season'].dropna().unique() if s >= "2014/15"])
+all_seasons = sorted([s for s in df[df['league'] == 'LaLiga']['season'].dropna().unique() if s >= "2010/11"])
 
 if st.sidebar.button("Reset All Filters", width="stretch", type="primary"):
     keys_to_delete = [k for k in st.session_state.keys() if k.startswith('ts_')]
@@ -931,12 +931,22 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
     # Mapping between short code and model name
     short_to_model = {}
     model_to_short = {}
+    if 'team_dict' in globals():
+        for t_name, info in team_dict.items():
+            abbr = info.get('abbr')
+            if abbr:
+                model_to_short[t_name] = abbr
+                short_to_model[abbr] = t_name
     for _, r in df_model[['team_h_short', 'team_h_model']].drop_duplicates().iterrows():
-        short_to_model[r['team_h_short']] = r['team_h_model']
-        model_to_short[r['team_h_model']] = r['team_h_short']
+        if r['team_h_model'] not in model_to_short:
+            model_to_short[r['team_h_model']] = r['team_h_short']
+        if r['team_h_short'] not in short_to_model:
+            short_to_model[r['team_h_short']] = r['team_h_model']
     for _, r in df_model[['team_a_short', 'team_a_model']].drop_duplicates().iterrows():
-        short_to_model[r['team_a_short']] = r['team_a_model']
-        model_to_short[r['team_a_model']] = r['team_a_short']
+        if r['team_a_model'] not in model_to_short:
+            model_to_short[r['team_a_model']] = r['team_a_short']
+        if r['team_a_short'] not in short_to_model:
+            short_to_model[r['team_a_short']] = r['team_a_model']
 
     all_teams_model = sorted(list(set(df_model['team_h_model'].dropna()).union(set(df_model['team_a_model'].dropna()))))
     
@@ -982,18 +992,20 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
                 m_vals = []
                 opps = []
                 for _, m in matches.iterrows():
+                    h_short = model_to_short.get(m['team_h_model'], m.get('team_h_short', ''))
+                    a_short = model_to_short.get(m['team_a_model'], m.get('team_a_short', ''))
                     if m['team_h_model'] == t_model:
                         if is_rel:
                             v = m['home_xg_rel'] if (metric_type == 'xg' and 'home_xg_rel' in m) else (m['home_cs_rel'] if 'home_cs_rel' in m else 1.0)
                         else:
                             v = m['home_xg'] if metric_type == 'xg' else m['home_cs']
-                        opp = f"{m['team_a_short']} (H)"
+                        opp = f"{a_short} (H)"
                     else:
                         if is_rel:
                             v = m['away_xg_rel'] if (metric_type == 'xg' and 'away_xg_rel' in m) else (m['away_cs_rel'] if 'away_cs_rel' in m else 1.0)
                         else:
                             v = m['away_xg'] if metric_type == 'xg' else m['away_cs']
-                        opp = f"{m['team_h_short']} (A)"
+                        opp = f"{h_short} (A)"
                     m_vals.append(v)
                     opps.append(opp)
                 
@@ -1467,7 +1479,7 @@ hist_away = df_played[['match_date', 'season', 'league', 'away_team', 'away_team
 )
 
 df_hist = pd.concat([hist_home, hist_away]).sort_values('date')
-df_hist = df_hist[df_hist['season'] >= "2014/15"]
+df_hist = df_hist[df_hist['season'] >= "2010/11"]
 df_hist = df_hist[df_hist['league'] == 'LaLiga']
 
 if season_range:
