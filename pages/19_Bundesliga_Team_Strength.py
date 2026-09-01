@@ -936,14 +936,6 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
         if t_short not in short_to_model:
             short_to_model[t_short] = t_model
 
-    # Clean up any legacy abbreviations
-    if 'AC Milan' in model_to_short or 'AC ' in short_to_model:
-        model_to_short['AC Milan'] = 'ACM'
-        short_to_model['ACM'] = 'AC Milan'
-    if 'AS Roma' in model_to_short or 'AS ' in short_to_model:
-        model_to_short['AS Roma'] = 'ROM'
-        short_to_model['ROM'] = 'AS Roma'
-
     all_teams_model = sorted(list(set(df_model['team_h_model'].dropna()).union(set(df_model['team_a_model'].dropna()))))
     
     if code_to_name is None and 'team_code_to_name' in globals():
@@ -978,8 +970,6 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
 
     for t_model in teams_to_show:
         t_short = model_to_short.get(t_model, t_model)
-        if str(t_short).strip() == 'AC': t_short = 'ACM'
-        if str(t_short).strip() == 'AS': t_short = 'ROM'
         row = {'Team': t_model, 'TeamShort': t_short, 'cells': {}}
         vals_list = []
         for gw in gws:
@@ -992,10 +982,6 @@ def build_projection_table_html(df_model, metric_type="xg", view_mode="Absolute"
                 for _, m in matches.iterrows():
                     h_short = model_to_short.get(m['team_h_model'], m.get('team_h_short', ''))
                     a_short = model_to_short.get(m['team_a_model'], m.get('team_a_short', ''))
-                    if str(h_short).strip() == 'AC': h_short = 'ACM'
-                    if str(h_short).strip() == 'AS': h_short = 'ROM'
-                    if str(a_short).strip() == 'AC': a_short = 'ACM'
-                    if str(a_short).strip() == 'AS': a_short = 'ROM'
                     if m['team_h_model'] == t_model:
                         if is_rel:
                             v = m['home_xg_rel'] if (metric_type == 'xg' and 'home_xg_rel' in m) else (m['home_cs_rel'] if 'home_cs_rel' in m else 1.0)
