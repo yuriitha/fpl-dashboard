@@ -376,7 +376,7 @@ js = f"""
 }} ).call(this);
 </script>
 """
-st.components.v1.html(js, height=0, scrolling=False)
+st.html(js, unsafe_allow_javascript=True)
 
 def soft_gradient(s, cmap_name='Blues', alpha=0.5, fixed_min=None, fixed_max=None, transparent_at='min', power=0.7):
     if s.empty:
@@ -1088,6 +1088,6 @@ if not df_hist.empty:
     }})();
     </script>
     """
-    st.components.v1.html(js_hover_sorter, height=0, scrolling=False)
+    st.html(js_hover_sorter, unsafe_allow_javascript=True)
 else:
     st.info("No historical data available for selected filters.")

@@ -415,7 +415,7 @@ def inject_sidebar_layout(inactive_all: list):
     }} )();
     </script>
     '''
-    st.components.v1.html(js, height=0, scrolling=False)
+    st.html(js, unsafe_allow_javascript=True)
 
 
 # Автооновлення слайдерів
