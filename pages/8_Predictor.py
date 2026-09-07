@@ -65,11 +65,11 @@ for name, filename in TOURNAMENTS.items():
             with open(filepath, 'r', encoding='utf-8') as f:
                 data_cache[name] = json.load(f)
                 available_tournaments.append(name)
-        except Exception:
-            pass
+        except Exception as e:
+            st.error(f"Error loading {filepath}: {e}")
 
 if not available_tournaments:
-    st.warning("No predictor data available. Please check the backend service.")
+    st.warning(f"No predictor data available. BASE_DIR is: {BASE_DIR}. Looked for files like {TOURNAMENTS['UCL']}. Please check the backend service.")
     st.stop()
 
 # UI
