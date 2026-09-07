@@ -44,42 +44,31 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Load Data
-search_paths = [
-    os.getenv("SCRAPER_BASE_DIR"),
-    "/opt/streamlit",
-    r"e:\Documents\python\opt\streamlit",
-    "/mnt/e/Documents/python/opt/streamlit",
-    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "streamlit")
-]
+import requests
 
+# Load Data
+API_BASE = "http://198.244.151.163:8000"
 TOURNAMENTS = {
-    'UCL': 'predictor_ucl_out.json',
-    'UEL': 'predictor_uel_out.json',
-    'UECL': 'predictor_uecl_out.json'
+    'UCL': f'{API_BASE}/predictor_ucl',
+    'UEL': f'{API_BASE}/predictor_uel',
+    'UECL': f'{API_BASE}/predictor_uecl'
 }
 
 available_tournaments = []
 data_cache = {}
-used_base_dir = "None"
 
-for name, filename in TOURNAMENTS.items():
-    for base_path in search_paths:
-        if not base_path:
-            continue
-        filepath = os.path.join(base_path, filename)
-        if os.path.exists(filepath):
-            try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    data_cache[name] = json.load(f)
-                    available_tournaments.append(name)
-                    used_base_dir = base_path
-                break  # Stop searching once found
-            except Exception as e:
-                st.error(f"Error loading {filepath}: {e}")
+for name, url in TOURNAMENTS.items():
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data_cache[name] = response.json()
+            available_tournaments.append(name)
+    except Exception as e:
+        # Silently fail if endpoint isn't ready or tournament isn't available
+        pass
 
 if not available_tournaments:
-    st.warning(f"No predictor data available. Checked paths: {search_paths}. Please check the backend service.")
+    st.warning("No predictor data available. Checked API endpoints. Please make sure the endpoints are added to your FastAPI backend.")
     st.stop()
 
 # UI
