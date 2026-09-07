@@ -87,8 +87,14 @@ if not matches:
     st.info("No matches found for this tournament.")
     st.stop()
 
+import matplotlib as mpl
+
 # Helper for color mapping
-cmap = cm.get_cmap('RdYlGn')
+try:
+    cmap = mpl.colormaps['RdYlGn']
+except AttributeError:
+    cmap = cm.get_cmap('RdYlGn')
+
 def get_color(val, min_val, max_val):
     if max_val == min_val:
         norm_val = 0.5
