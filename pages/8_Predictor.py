@@ -44,7 +44,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load Data
-BASE_DIR = os.getenv("SCRAPER_BASE_DIR", "e:/Documents/python/opt/streamlit")
+BASE_DIR = r"e:\Documents\python\opt\streamlit"
 TOURNAMENTS = {
     'UCL': 'predictor_ucl_out.json',
     'UEL': 'predictor_uel_out.json',
