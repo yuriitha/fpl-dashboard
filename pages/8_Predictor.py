@@ -34,11 +34,17 @@ st.markdown("""
     text-decoration: underline;
     font-size: 1.05rem;
 }
+.away-team-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 250px;
+}
 .away-team-header {
-    writing-mode: vertical-lr;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
     white-space: nowrap;
-    text-align: center;
-    vertical-align: middle;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -129,7 +135,7 @@ for match in matches:
     for a in range(7):
         html += '<tr>'
         if a == 0:
-            html += f'<th rowspan="7" class="away-team-header" style="font-size: 1.1rem;">{away_team}</th>'
+            html += f'<th rowspan="7" style="padding: 0; font-size: 1.1rem;"><div class="away-team-header-container"><div class="away-team-header">{away_team}</div></div></th>'
         html += f'<th>{a}</th>'
         
         for h in range(7):
