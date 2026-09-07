@@ -16,19 +16,18 @@ st.markdown("""
     font-size: 0.9rem;
 }
 .predictor-matrix th, .predictor-matrix td {
-    border: 1px solid #444;
+    border: 1px solid var(--secondary-background-color);
     text-align: center;
     padding: 10px;
 }
 .predictor-matrix th {
-    background-color: #2e2e2e;
-    color: #fff;
+    background-color: var(--secondary-background-color);
+    color: var(--text-color);
     font-weight: bold;
 }
 .predictor-matrix td {
-    color: #fff;
+    color: var(--text-color);
     font-weight: 500;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 .popular-score {
     font-weight: 900 !important;
@@ -36,10 +35,10 @@ st.markdown("""
     font-size: 1.05rem;
 }
 .away-team-header {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
+    writing-mode: vertical-lr;
     white-space: nowrap;
-    padding: 10px;
+    text-align: center;
+    vertical-align: middle;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -72,14 +71,14 @@ if not available_tournaments:
     st.stop()
 
 # UI
-st.title("European Predictor")
-
-selected_tournament = st.selectbox("Select Tournament", available_tournaments)
+col1, col2 = st.columns([1, 4])
+with col1:
+    selected_tournament = st.selectbox("Select Tournament", available_tournaments, label_visibility="collapsed")
 
 data = data_cache[selected_tournament]
 last_updated = data.get("last_updated", "Unknown")
 
-st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: -3.5rem; margin-bottom: 1.0rem;'>Data updated: <b>{last_updated}</b></p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: -2.5rem; margin-bottom: 1.0rem;'>Data updated: <b>{last_updated}</b></p>", unsafe_allow_html=True)
 
 matches = data.get("matches", [])
 
@@ -100,8 +99,8 @@ def get_color(val, min_val, max_val):
         norm_val = 0.5
     else:
         norm_val = (val - min_val) / (max_val - min_val)
-    rgba = cmap(norm_val)
-    return mcolors.to_hex(rgba)
+    r, g, b, _ = cmap(norm_val)
+    return f"rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, 0.45)"
 
 for match in matches:
     home_team = match['home_team']
@@ -115,12 +114,12 @@ for match in matches:
     min_ev = min(ev_values)
     max_ev = max(ev_values)
     
-    st.markdown(f"### {home_team} ({xg_h}) vs {away_team} ({xg_a})")
+    st.markdown(f"<h3 style='text-align: left; margin-bottom: 0px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
     
     html = '<table class="predictor-matrix">'
     
     # Top headers
-    html += f'<tr><th colspan="2" rowspan="2" style="background-color: transparent; border: none;"></th><th colspan="7" style="font-size: 1.1rem;">{home_team} Goals</th></tr>'
+    html += f'<tr><th colspan="2" rowspan="2" style="background-color: transparent; border: none;"></th><th colspan="7" style="font-size: 1.1rem;">{home_team}</th></tr>'
     html += '<tr>'
     for h in range(7):
         html += f'<th>{h}</th>'
@@ -130,7 +129,7 @@ for match in matches:
     for a in range(7):
         html += '<tr>'
         if a == 0:
-            html += f'<th rowspan="7" class="away-team-header" style="font-size: 1.1rem;">{away_team} Goals</th>'
+            html += f'<th rowspan="7" class="away-team-header" style="font-size: 1.1rem;">{away_team}</th>'
         html += f'<th>{a}</th>'
         
         for h in range(7):
