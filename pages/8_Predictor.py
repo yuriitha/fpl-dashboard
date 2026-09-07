@@ -44,6 +44,7 @@ st.markdown("""
 .away-team-header {
     writing-mode: vertical-rl;
     text-orientation: mixed;
+    transform: rotate(180deg);
     white-space: nowrap;
 }
 </style>
