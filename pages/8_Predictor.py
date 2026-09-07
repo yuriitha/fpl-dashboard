@@ -45,10 +45,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load Data
-if sys.platform == "win32":
-    BASE_DIR = r"e:\Documents\python\opt\streamlit"
-else:
-    BASE_DIR = "/opt/streamlit"
+search_paths = [
+    os.getenv("SCRAPER_BASE_DIR"),
+    "/opt/streamlit",
+    r"e:\Documents\python\opt\streamlit",
+    "/mnt/e/Documents/python/opt/streamlit",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "streamlit")
+]
+
 TOURNAMENTS = {
     'UCL': 'predictor_ucl_out.json',
     'UEL': 'predictor_uel_out.json',
@@ -57,19 +61,25 @@ TOURNAMENTS = {
 
 available_tournaments = []
 data_cache = {}
+used_base_dir = "None"
 
 for name, filename in TOURNAMENTS.items():
-    filepath = os.path.join(BASE_DIR, filename)
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                data_cache[name] = json.load(f)
-                available_tournaments.append(name)
-        except Exception as e:
-            st.error(f"Error loading {filepath}: {e}")
+    for base_path in search_paths:
+        if not base_path:
+            continue
+        filepath = os.path.join(base_path, filename)
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data_cache[name] = json.load(f)
+                    available_tournaments.append(name)
+                    used_base_dir = base_path
+                break  # Stop searching once found
+            except Exception as e:
+                st.error(f"Error loading {filepath}: {e}")
 
 if not available_tournaments:
-    st.warning(f"No predictor data available. BASE_DIR is: {BASE_DIR}. Looked for files like {TOURNAMENTS['UCL']}. Please check the backend service.")
+    st.warning(f"No predictor data available. Checked paths: {search_paths}. Please check the backend service.")
     st.stop()
 
 # UI
