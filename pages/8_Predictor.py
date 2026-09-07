@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import os
+import sys
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 
@@ -44,7 +45,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load Data
-BASE_DIR = r"e:\Documents\python\opt\streamlit"
+if sys.platform == "win32":
+    BASE_DIR = r"e:\Documents\python\opt\streamlit"
+else:
+    BASE_DIR = "/opt/streamlit"
 TOURNAMENTS = {
     'UCL': 'predictor_ucl_out.json',
     'UEL': 'predictor_uel_out.json',
