@@ -127,18 +127,18 @@ for match in matches:
     html = '<table class="predictor-matrix">'
     
     # Top headers
-    html += f'<tr><th colspan="2" rowspan="2" style="background-color: transparent; border: none;"></th><th colspan="7" style="font-size: 1.1rem;">{home_team}</th></tr>'
+    html += f'<tr><th colspan="2" rowspan="2" style="background-color: transparent; border: none;"></th><th colspan="7" style="font-size: 1.4rem;">{home_team}</th></tr>'
     html += '<tr>'
     for h in range(7):
-        html += f'<th>{h}</th>'
+        html += f'<th style="font-size: 1.2rem;">{h}</th>'
     html += '</tr>'
     
     # Rows
     for a in range(7):
         html += '<tr>'
         if a == 0:
-            html += f'<th rowspan="7" style="padding: 0; font-size: 1.1rem;"><div class="away-team-header-container"><div class="away-team-header">{away_team}</div></div></th>'
-        html += f'<th>{a}</th>'
+            html += f'<th rowspan="7" style="padding: 0; font-size: 1.4rem;"><div class="away-team-header-container"><div class="away-team-header">{away_team}</div></div></th>'
+        html += f'<th style="font-size: 1.2rem;">{a}</th>'
         
         for h in range(7):
             key = f"{h}-{a}"
@@ -149,8 +149,8 @@ for match in matches:
             is_pop = key in popular
             
             cell_class = "popular-score" if is_pop else ""
-            risk_html = f'<br><span style="font-size: 0.75rem; opacity: 0.7;">{risk}%</span>' if risk is not None else ''
-            html += f'<td style="background-color: {color};" class="{cell_class}">{ev:.2f}{risk_html}</td>'
+            risk_html = f'<br><span style="font-size: 0.85rem; opacity: 0.7; font-weight: normal;">{risk}%</span>' if risk is not None else ''
+            html += f'<td style="background-color: {color}; font-size: 1.2rem; font-weight: 700;" class="{cell_class}">{ev:.2f}{risk_html}</td>'
         
         html += '</tr>'
         
