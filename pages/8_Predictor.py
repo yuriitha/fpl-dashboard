@@ -17,7 +17,7 @@ st.markdown("""
 .predictor-matrix th, .predictor-matrix td {
     border: 1px solid var(--secondary-background-color);
     text-align: center;
-    padding: 10px;
+    padding: 2px 5px;
 }
 .predictor-matrix th {
     background-color: var(--secondary-background-color);
@@ -38,7 +38,7 @@ st.markdown("""
     align-items: center;
     justify-content: center;
     height: 100%;
-    min-height: 250px;
+    min-height: 120px;
 }
 .away-team-header {
     writing-mode: vertical-rl;
