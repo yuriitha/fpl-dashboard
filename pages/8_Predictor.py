@@ -11,14 +11,15 @@ st.markdown("""
 <style>
 .predictor-matrix {
     border-collapse: collapse;
-    width: 100%;
-    margin-bottom: 30px;
+    margin: 0 auto 30px auto;
     font-size: 0.9rem;
 }
 .predictor-matrix th, .predictor-matrix td {
     border: 1px solid var(--secondary-background-color);
     text-align: center;
-    padding: 10px;
+    padding: 5px;
+    min-width: 80px;
+    height: 80px;
 }
 .predictor-matrix th {
     background-color: var(--secondary-background-color);
@@ -127,18 +128,18 @@ for match in matches:
     html = '<table class="predictor-matrix">'
     
     # Top headers
-    html += f'<tr><th colspan="2" rowspan="2" style="background-color: transparent; border: none;"></th><th colspan="7" style="font-size: 1.4rem;">{home_team}</th></tr>'
+    html += f'<tr><th colspan="2" rowspan="2" style="background-color: transparent; border: none;"></th><th colspan="7" style="font-size: 1.6rem; padding: 10px;">{home_team}</th></tr>'
     html += '<tr>'
     for h in range(7):
-        html += f'<th style="font-size: 1.2rem;">{h}</th>'
+        html += f'<th style="font-size: 1.4rem;">{h}</th>'
     html += '</tr>'
     
     # Rows
     for a in range(7):
         html += '<tr>'
         if a == 0:
-            html += f'<th rowspan="7" style="padding: 0; font-size: 1.4rem;"><div class="away-team-header-container"><div class="away-team-header">{away_team}</div></div></th>'
-        html += f'<th style="font-size: 1.2rem;">{a}</th>'
+            html += f'<th rowspan="7" style="padding: 0; font-size: 1.6rem;"><div class="away-team-header-container"><div class="away-team-header">{away_team}</div></div></th>'
+        html += f'<th style="font-size: 1.4rem;">{a}</th>'
         
         for h in range(7):
             key = f"{h}-{a}"
@@ -149,8 +150,8 @@ for match in matches:
             is_pop = key in popular
             
             cell_class = "popular-score" if is_pop else ""
-            risk_html = f'<br><span style="font-size: 0.85rem; opacity: 0.7; font-weight: normal;">{risk}%</span>' if risk is not None else ''
-            html += f'<td style="background-color: {color}; font-size: 1.2rem; font-weight: 700;" class="{cell_class}">{ev:.2f}{risk_html}</td>'
+            risk_html = f'<br><span style="font-size: 0.95rem; opacity: 0.7; font-weight: normal;">{risk}%</span>' if risk is not None else ''
+            html += f'<td style="background-color: {color}; font-size: 1.5rem; font-weight: 700;" class="{cell_class}">{ev:.2f}{risk_html}</td>'
         
         html += '</tr>'
         
