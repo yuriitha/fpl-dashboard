@@ -12,7 +12,7 @@ st.markdown("""
 .predictor-matrix {
     border-collapse: collapse;
     width: 100%;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
 }
 .predictor-matrix th, .predictor-matrix td {
     border: 1px solid var(--secondary-background-color);
@@ -136,22 +136,22 @@ for match in matches:
     visible_keys = [k for k, r in risk_matrix.items() if r <= max_risk]
     best_visible_pick = max(visible_keys, key=lambda k: ev_matrix[k]) if visible_keys else None
     
-    st.markdown(f"<h3 style='text-align: left; margin-top: 15px; margin-bottom: 5px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align: left; margin-top: 5px; margin-bottom: 2px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
     
-    c1, c2, c3 = st.columns(3)
-    c2.warning(f"**⚖️ Optimal Pick:** {optimal_pick} (EV: {ev_matrix[optimal_pick]:.2f} | Risk: {risk_matrix.get(optimal_pick, 'N/A')}%)")
+    safe_text = f"Safest Alt: {safe_pick} (EV: {ev_matrix[safe_pick]:.2f} | Risk: {risk_matrix[safe_pick]}%)" if safe_pick else "Safest Alt: N/A"
+    diff_text = f"Differential Alt: {diff_pick} (EV: {ev_matrix[diff_pick]:.2f} | Risk: {risk_matrix.get(diff_pick, 'N/A')}%)" if diff_pick else "Differential Alt: N/A"
+    opt_text = f"Optimal Pick: {optimal_pick} (EV: {ev_matrix[optimal_pick]:.2f} | Risk: {risk_matrix.get(optimal_pick, 'N/A')}%)"
     
-    if safe_pick:
-        c1.success(f"**🛡️ Safest Alternative:** {safe_pick} (EV: {ev_matrix[safe_pick]:.2f} | Risk: {risk_matrix[safe_pick]}%)")
-    else:
-        c1.success("**🛡️ Safest Alternative:** N/A")
-        
-    if diff_pick:
-        c3.info(f"**🎁 Differential Alt:** {diff_pick} (EV: {ev_matrix[diff_pick]:.2f} | Risk: {risk_matrix.get(diff_pick, 'N/A')}%)")
-    else:
-        c3.info("**🎁 Differential Alt:** N/A")
+    tags_html = f'''
+    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+        <span style="color: #4CAF50; font-weight: 600;">{safe_text}</span>
+        <span style="color: #FFC107; font-weight: 600;">{opt_text}</span>
+        <span style="color: #2196F3; font-weight: 600;">{diff_text}</span>
+    </div>
+    '''
+    st.markdown(tags_html, unsafe_allow_html=True)
     
-    html = '<table class="predictor-matrix" style="margin-top: 10px;">'
+    html = '<table class="predictor-matrix" style="margin-top: 5px;">'
     
     # Top headers
     html += f'<tr><th colspan="2" rowspan="2" style="background-color: transparent; border: none;"></th><th colspan="7" style="font-size: 1.6rem; padding: 10px;">{home_team}</th></tr>'
