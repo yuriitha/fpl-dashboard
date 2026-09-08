@@ -115,6 +115,7 @@ for match in matches:
     xg_h = match['xg_home']
     xg_a = match['xg_away']
     ev_matrix = match['ev_matrix']
+    risk_matrix = match.get('risk_matrix', {})
     popular = match.get('popular_scores', [])
     
     ev_values = list(ev_matrix.values())
@@ -142,12 +143,14 @@ for match in matches:
         for h in range(7):
             key = f"{h}-{a}"
             ev = ev_matrix.get(key, 0)
+            risk = risk_matrix.get(key, None)
             
             color = get_color(ev, min_ev, max_ev)
             is_pop = key in popular
             
             cell_class = "popular-score" if is_pop else ""
-            html += f'<td style="background-color: {color};" class="{cell_class}">{ev:.2f}</td>'
+            risk_html = f'<br><span style="font-size: 0.75rem; opacity: 0.7;">{risk}%</span>' if risk is not None else ''
+            html += f'<td style="background-color: {color};" class="{cell_class}">{ev:.2f}{risk_html}</td>'
         
         html += '</tr>'
         
