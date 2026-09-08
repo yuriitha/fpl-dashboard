@@ -11,15 +11,13 @@ st.markdown("""
 <style>
 .predictor-matrix {
     border-collapse: collapse;
-    margin: 0 auto 30px auto;
-    font-size: 0.9rem;
+    width: 100%;
+    margin-bottom: 30px;
 }
 .predictor-matrix th, .predictor-matrix td {
     border: 1px solid var(--secondary-background-color);
     text-align: center;
-    padding: 5px;
-    min-width: 80px;
-    height: 80px;
+    padding: 10px;
 }
 .predictor-matrix th {
     background-color: var(--secondary-background-color);
