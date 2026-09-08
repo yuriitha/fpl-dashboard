@@ -80,6 +80,7 @@ if not available_tournaments:
 col1, col2 = st.columns([1, 4])
 with col1:
     selected_tournament = st.selectbox("Select Tournament", available_tournaments, label_visibility="collapsed")
+    max_risk = st.slider("Max Risk Tolerance (%)", 0, 100, 100, 5, help="Gray out predictions that exceed this risk level.")
 
 data = data_cache[selected_tournament]
 last_updated = data.get("last_updated", "Unknown")
@@ -121,9 +122,32 @@ for match in matches:
     min_ev = min(ev_values)
     max_ev = max(ev_values)
     
-    st.markdown(f"<h3 style='text-align: left; margin-bottom: 0px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
+    # Calculate best picks
+    optimal_pick = max(ev_matrix.keys(), key=lambda k: ev_matrix[k])
     
-    html = '<table class="predictor-matrix">'
+    safe_keys = [k for k, r in risk_matrix.items() if r <= 35]
+    safe_pick = max(safe_keys, key=lambda k: ev_matrix[k]) if safe_keys else None
+    
+    diff_keys = [k for k in ev_matrix.keys() if k not in popular]
+    diff_pick = max(diff_keys, key=lambda k: ev_matrix[k]) if diff_keys else None
+
+    visible_keys = [k for k, r in risk_matrix.items() if r <= max_risk]
+    best_visible_pick = max(visible_keys, key=lambda k: ev_matrix[k]) if visible_keys else None
+    
+    st.markdown(f"<h3 style='text-align: left; margin-top: 15px; margin-bottom: 5px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
+    
+    c1, c2, c3 = st.columns(3)
+    if safe_pick:
+        c1.success(f"**🛡️ Safe Pick (<35% Risk):** {safe_pick} (EV: {ev_matrix[safe_pick]:.2f} | Risk: {risk_matrix[safe_pick]}%)")
+    else:
+        c1.success("**🛡️ Safe Pick:** None")
+        
+    c2.warning(f"**⚖️ Optimal Pick:** {optimal_pick} (EV: {ev_matrix[optimal_pick]:.2f} | Risk: {risk_matrix.get(optimal_pick, 'N/A')}%)")
+    
+    if diff_pick:
+        c3.info(f"**🎁 Differential Pick:** {diff_pick} (EV: {ev_matrix[diff_pick]:.2f} | Risk: {risk_matrix.get(diff_pick, 'N/A')}%)")
+    
+    html = '<table class="predictor-matrix" style="margin-top: 10px;">'
     
     # Top headers
     html += f'<tr><th colspan="2" rowspan="2" style="background-color: transparent; border: none;"></th><th colspan="7" style="font-size: 1.6rem; padding: 10px;">{home_team}</th></tr>'
@@ -148,8 +172,16 @@ for match in matches:
             is_pop = key in popular
             
             cell_class = "popular-score" if is_pop else ""
+            
+            cell_style = f"background-color: {color}; font-size: 1.5rem; font-weight: 700;"
+            if risk is not None and risk > max_risk:
+                cell_style += " opacity: 0.25; filter: grayscale(80%);"
+                
+            if key == best_visible_pick:
+                cell_style += " border: 3px solid gold; box-shadow: inset 0px 0px 10px rgba(255, 215, 0, 0.8);"
+                
             risk_html = f'<br><span style="font-size: 0.95rem; opacity: 0.7; font-weight: normal;">{risk}%</span>' if risk is not None else ''
-            html += f'<td style="background-color: {color}; font-size: 1.5rem; font-weight: 700;" class="{cell_class}">{ev:.2f}{risk_html}</td>'
+            html += f'<td style="{cell_style}" class="{cell_class}">{ev:.2f}{risk_html}</td>'
         
         html += '</tr>'
         
