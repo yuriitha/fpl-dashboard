@@ -125,10 +125,12 @@ for match in matches:
     # Calculate best picks
     optimal_pick = max(ev_matrix.keys(), key=lambda k: ev_matrix[k])
     
-    safe_keys = [k for k, r in risk_matrix.items() if r <= 35]
-    safe_pick = max(safe_keys, key=lambda k: ev_matrix[k]) if safe_keys else None
+    # Safest Alternative (Absolute lowest risk, excluding optimal)
+    other_safe_keys = [k for k in risk_matrix.keys() if k != optimal_pick]
+    safe_pick = min(other_safe_keys, key=lambda k: risk_matrix[k]) if other_safe_keys else None
     
-    diff_keys = [k for k in ev_matrix.keys() if k not in popular]
+    # Differential Alternative (Best EV among non-popular, excluding optimal and safe)
+    diff_keys = [k for k in ev_matrix.keys() if k not in popular and k != optimal_pick and k != safe_pick]
     diff_pick = max(diff_keys, key=lambda k: ev_matrix[k]) if diff_keys else None
 
     visible_keys = [k for k, r in risk_matrix.items() if r <= max_risk]
@@ -137,15 +139,17 @@ for match in matches:
     st.markdown(f"<h3 style='text-align: left; margin-top: 15px; margin-bottom: 5px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
     
     c1, c2, c3 = st.columns(3)
-    if safe_pick:
-        c1.success(f"**🛡️ Safe Pick (<35% Risk):** {safe_pick} (EV: {ev_matrix[safe_pick]:.2f} | Risk: {risk_matrix[safe_pick]}%)")
-    else:
-        c1.success("**🛡️ Safe Pick:** None")
-        
     c2.warning(f"**⚖️ Optimal Pick:** {optimal_pick} (EV: {ev_matrix[optimal_pick]:.2f} | Risk: {risk_matrix.get(optimal_pick, 'N/A')}%)")
     
+    if safe_pick:
+        c1.success(f"**🛡️ Safest Alternative:** {safe_pick} (EV: {ev_matrix[safe_pick]:.2f} | Risk: {risk_matrix[safe_pick]}%)")
+    else:
+        c1.success("**🛡️ Safest Alternative:** N/A")
+        
     if diff_pick:
-        c3.info(f"**🎁 Differential Pick:** {diff_pick} (EV: {ev_matrix[diff_pick]:.2f} | Risk: {risk_matrix.get(diff_pick, 'N/A')}%)")
+        c3.info(f"**🎁 Differential Alt:** {diff_pick} (EV: {ev_matrix[diff_pick]:.2f} | Risk: {risk_matrix.get(diff_pick, 'N/A')}%)")
+    else:
+        c3.info("**🎁 Differential Alt:** N/A")
     
     html = '<table class="predictor-matrix" style="margin-top: 10px;">'
     
