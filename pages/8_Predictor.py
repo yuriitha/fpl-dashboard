@@ -56,7 +56,8 @@ API_BASE = "http://198.244.151.163:8000"
 TOURNAMENTS = {
     'UCL': f'{API_BASE}/predictor_ucl',
     'UEL': f'{API_BASE}/predictor_uel',
-    'UECL': f'{API_BASE}/predictor_uecl'
+    'UECL': f'{API_BASE}/predictor_uecl',
+    'UWCL': f'{API_BASE}/predictor_uwcl'
 }
 
 available_tournaments = []
