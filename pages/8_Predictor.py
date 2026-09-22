@@ -78,10 +78,11 @@ if not available_tournaments:
     st.stop()
 
 # UI
-col1, col2 = st.columns([1, 4])
+col1, col2, col3 = st.columns([2, 6, 3])
 with col1:
     selected_tournament = st.selectbox("Select Tournament", available_tournaments, label_visibility="collapsed")
-    max_risk = st.slider("Max Risk Tolerance (%)", 0, 100, 100, 5, help="Gray out predictions that exceed this risk level.")
+with col3:
+    max_risk = st.slider("Max Risk Tolerance (%)", 0, 100, 45, 5, help="Gray out predictions that exceed this risk level.", label_visibility="collapsed")
 
 data = data_cache[selected_tournament]
 last_updated = data.get("last_updated", "Unknown")
