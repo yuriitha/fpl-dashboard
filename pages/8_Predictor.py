@@ -161,6 +161,111 @@ if not matches:
     st.info("No matches found for this tournament.")
     st.stop()
 
+# ========================== TOP 3 CAPTAIN PICKS (BOOSTER 2X) ==========================
+def calculate_captain_score(ev, prob, risk):
+    safety = (100.0 - risk) / 100.0
+    return ev * safety * (1.0 + prob / 100.0)
+
+captain_candidates = []
+for m in matches:
+    ht = m.get('home_team', 'Home')
+    at = m.get('away_team', 'Away')
+    ev_m = m.get('ev_matrix', {})
+    risk_m = m.get('risk_matrix', {})
+    prob_m = m.get('prob_matrix')
+    if not prob_m:
+        prob_m = compute_prob_matrix(m.get('xg_home', 0), m.get('xg_away', 0))
+    pops = m.get('popular_scores', [])
+
+    # Filter candidate scorelines by max_risk
+    cand_scores = [s for s in ev_m if risk_m.get(s, 100.0) <= max_risk]
+    if not cand_scores:
+        cand_scores = list(ev_m.keys())
+
+    if cand_scores:
+        best_s = max(cand_scores, key=lambda s: calculate_captain_score(ev_m.get(s, 0), prob_m.get(s, 0), risk_m.get(s, 50.0)))
+        ev_val = ev_m.get(best_s, 0)
+        prob_val = prob_m.get(best_s, 0)
+        risk_val = risk_m.get(best_s, 50.0)
+        safety_val = round(100.0 - risk_val, 1)
+        cs_val = calculate_captain_score(ev_val, prob_val, risk_val)
+
+        captain_candidates.append({
+            'home_team': ht,
+            'away_team': at,
+            'score': best_s,
+            'captain_score': round(cs_val, 2),
+            'ev': round(ev_val, 2),
+            'prob': round(prob_val, 1),
+            'risk': round(risk_val, 1),
+            'safety': safety_val,
+            'is_pop': best_s in pops
+        })
+
+captain_candidates.sort(key=lambda x: x['captain_score'], reverse=True)
+top_captains = captain_candidates[:3]
+
+if top_captains:
+    st.markdown("<h3 style='margin-top: 5px; margin-bottom: 8px;'>🎯 Топ-3 матчі для капітанства (Booster 2x)</h3>", unsafe_allow_html=True)
+    
+    cap_cols = st.columns(len(top_captains))
+    ranks = [
+        {"icon": "🥇", "title": "ТОП-1 КАПІТАН", "border": "#FFD700", "badge_bg": "rgba(255, 215, 0, 0.15)", "text_color": "#FFD700"},
+        {"icon": "🥈", "title": "ТОП-2 КАПІТАН", "border": "#C0C0C0", "badge_bg": "rgba(192, 192, 192, 0.15)", "text_color": "#C0C0C0"},
+        {"icon": "🥉", "title": "ТОП-3 КАПІТАН", "border": "#CD7F32", "badge_bg": "rgba(205, 127, 50, 0.15)", "text_color": "#CD7F32"},
+    ]
+    
+    for idx, (col, cap) in enumerate(zip(cap_cols, top_captains)):
+        r = ranks[idx]
+        with col:
+            pop_badge = '<span style="font-size: 0.75rem; background: rgba(33, 150, 243, 0.2); color: #2196F3; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Популярний UEFA</span>' if cap['is_pop'] else '<span style="font-size: 0.75rem; background: rgba(76, 175, 80, 0.2); color: #4CAF50; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Диференціал (+5)</span>'
+            
+            card_html = f'''
+            <div style="
+                border: 2px solid {r['border']};
+                border-radius: 10px;
+                padding: 12px 14px;
+                background: var(--secondary-background-color);
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                margin-bottom: 12px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-weight: 800; font-size: 0.95rem; color: {r['text_color']};">{r['icon']} {r['title']}</span>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: #4CAF50;" title="Індекс якості капітана (EV * Safety * (1+Prob))">⭐ {cap['captain_score']:.2f}</span>
+                </div>
+                <div style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{cap['home_team']} vs {cap['away_team']}">
+                    {cap['home_team']} vs {cap['away_team']}
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 1.8rem; font-weight: 900; color: var(--text-color);">{cap['score']}</span>
+                    {pop_badge}
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 0.85rem; padding-top: 6px; border-top: 1px solid rgba(128, 128, 128, 0.2);">
+                    <div><span style="opacity: 0.7;">Очікувані (EV):</span> <b>{cap['ev']:.2f}</b></div>
+                    <div><span style="opacity: 0.7;">Ймовірність (P):</span> <b>{cap['prob']}%</b></div>
+                    <div><span style="opacity: 0.7;">Надійність:</span> <b>{cap['safety']}%</b></div>
+                    <div><span style="opacity: 0.7;">Ризик нуля (R):</span> <b>{cap['risk']}%</b></div>
+                </div>
+            </div>
+            '''
+            st.markdown(card_html, unsafe_allow_html=True)
+            
+    with st.expander("ℹ️ Як обирається ТОП-3 для капітанства (Booster 2x)?"):
+        st.markdown("""
+        **Правила капітанства у Predictor:**
+        * У кожному турі бали за один обраний матч **подвоюються ($2\\times$)**.
+        * Якщо матч закінчиться з нулем очок, бустер втрачається марно ($0 \\times 2 = 0$). Тому для капітана критично мати не лише високий EV, але й **високу надійність (низький ризик нуля)** та **високий шанс точного рахунку** для джекпоту.
+        
+        **Формула Captain Score (Індекс капітана):**
+        $$\\text{Captain Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right) \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)$$
+        
+        * **1 результат на матч**: у кожному матчі визначається лише один найкращий прогноз, після чого матчі ранжуються між собою (матчі не повторюються).
+        * **Врахування ризику**: опції з високим ризиком повного нуля отримують суттєвий штраф за рахунок множника надійності $\\text{Safety}$.
+        * **Бонус за точний рахунок**: чим вища ймовірність точного рахунку, тим більший потенціал зірвати максимальні $20$–$30$ балів.
+        """)
+
+st.markdown("<hr style='margin: 12px 0 16px 0; opacity: 0.3;'>", unsafe_allow_html=True)
+
 # Helper for color mapping
 try:
     cmap = mpl.colormaps['RdYlGn']
