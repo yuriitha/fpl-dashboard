@@ -222,9 +222,9 @@ top_captains = captain_candidates[:3]
 if top_captains:
     cap_cols = st.columns(len(top_captains))
     ranks = [
-        {"icon": "🥇", "title": "ТОП-1 КАПІТАН", "border": "#FFD700", "badge_bg": "rgba(255, 215, 0, 0.15)", "text_color": "#FFD700"},
-        {"icon": "🥈", "title": "ТОП-2 КАПІТАН", "border": "#C0C0C0", "badge_bg": "rgba(192, 192, 192, 0.15)", "text_color": "#C0C0C0"},
-        {"icon": "🥉", "title": "ТОП-3 КАПІТАН", "border": "#CD7F32", "badge_bg": "rgba(205, 127, 50, 0.15)", "text_color": "#CD7F32"},
+        {"icon": "🥇", "title": "Top-1 Booster", "border": "#FFD700", "badge_bg": "rgba(255, 215, 0, 0.15)", "text_color": "#FFD700"},
+        {"icon": "🥈", "title": "Top-2 Booster", "border": "#C0C0C0", "badge_bg": "rgba(192, 192, 192, 0.15)", "text_color": "#C0C0C0"},
+        {"icon": "🥉", "title": "Top-3 Booster", "border": "#CD7F32", "badge_bg": "rgba(205, 127, 50, 0.15)", "text_color": "#CD7F32"},
     ]
     
     for idx, (col, cap) in enumerate(zip(cap_cols, top_captains)):
@@ -235,7 +235,7 @@ if top_captains:
             card_html = f'''<div style="border: 2px solid {r['border']}; border-radius: 10px; padding: 12px 14px; background: var(--secondary-background-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
     <span style="font-weight: 800; font-size: 0.95rem; color: {r['text_color']};">{r['icon']} {r['title']}</span>
-    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості капітана (EV * Safety * (1+Prob))">⭐ {cap['captain_score']:.2f}</span>
+    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості Booster (EV * Safety * (1+Prob))">⭐ {cap['captain_score']:.2f}</span>
 </div>
 <div style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{cap['home_team']} vs {cap['away_team']}">
     {cap['home_team']} vs {cap['away_team']}
@@ -253,14 +253,14 @@ if top_captains:
 </div>'''
             st.markdown(card_html, unsafe_allow_html=True)
             
-    with st.expander("ℹ️ Як обирається ТОП-3 для капітанства (Booster 2x)?"):
+    with st.expander("ℹ️ Як обирається ТОП-3 для Booster 2x?"):
         st.markdown("""
-        **Правила капітанства у Predictor:**
+        **Правила Booster 2x у Predictor:**
         * У кожному турі бали за один обраний матч **подвоюються ($2\\times$)**.
-        * Якщо матч закінчиться з нулем очок, бустер втрачається марно ($0 \\times 2 = 0$). Тому для капітана критично мати не лише високий EV, але й **високу надійність (низький ризик нуля)** та **високий шанс точного рахунку** для джекпоту.
+        * Якщо матч закінчиться з нулем очок, бустер втрачається марно ($0 \\times 2 = 0$). Тому для бустера критично мати не лише високий EV, але й **високу надійність (низький ризик нуля)** та **високий шанс точного рахунку** для джекпоту.
         
-        **Формула Captain Score (Індекс капітана):**
-        $$\\text{Captain Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right) \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)$$
+        **Формула Booster Score:**
+        $$\\text{Booster Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right) \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)$$
         
         * **1 результат на матч**: у кожному матчі визначається лише один найкращий прогноз, після чого матчі ранжуються між собою (матчі не повторюються).
         * **Врахування ризику**: опції з високим ризиком повного нуля отримують суттєвий штраф за рахунок множника надійності $\\text{Safety}$.
