@@ -31,6 +31,7 @@ st.markdown("""
 .predictor-matrix td {
     color: var(--text-color);
     font-weight: 500;
+    text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.4);
 }
 .popular-score {
     font-weight: 900 !important;
@@ -122,6 +123,16 @@ if not available_tournaments:
     st.warning("No predictor data available. Checked API endpoints. Please make sure the endpoints are added to your FastAPI backend.")
     st.stop()
 
+# Sidebar Settings
+with st.sidebar:
+    st.markdown("### 🎨 Налаштування візуалізації")
+    palette_choice = st.selectbox(
+        "Палітра теплокарти (Colorblind)",
+        ["Cividis (Colorblind-Safe)", "Viridis (Colorblind-Safe)", "Plasma (Colorblind-Safe)"],
+        index=0,
+        help="Кольорові палітри, оптимізовані для людей із порушенням сприйняття кольорів (дальтонізмом)."
+    )
+
 # UI Controls
 col1, col2, col3, col4, col5 = st.columns([1.8, 2.8, 2.6, 2.8, 2.0])
 with col1:
@@ -157,14 +168,16 @@ last_updated = data.get("last_updated", "Unknown")
 st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: -1.0rem; margin-bottom: 0.5rem;'>Data updated: <b>{last_updated}</b></p>", unsafe_allow_html=True)
 
 # Legend
-st.markdown("""
+active_pal_name = palette_choice.split()[0]
+st.markdown(f"""
 <div class="legend-container">
     <span><b>EV:</b> Очікувані очки (Expected Points)</span>
-    <span><b>S-EV:</b> Smart EV (Збалансоване очікування)</span>
-    <span><b>P:</b> Ймовірність точного рахунку (Score Probability %)</span>
-    <span><b>R:</b> Ризик отримати 0 очок (Zero Points Risk %)</span>
-    <span><u><b>Підкреслено:</b></u> Популярний вибір UEFA</span>
-    <span style="border: 1px solid gold; padding: 0 4px; border-radius: 3px;"><b>Gold Box:</b> Оптимальний вибір за поточною стратегією</span>
+    <span><span style="background: rgba(15, 23, 42, 0.7); color: #38BDF8; padding: 1px 5px; border-radius: 3px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3);">S-EV</span> Smart EV (Збалансоване очікування)</span>
+    <span><b>P:</b> Ймовірність точного рахунку %</span>
+    <span><b>R:</b> Ризик 0 очок %</span>
+    <span><u><b>Підкреслено:</b></u> Популярний UEFA</span>
+    <span style="border: 1px solid gold; padding: 0 4px; border-radius: 3px;"><b>Gold Box:</b> Оптимальний вибір</span>
+    <span style="opacity: 0.85;">🎨 <b>Палітра:</b> {active_pal_name} (Colorblind)</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -218,8 +231,6 @@ captain_candidates.sort(key=lambda x: x['captain_score'], reverse=True)
 top_captains = captain_candidates[:3]
 
 if top_captains:
-    st.markdown("<h3 style='margin-top: 5px; margin-bottom: 8px;'>🎯 Топ-3 матчі для капітанства (Booster 2x)</h3>", unsafe_allow_html=True)
-    
     cap_cols = st.columns(len(top_captains))
     ranks = [
         {"icon": "🥇", "title": "ТОП-1 КАПІТАН", "border": "#FFD700", "badge_bg": "rgba(255, 215, 0, 0.15)", "text_color": "#FFD700"},
@@ -230,36 +241,27 @@ if top_captains:
     for idx, (col, cap) in enumerate(zip(cap_cols, top_captains)):
         r = ranks[idx]
         with col:
-            pop_badge = '<span style="font-size: 0.75rem; background: rgba(33, 150, 243, 0.2); color: #2196F3; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Популярний UEFA</span>' if cap['is_pop'] else '<span style="font-size: 0.75rem; background: rgba(76, 175, 80, 0.2); color: #4CAF50; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Диференціал (+5)</span>'
+            pop_badge = '<span style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: #38BDF8; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Популярний UEFA</span>' if cap['is_pop'] else '<span style="font-size: 0.75rem; background: rgba(76, 175, 80, 0.2); color: #4CAF50; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Диференціал (+5)</span>'
             
-            card_html = f'''
-            <div style="
-                border: 2px solid {r['border']};
-                border-radius: 10px;
-                padding: 12px 14px;
-                background: var(--secondary-background-color);
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-                margin-bottom: 12px;
-            ">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-weight: 800; font-size: 0.95rem; color: {r['text_color']};">{r['icon']} {r['title']}</span>
-                    <span style="font-size: 0.85rem; font-weight: 700; color: #4CAF50;" title="Індекс якості капітана (EV * Safety * (1+Prob))">⭐ {cap['captain_score']:.2f}</span>
-                </div>
-                <div style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{cap['home_team']} vs {cap['away_team']}">
-                    {cap['home_team']} vs {cap['away_team']}
-                </div>
-                <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px;">
-                    <span style="font-size: 1.8rem; font-weight: 900; color: var(--text-color);">{cap['score']}</span>
-                    {pop_badge}
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 0.85rem; padding-top: 6px; border-top: 1px solid rgba(128, 128, 128, 0.2);">
-                    <div><span style="opacity: 0.7;">Очікувані (EV):</span> <b>{cap['ev']:.2f}</b></div>
-                    <div><span style="opacity: 0.7;">Ймовірність (P):</span> <b>{cap['prob']}%</b></div>
-                    <div><span style="opacity: 0.7;">Надійність:</span> <b>{cap['safety']}%</b></div>
-                    <div><span style="opacity: 0.7;">Ризик нуля (R):</span> <b>{cap['risk']}%</b></div>
-                </div>
-            </div>
-            '''
+            card_html = f'''<div style="border: 2px solid {r['border']}; border-radius: 10px; padding: 12px 14px; background: var(--secondary-background-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+    <span style="font-weight: 800; font-size: 0.95rem; color: {r['text_color']};">{r['icon']} {r['title']}</span>
+    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості капітана (EV * Safety * (1+Prob))">⭐ {cap['captain_score']:.2f}</span>
+</div>
+<div style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{cap['home_team']} vs {cap['away_team']}">
+    {cap['home_team']} vs {cap['away_team']}
+</div>
+<div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px;">
+    <span style="font-size: 1.8rem; font-weight: 900; color: var(--text-color);">{cap['score']}</span>
+    {pop_badge}
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 0.85rem; padding-top: 6px; border-top: 1px solid rgba(128, 128, 128, 0.2);">
+    <div><span style="opacity: 0.7;">Очікувані (EV):</span> <b>{cap['ev']:.2f}</b></div>
+    <div><span style="opacity: 0.7;">Ймовірність (P):</span> <b>{cap['prob']}%</b></div>
+    <div><span style="opacity: 0.7;">Надійність:</span> <b>{cap['safety']}%</b></div>
+    <div><span style="opacity: 0.7;">Ризик нуля (R):</span> <b>{cap['risk']}%</b></div>
+</div>
+</div>'''
             st.markdown(card_html, unsafe_allow_html=True)
             
     with st.expander("ℹ️ Як обирається ТОП-3 для капітанства (Booster 2x)?"):
@@ -278,11 +280,17 @@ if top_captains:
 
 st.markdown("<hr style='margin: 12px 0 16px 0; opacity: 0.3;'>", unsafe_allow_html=True)
 
-# Helper for color mapping
+# Helper for color mapping (Colorblind-Safe)
+cmap_name = "cividis"
+if "Viridis" in palette_choice:
+    cmap_name = "viridis"
+elif "Plasma" in palette_choice:
+    cmap_name = "plasma"
+
 try:
-    cmap = mpl.colormaps['RdYlGn']
+    cmap = mpl.colormaps[cmap_name]
 except AttributeError:
-    cmap = cm.get_cmap('RdYlGn')
+    cmap = cm.get_cmap(cmap_name)
 
 def get_color(val, min_val, max_val):
     if max_val == min_val:
@@ -290,7 +298,7 @@ def get_color(val, min_val, max_val):
     else:
         norm_val = (val - min_val) / (max_val - min_val)
     r, g, b, _ = cmap(norm_val)
-    return f"rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, 0.45)"
+    return f"rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, 0.55)"
 
 for match in matches:
     home_team = match['home_team']
@@ -371,14 +379,15 @@ for match in matches:
         alt_text = format_pick_tag(alt_label, alt_key)
         alt_tag_html = f'<span style="color: #BA68C8; font-weight: 600;">{alt_text}</span>'
     
-    tags_html = f'''
-    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.88rem; margin-bottom: 5px;">
-        <span style="color: #4CAF50; font-weight: 600;">{safe_text}</span>
-        <span style="color: #FFC107; font-weight: 700; border-bottom: 2px solid gold;">{opt_text}</span>
-        {alt_tag_html}
-        <span style="color: #2196F3; font-weight: 600;">{diff_text}</span>
-    </div>
-    '''
+    tags_parts = [
+        f'<span style="color: #4CAF50; font-weight: 600;">{safe_text}</span>',
+        f'<span style="color: #FFC107; font-weight: 700; border-bottom: 2px solid gold;">{opt_text}</span>'
+    ]
+    if alt_tag_html:
+        tags_parts.append(alt_tag_html)
+    tags_parts.append(f'<span style="color: #38BDF8; font-weight: 600;">{diff_text}</span>')
+    
+    tags_html = f'<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.88rem; margin-bottom: 6px;">{"".join(tags_parts)}</div>'
     st.markdown(tags_html, unsafe_allow_html=True)
     
     html = '<table class="predictor-matrix" style="margin-top: 5px;">'
@@ -427,8 +436,8 @@ for match in matches:
             if display_mode == "Show: EV + Smart + P + R":
                 cell_content = f'''
                 <div style="font-size: 1.25rem; font-weight: 800; line-height: 1.1;">{ev:.2f}</div>
-                <div style="font-size: 0.76rem; font-weight: 600; color: #4CAF50; margin-top: 1px;">S-EV: {smart_ev:.2f}</div>
-                <div style="font-size: 0.74rem; margin-top: 1px; line-height: 1.1; white-space: nowrap;">
+                <div style="margin-top: 2px;"><span style="display: inline-block; background: rgba(15, 23, 42, 0.7); color: #38BDF8; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 0.74rem; border: 1px solid rgba(56, 189, 248, 0.25);">S-EV: {smart_ev:.2f}</span></div>
+                <div style="font-size: 0.74rem; margin-top: 2px; line-height: 1.1; white-space: nowrap;">
                     <span title="Score Probability (P)" style="font-weight: 700;">P: {prob:.1f}%</span>
                     <span style="opacity: 0.35;"> | </span>
                     <span title="Risk of 0 pts (R)" style="opacity: 0.75;">R: {risk_str}</span>
@@ -436,7 +445,7 @@ for match in matches:
                 '''
             elif display_mode == "Show: Smart EV + Prob":
                 cell_content = f'''
-                <div style="font-size: 1.25rem; font-weight: 800; line-height: 1.1; color: #4CAF50;">{smart_ev:.2f}</div>
+                <div style="font-size: 1.25rem; font-weight: 800; line-height: 1.1; color: #38BDF8;">{smart_ev:.2f}</div>
                 <div style="font-size: 0.78rem; margin-top: 2px; line-height: 1.15; white-space: nowrap;">
                     <span title="Score Probability" style="font-weight: 700;">P: {prob:.1f}%</span>
                     <span style="opacity: 0.35;"> | </span>
