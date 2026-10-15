@@ -4,6 +4,10 @@ import os
 import sys
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+import matplotlib as mpl
+import requests
+import numpy as np
+from scipy.stats import poisson
 
 st.set_page_config(page_title="Predictor", layout="wide", initial_sidebar_state="expanded")
 
@@ -17,7 +21,7 @@ st.markdown("""
 .predictor-matrix th, .predictor-matrix td {
     border: 1px solid var(--secondary-background-color);
     text-align: center;
-    padding: 2px 5px;
+    padding: 3px 5px;
 }
 .predictor-matrix th {
     background-color: var(--secondary-background-color);
@@ -31,7 +35,6 @@ st.markdown("""
 .popular-score {
     font-weight: 900 !important;
     text-decoration: underline;
-    font-size: 1.05rem;
 }
 .away-team-header-container {
     display: flex;
@@ -46,10 +49,43 @@ st.markdown("""
     transform: rotate(180deg);
     white-space: nowrap;
 }
+.legend-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: #888888;
+    margin-bottom: 12px;
+    padding: 6px 12px;
+    background: var(--secondary-background-color);
+    border-radius: 6px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-import requests
+# Helper for Dixon-Coles and Poisson probability
+def dixon_coles_adjustment(h, a, xg_home, xg_away, rho=-0.15):
+    if h == 0 and a == 0:
+        return max(0.0, 1.0 - rho * xg_home * xg_away)
+    elif h == 1 and a == 0:
+        return max(0.0, 1.0 + rho * xg_home)
+    elif h == 0 and a == 1:
+        return max(0.0, 1.0 + rho * xg_away)
+    elif h == 1 and a == 1:
+        return max(0.0, 1.0 - rho)
+    return 1.0
+
+def compute_prob_matrix(xg_h, xg_a, max_g=6):
+    probs = np.zeros((max_g + 1, max_g + 1))
+    total_p = 0.0
+    for h in range(max_g + 1):
+        for a in range(max_g + 1):
+            p = poisson.pmf(h, xg_h) * poisson.pmf(a, xg_a) * dixon_coles_adjustment(h, a, xg_h, xg_a, rho=-0.15)
+            probs[h, a] = p
+            total_p += p
+    if total_p > 0:
+        probs /= total_p
+    return {f"{h}-{a}": round(float(probs[h, a]) * 100, 1) for h in range(max_g + 1) for a in range(max_g + 1)}
 
 # Load Data
 API_BASE = "http://198.244.151.163:8000"
@@ -77,25 +113,48 @@ if not available_tournaments:
     st.warning("No predictor data available. Checked API endpoints. Please make sure the endpoints are added to your FastAPI backend.")
     st.stop()
 
-# UI
-col1, col2, col3 = st.columns([2, 6, 3])
+# UI Controls
+col1, col2, col3, col4 = st.columns([2.5, 2.5, 2.5, 2.5])
 with col1:
     selected_tournament = st.selectbox("Select Tournament", available_tournaments, label_visibility="collapsed")
+with col2:
+    color_by = st.selectbox(
+        "Color Heatmap By",
+        ["Color by EV (Expected Points)", "Color by Score Probability (%)"],
+        index=0,
+        label_visibility="collapsed"
+    )
 with col3:
+    display_mode = st.selectbox(
+        "Cell Display",
+        ["Show: EV + Prob + Risk", "Show: Prob + EV", "Show: Prob Only", "Show: EV Only"],
+        index=0,
+        label_visibility="collapsed"
+    )
+with col4:
     max_risk = st.slider("Max Risk Tolerance (%)", 0, 100, 45, 5, help="Gray out predictions that exceed this risk level.", label_visibility="collapsed")
 
 data = data_cache[selected_tournament]
 last_updated = data.get("last_updated", "Unknown")
 
-st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: -2.5rem; margin-bottom: 1.0rem;'>Data updated: <b>{last_updated}</b></p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: -1.0rem; margin-bottom: 0.5rem;'>Data updated: <b>{last_updated}</b></p>", unsafe_allow_html=True)
+
+# Legend
+st.markdown("""
+<div class="legend-container">
+    <span><b>Top number:</b> EV (Expected Value / Очікувані очки)</span>
+    <span><b>P:</b> Ймовірність точного рахунку (Score Probability %)</span>
+    <span><b>R:</b> Ризик отримати 0 очок (Zero Points Risk %)</span>
+    <span><u><b>Underlined:</b></u> Популярний вибір UEFA</span>
+    <span style="border: 1px solid gold; padding: 0 4px; border-radius: 3px;"><b>Gold Box:</b> Оптимальний вибір у межах ризику</span>
+</div>
+""", unsafe_allow_html=True)
 
 matches = data.get("matches", [])
 
 if not matches:
     st.info("No matches found for this tournament.")
     st.stop()
-
-import matplotlib as mpl
 
 # Helper for color mapping
 try:
@@ -118,11 +177,21 @@ for match in matches:
     xg_a = match['xg_away']
     ev_matrix = match['ev_matrix']
     risk_matrix = match.get('risk_matrix', {})
+    
+    # Get precalculated prob_matrix or compute dynamically on the fly
+    prob_matrix = match.get('prob_matrix')
+    if not prob_matrix:
+        prob_matrix = compute_prob_matrix(xg_h, xg_a)
+        
     popular = match.get('popular_scores', [])
     
     ev_values = list(ev_matrix.values())
     min_ev = min(ev_values)
     max_ev = max(ev_values)
+
+    prob_values = list(prob_matrix.values())
+    min_prob = min(prob_values)
+    max_prob = max(prob_values)
     
     # Calculate best picks
     optimal_pick = max(ev_matrix.keys(), key=lambda k: ev_matrix[k])
@@ -138,11 +207,19 @@ for match in matches:
     visible_keys = [k for k, r in risk_matrix.items() if r <= max_risk]
     best_visible_pick = max(visible_keys, key=lambda k: ev_matrix[k]) if visible_keys else None
     
-    st.markdown(f"<h3 style='text-align: left; margin-top: 5px; margin-bottom: 2px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align: left; margin-top: 10px; margin-bottom: 2px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
     
-    safe_text = f"Safest Alt: {safe_pick} (EV: {ev_matrix[safe_pick]:.2f} | Risk: {risk_matrix[safe_pick]}%)" if safe_pick else "Safest Alt: N/A"
-    diff_text = f"Differential Alt: {diff_pick} (EV: {ev_matrix[diff_pick]:.2f} | Risk: {risk_matrix.get(diff_pick, 'N/A')}%)" if diff_pick else "Differential Alt: N/A"
-    opt_text = f"Optimal Pick: {optimal_pick} (EV: {ev_matrix[optimal_pick]:.2f} | Risk: {risk_matrix.get(optimal_pick, 'N/A')}%)"
+    def format_pick_tag(label, pick_key):
+        if not pick_key:
+            return f"{label}: N/A"
+        ev_v = ev_matrix.get(pick_key, 0)
+        p_v = prob_matrix.get(pick_key, 0)
+        r_v = risk_matrix.get(pick_key, 'N/A')
+        return f"{label}: {pick_key} (EV: {ev_v:.2f} | Prob: {p_v}% | Risk: {r_v}%)"
+    
+    safe_text = format_pick_tag("Safest Alt", safe_pick)
+    opt_text = format_pick_tag("Optimal Pick", optimal_pick)
+    diff_text = format_pick_tag("Differential Alt", diff_pick)
     
     tags_html = f'''
     <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
@@ -172,22 +249,53 @@ for match in matches:
         for h in range(7):
             key = f"{h}-{a}"
             ev = ev_matrix.get(key, 0)
+            prob = prob_matrix.get(key, 0)
             risk = risk_matrix.get(key, None)
             
-            color = get_color(ev, min_ev, max_ev)
+            # Heatmap color selection
+            if "Probability" in color_by:
+                color = get_color(prob, min_prob, max_prob)
+            else:
+                color = get_color(ev, min_ev, max_ev)
+                
             is_pop = key in popular
-            
             cell_class = "popular-score" if is_pop else ""
             
-            cell_style = f"background-color: {color}; font-size: 1.5rem; font-weight: 700;"
+            cell_style = f"background-color: {color};"
             if risk is not None and risk > max_risk:
                 cell_style += " opacity: 0.25; filter: grayscale(80%);"
                 
             if key == best_visible_pick:
                 cell_style += " border: 3px solid gold; box-shadow: inset 0px 0px 10px rgba(255, 215, 0, 0.8);"
                 
-            risk_html = f'<br><span style="font-size: 0.95rem; opacity: 0.7; font-weight: normal;">{risk}%</span>' if risk is not None else ''
-            html += f'<td style="{cell_style}" class="{cell_class}">{ev:.2f}{risk_html}</td>'
+            # Content based on display_mode
+            if display_mode == "Show: Prob Only":
+                cell_content = f'''
+                <div style="font-size: 1.35rem; font-weight: 800; line-height: 1.1;">{prob:.1f}%</div>
+                '''
+            elif display_mode == "Show: EV Only":
+                risk_sub = f'<div style="font-size: 0.8rem; opacity: 0.7; margin-top: 2px;">{risk}%</div>' if risk is not None else ''
+                cell_content = f'''
+                <div style="font-size: 1.35rem; font-weight: 800; line-height: 1.1;">{ev:.2f}</div>
+                {risk_sub}
+                '''
+            elif display_mode == "Show: Prob + EV":
+                cell_content = f'''
+                <div style="font-size: 1.35rem; font-weight: 800; line-height: 1.1;">{prob:.1f}%</div>
+                <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 2px;">EV: {ev:.2f}</div>
+                '''
+            else:  # Default: "Show: EV + Prob + Risk"
+                risk_str = f"{risk}%" if risk is not None else "N/A"
+                cell_content = f'''
+                <div style="font-size: 1.35rem; font-weight: 800; line-height: 1.1;">{ev:.2f}</div>
+                <div style="font-size: 0.8rem; margin-top: 2px; line-height: 1.15; white-space: nowrap;">
+                    <span title="Score Probability (Ймовірність рахунку)" style="font-weight: 700;">P: {prob:.1f}%</span>
+                    <span style="opacity: 0.35;"> | </span>
+                    <span title="Risk of 0 pts (Ризик 0 очок)" style="opacity: 0.75; font-weight: 400;">R: {risk_str}</span>
+                </div>
+                '''
+                
+            html += f'<td style="{cell_style}" class="{cell_class}">{cell_content}</td>'
         
         html += '</tr>'
         
