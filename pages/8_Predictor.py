@@ -128,7 +128,14 @@ with st.sidebar:
     st.markdown("### 🎨 Налаштування візуалізації")
     palette_choice = st.selectbox(
         "Палітра теплокарти (Colorblind)",
-        ["Cividis (Colorblind-Safe)", "Viridis (Colorblind-Safe)", "Plasma (Colorblind-Safe)"],
+        [
+            "Coolwarm (Айсберг - Корал)",
+            "Cividis (Colorblind-Safe)",
+            "Magma (Лавандовий - Персиковий)",
+            "Viridis (Colorblind-Safe)",
+            "Inferno (Бурштин)",
+            "Plasma (Colorblind-Safe)"
+        ],
         index=0,
         help="Кольорові палітри, оптимізовані для людей із порушенням сприйняття кольорів (дальтонізмом)."
     )
@@ -168,8 +175,7 @@ last_updated = data.get("last_updated", "Unknown")
 st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: -1.0rem; margin-bottom: 0.5rem;'>Data updated: <b>{last_updated}</b></p>", unsafe_allow_html=True)
 
 # Legend
-active_pal_name = palette_choice.split()[0]
-st.markdown(f"""
+st.markdown("""
 <div class="legend-container">
     <span><b>EV:</b> Очікувані очки (Expected Points)</span>
     <span><span style="background: rgba(15, 23, 42, 0.7); color: #38BDF8; padding: 1px 5px; border-radius: 3px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3);">S-EV</span> Smart EV (Збалансоване очікування)</span>
@@ -177,7 +183,6 @@ st.markdown(f"""
     <span><b>R:</b> Ризик 0 очок %</span>
     <span><u><b>Підкреслено:</b></u> Популярний UEFA</span>
     <span style="border: 1px solid gold; padding: 0 4px; border-radius: 3px;"><b>Gold Box:</b> Оптимальний вибір</span>
-    <span style="opacity: 0.85;">🎨 <b>Палітра:</b> {active_pal_name} (Colorblind)</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -281,9 +286,15 @@ if top_captains:
 st.markdown("<hr style='margin: 12px 0 16px 0; opacity: 0.3;'>", unsafe_allow_html=True)
 
 # Helper for color mapping (Colorblind-Safe)
-cmap_name = "cividis"
-if "Viridis" in palette_choice:
+cmap_name = "coolwarm"
+if "Cividis" in palette_choice:
+    cmap_name = "cividis"
+elif "Magma" in palette_choice:
+    cmap_name = "magma"
+elif "Viridis" in palette_choice:
     cmap_name = "viridis"
+elif "Inferno" in palette_choice:
+    cmap_name = "inferno"
 elif "Plasma" in palette_choice:
     cmap_name = "plasma"
 
