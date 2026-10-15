@@ -92,6 +92,10 @@ def compute_prob_matrix(xg_h, xg_a, max_g=6):
         probs /= total_p
     return {f"{h}-{a}": round(float(probs[h, a]) * 100, 1) for h in range(max_g + 1) for a in range(max_g + 1)}
 
+def calculate_smart_ev(ev, prob, risk):
+    safety = (100.0 - risk) / 100.0
+    return ev * safety * (1.0 + prob / 100.0)
+
 # Load Data
 API_BASE = "http://198.244.151.163:8000"
 TOURNAMENTS = {
@@ -119,25 +123,33 @@ if not available_tournaments:
     st.stop()
 
 # UI Controls
-col1, col2, col3, col4 = st.columns([2.5, 2.5, 2.5, 2.5])
+col1, col2, col3, col4, col5 = st.columns([1.8, 2.8, 2.6, 2.8, 2.0])
 with col1:
     selected_tournament = st.selectbox("Select Tournament", available_tournaments, label_visibility="collapsed")
 with col2:
-    color_by = st.selectbox(
-        "Color Heatmap By",
-        ["Color by EV (Expected Points)", "Color by Score Probability (%)"],
+    pick_strategy = st.selectbox(
+        "Pick Strategy",
+        ["🧠 Збалансована (Smart EV)", "🎯 Класична (Max EV)"],
         index=0,
+        help="Стратегія вибору рекомендованого рахунку (Smart EV враховує ризик та точний рахунок)",
         label_visibility="collapsed"
     )
 with col3:
-    display_mode = st.selectbox(
-        "Cell Display",
-        ["Show: EV + Prob + Risk", "Show: Prob + EV", "Show: Prob Only", "Show: EV Only"],
+    color_by = st.selectbox(
+        "Color Heatmap By",
+        ["Color by EV (Expected Points)", "Color by Smart EV", "Color by Score Probability (%)"],
         index=0,
         label_visibility="collapsed"
     )
 with col4:
-    max_risk = st.slider("Max Risk Tolerance (%)", 0, 100, 45, 5, help="Gray out predictions that exceed this risk level.", label_visibility="collapsed")
+    display_mode = st.selectbox(
+        "Cell Display",
+        ["Show: EV + Smart + P + R", "Show: EV + Prob + Risk", "Show: Smart EV + Prob", "Show: Prob + EV", "Show: Prob Only", "Show: EV Only"],
+        index=0,
+        label_visibility="collapsed"
+    )
+with col5:
+    max_risk = st.slider("Max Risk Tolerance (%)", 0, 100, 45, 5, help="Затінити прогнози, ризик яких перевищує поріг.", label_visibility="collapsed")
 
 data = data_cache[selected_tournament]
 last_updated = data.get("last_updated", "Unknown")
@@ -147,11 +159,12 @@ st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; ma
 # Legend
 st.markdown("""
 <div class="legend-container">
-    <span><b>Top number:</b> EV (Expected Value / Очікувані очки)</span>
+    <span><b>EV:</b> Очікувані очки (Expected Points)</span>
+    <span><b>S-EV:</b> Smart EV (Збалансоване очікування)</span>
     <span><b>P:</b> Ймовірність точного рахунку (Score Probability %)</span>
     <span><b>R:</b> Ризик отримати 0 очок (Zero Points Risk %)</span>
-    <span><u><b>Underlined:</b></u> Популярний вибір UEFA</span>
-    <span style="border: 1px solid gold; padding: 0 4px; border-radius: 3px;"><b>Gold Box:</b> Оптимальний вибір у межах ризику</span>
+    <span><u><b>Підкреслено:</b></u> Популярний вибір UEFA</span>
+    <span style="border: 1px solid gold; padding: 0 4px; border-radius: 3px;"><b>Gold Box:</b> Оптимальний вибір за поточною стратегією</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -163,8 +176,7 @@ if not matches:
 
 # ========================== TOP 3 CAPTAIN PICKS (BOOSTER 2X) ==========================
 def calculate_captain_score(ev, prob, risk):
-    safety = (100.0 - risk) / 100.0
-    return ev * safety * (1.0 + prob / 100.0)
+    return calculate_smart_ev(ev, prob, risk)
 
 captain_candidates = []
 for m in matches:
@@ -293,29 +305,48 @@ for match in matches:
     if not prob_matrix:
         prob_matrix = compute_prob_matrix(xg_h, xg_a)
         
+    smart_ev_matrix = {
+        k: calculate_smart_ev(ev_matrix.get(k, 0), prob_matrix.get(k, 0), risk_matrix.get(k, 50.0))
+        for k in ev_matrix
+    }
+        
     popular = match.get('popular_scores', [])
     
     ev_values = list(ev_matrix.values())
-    min_ev = min(ev_values)
-    max_ev = max(ev_values)
+    min_ev = min(ev_values) if ev_values else 0
+    max_ev = max(ev_values) if ev_values else 0
 
     prob_values = list(prob_matrix.values())
-    min_prob = min(prob_values)
-    max_prob = max(prob_values)
+    min_prob = min(prob_values) if prob_values else 0
+    max_prob = max(prob_values) if prob_values else 0
+    
+    smart_ev_values = list(smart_ev_matrix.values())
+    min_smart_ev = min(smart_ev_values) if smart_ev_values else 0
+    max_smart_ev = max(smart_ev_values) if smart_ev_values else 0
     
     # Calculate best picks
-    optimal_pick = max(ev_matrix.keys(), key=lambda k: ev_matrix[k])
+    is_smart_strategy = "Smart EV" in pick_strategy
+    optimal_pick_ev = max(ev_matrix.keys(), key=lambda k: ev_matrix[k])
+    optimal_pick_smart = max(smart_ev_matrix.keys(), key=lambda k: smart_ev_matrix[k])
+    
+    primary_optimal = optimal_pick_smart if is_smart_strategy else optimal_pick_ev
     
     # Safest Alternative (Absolute lowest risk, excluding optimal)
-    other_safe_keys = [k for k in risk_matrix.keys() if k != optimal_pick]
+    other_safe_keys = [k for k in risk_matrix.keys() if k != primary_optimal]
     safe_pick = min(other_safe_keys, key=lambda k: risk_matrix[k]) if other_safe_keys else None
     
-    # Differential Alternative (Best EV among non-popular, excluding optimal and safe)
-    diff_keys = [k for k in ev_matrix.keys() if k not in popular and k != optimal_pick and k != safe_pick]
-    diff_pick = max(diff_keys, key=lambda k: ev_matrix[k]) if diff_keys else None
+    # Differential Alternative (Best among non-popular, excluding optimal and safe)
+    diff_keys = [k for k in ev_matrix.keys() if k not in popular and k != primary_optimal and k != safe_pick]
+    if is_smart_strategy:
+        diff_pick = max(diff_keys, key=lambda k: smart_ev_matrix[k]) if diff_keys else None
+    else:
+        diff_pick = max(diff_keys, key=lambda k: ev_matrix[k]) if diff_keys else None
 
     visible_keys = [k for k, r in risk_matrix.items() if r <= max_risk]
-    best_visible_pick = max(visible_keys, key=lambda k: ev_matrix[k]) if visible_keys else None
+    if is_smart_strategy:
+        best_visible_pick = max(visible_keys, key=lambda k: smart_ev_matrix[k]) if visible_keys else None
+    else:
+        best_visible_pick = max(visible_keys, key=lambda k: ev_matrix[k]) if visible_keys else None
     
     st.markdown(f"<h3 style='text-align: left; margin-top: 10px; margin-bottom: 2px;'>{home_team} ({xg_h}) vs {away_team} ({xg_a})</h3>", unsafe_allow_html=True)
     
@@ -323,18 +354,28 @@ for match in matches:
         if not pick_key:
             return f"{label}: N/A"
         ev_v = ev_matrix.get(pick_key, 0)
+        sev_v = smart_ev_matrix.get(pick_key, 0)
         p_v = prob_matrix.get(pick_key, 0)
         r_v = risk_matrix.get(pick_key, 'N/A')
-        return f"{label}: {pick_key} (EV: {ev_v:.2f} | Prob: {p_v}% | Risk: {r_v}%)"
+        return f"{label}: {pick_key} (EV: {ev_v:.2f} | Smart: {sev_v:.2f} | P: {p_v}% | R: {r_v}%)"
     
-    safe_text = format_pick_tag("Safest Alt", safe_pick)
-    opt_text = format_pick_tag("Optimal Pick", optimal_pick)
-    diff_text = format_pick_tag("Differential Alt", diff_pick)
+    safe_text = format_pick_tag("🛡️ Safest Alt", safe_pick)
+    opt_label = "🧠 Optimal (Smart)" if is_smart_strategy else "🎯 Optimal (Max EV)"
+    opt_text = format_pick_tag(opt_label, best_visible_pick or primary_optimal)
+    diff_text = format_pick_tag("⚡ Differential", diff_pick)
+
+    alt_tag_html = ""
+    if optimal_pick_smart != optimal_pick_ev:
+        alt_label = "🎯 Max EV Pick" if is_smart_strategy else "🧠 Smart Pick"
+        alt_key = optimal_pick_ev if is_smart_strategy else optimal_pick_smart
+        alt_text = format_pick_tag(alt_label, alt_key)
+        alt_tag_html = f'<span style="color: #BA68C8; font-weight: 600;">{alt_text}</span>'
     
     tags_html = f'''
-    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.88rem; margin-bottom: 5px;">
         <span style="color: #4CAF50; font-weight: 600;">{safe_text}</span>
-        <span style="color: #FFC107; font-weight: 600;">{opt_text}</span>
+        <span style="color: #FFC107; font-weight: 700; border-bottom: 2px solid gold;">{opt_text}</span>
+        {alt_tag_html}
         <span style="color: #2196F3; font-weight: 600;">{diff_text}</span>
     </div>
     '''
@@ -361,10 +402,13 @@ for match in matches:
             ev = ev_matrix.get(key, 0)
             prob = prob_matrix.get(key, 0)
             risk = risk_matrix.get(key, None)
+            smart_ev = smart_ev_matrix.get(key, 0)
             
             # Heatmap color selection
             if "Probability" in color_by:
                 color = get_color(prob, min_prob, max_prob)
+            elif "Smart EV" in color_by:
+                color = get_color(smart_ev, min_smart_ev, max_smart_ev)
             else:
                 color = get_color(ev, min_ev, max_ev)
                 
@@ -379,7 +423,27 @@ for match in matches:
                 cell_style += " border: 3px solid gold; box-shadow: inset 0px 0px 10px rgba(255, 215, 0, 0.8);"
                 
             # Content based on display_mode
-            if display_mode == "Show: Prob Only":
+            risk_str = f"{risk}%" if risk is not None else "N/A"
+            if display_mode == "Show: EV + Smart + P + R":
+                cell_content = f'''
+                <div style="font-size: 1.25rem; font-weight: 800; line-height: 1.1;">{ev:.2f}</div>
+                <div style="font-size: 0.76rem; font-weight: 600; color: #4CAF50; margin-top: 1px;">S-EV: {smart_ev:.2f}</div>
+                <div style="font-size: 0.74rem; margin-top: 1px; line-height: 1.1; white-space: nowrap;">
+                    <span title="Score Probability (P)" style="font-weight: 700;">P: {prob:.1f}%</span>
+                    <span style="opacity: 0.35;"> | </span>
+                    <span title="Risk of 0 pts (R)" style="opacity: 0.75;">R: {risk_str}</span>
+                </div>
+                '''
+            elif display_mode == "Show: Smart EV + Prob":
+                cell_content = f'''
+                <div style="font-size: 1.25rem; font-weight: 800; line-height: 1.1; color: #4CAF50;">{smart_ev:.2f}</div>
+                <div style="font-size: 0.78rem; margin-top: 2px; line-height: 1.15; white-space: nowrap;">
+                    <span title="Score Probability" style="font-weight: 700;">P: {prob:.1f}%</span>
+                    <span style="opacity: 0.35;"> | </span>
+                    <span title="Raw EV" style="opacity: 0.85;">EV: {ev:.2f}</span>
+                </div>
+                '''
+            elif display_mode == "Show: Prob Only":
                 cell_content = f'''
                 <div style="font-size: 1.35rem; font-weight: 800; line-height: 1.1;">{prob:.1f}%</div>
                 '''
@@ -395,7 +459,6 @@ for match in matches:
                 <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 2px;">EV: {ev:.2f}</div>
                 '''
             else:  # Default: "Show: EV + Prob + Risk"
-                risk_str = f"{risk}%" if risk is not None else "N/A"
                 cell_content = f'''
                 <div style="font-size: 1.35rem; font-weight: 800; line-height: 1.1;">{ev:.2f}</div>
                 <div style="font-size: 0.8rem; margin-top: 2px; line-height: 1.15; white-space: nowrap;">
