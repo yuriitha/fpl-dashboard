@@ -99,35 +99,76 @@ def calculate_smart_ev(ev, prob, risk):
 
 # Load Data
 API_BASE = "http://198.244.151.163:8000"
-TOURNAMENTS = {
-    'UCL': f'{API_BASE}/predictor_ucl',
-    'UEL': f'{API_BASE}/predictor_uel',
-    'UECL': f'{API_BASE}/predictor_uecl',
-    'UWCL': f'{API_BASE}/predictor_uwcl'
-}
 
-available_tournaments = []
-data_cache = {}
-
-for name, url in TOURNAMENTS.items():
+@st.cache_data(ttl=60)
+def fetch_manifest():
     try:
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            data_cache[name] = response.json()
-            available_tournaments.append(name)
-    except Exception as e:
-        # Silently fail if endpoint isn't ready or tournament isn't available
+        r = requests.get(f"{API_BASE}/predictor_manifest", timeout=5)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
         pass
+    return None
+
+@st.cache_data(ttl=60)
+def fetch_predictor_data(tour, md):
+    # Try matchday-specific endpoint first
+    try:
+        r = requests.get(f"{API_BASE}/predictor/{tour.lower()}/{md}", timeout=5)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    # Fallback to legacy endpoint
+    try:
+        r = requests.get(f"{API_BASE}/predictor_{tour.lower()}", timeout=5)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    return None
+
+manifest = fetch_manifest()
+tournaments_meta = manifest.get("tournaments", {}) if manifest else {}
+
+# If manifest available, get tournaments from manifest; otherwise fallback to legacy checks
+if tournaments_meta:
+    available_tournaments = [t for t in ['UCL', 'UEL', 'UECL', 'UWCL'] if t in tournaments_meta and tournaments_meta[t].get("matchdays")]
+else:
+    available_tournaments = []
+    for t in ['UCL', 'UEL', 'UECL', 'UWCL']:
+        try:
+            r = requests.get(f"{API_BASE}/predictor_{t.lower()}", timeout=3)
+            if r.status_code == 200:
+                available_tournaments.append(t)
+                tournaments_meta[t] = {"matchdays": [1], "current_matchday": 1}
+        except Exception:
+            pass
 
 if not available_tournaments:
     st.warning("No predictor data available. Checked API endpoints. Please make sure the endpoints are added to your FastAPI backend.")
     st.stop()
 
-
 # UI Controls
-col1, col2, col3, col4, col5 = st.columns([1.8, 2.8, 2.6, 2.8, 2.0])
+col1, col_md, col2, col3, col4, col5 = st.columns([1.5, 2.0, 2.5, 2.3, 2.6, 1.8])
 with col1:
     selected_tournament = st.selectbox("Select Tournament", available_tournaments, label_visibility="collapsed")
+
+tour_info = tournaments_meta.get(selected_tournament, {})
+available_matchdays = tour_info.get("matchdays", [1])
+current_md = tour_info.get("current_matchday", available_matchdays[-1] if available_matchdays else 1)
+default_md_idx = available_matchdays.index(current_md) if current_md in available_matchdays else (len(available_matchdays) - 1)
+
+with col_md:
+    selected_md = st.selectbox(
+        "Select Matchday",
+        available_matchdays,
+        index=default_md_idx,
+        format_func=lambda md: f"Тур {md} (Поточний)" if md == current_md else f"Тур {md}",
+        key=f"md_selector_{selected_tournament}",
+        label_visibility="collapsed"
+    )
+
 with col2:
     pick_strategy = st.selectbox(
         "Pick Strategy",
@@ -153,7 +194,11 @@ with col4:
 with col5:
     max_risk = st.slider("Max Risk Tolerance (%)", 0, 100, 45, 5, help="Затінити прогнози, ризик яких перевищує поріг.", label_visibility="collapsed")
 
-data = data_cache[selected_tournament]
+data = fetch_predictor_data(selected_tournament, selected_md)
+if not data:
+    st.warning(f"No predictor data available for {selected_tournament} Тур {selected_md}.")
+    st.stop()
+
 last_updated = data.get("last_updated", "Unknown")
 
 st.markdown(f"<p style='text-align: right; font-size: 0.8rem; color: #888888; margin-top: -1.0rem; margin-bottom: 0.5rem;'>Data updated: <b>{last_updated}</b></p>", unsafe_allow_html=True)
