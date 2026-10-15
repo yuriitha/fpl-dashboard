@@ -165,7 +165,7 @@ st.markdown("""
     <span><span style="background: rgba(15, 23, 42, 0.7); color: #38BDF8; padding: 1px 5px; border-radius: 3px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3);">S-EV</span> Smart EV (Збалансоване очікування)</span>
     <span><b>P:</b> Ймовірність точного рахунку %</span>
     <span><b>R:</b> Ризик 0 очок %</span>
-    <span><u><b>Підкреслено:</b></u> Популярний UEFA</span>
+    <span><u><b>Підкреслено:</b></u> Popular Pick</span>
     <span style="border: 1px solid gold; padding: 0 4px; border-radius: 3px;"><b>Gold Box:</b> Оптимальний вибір</span>
 </div>
 """, unsafe_allow_html=True)
@@ -230,7 +230,7 @@ if top_captains:
     for idx, (col, cap) in enumerate(zip(cap_cols, top_captains)):
         r = ranks[idx]
         with col:
-            pop_badge = '<span style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: #38BDF8; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Популярний UEFA</span>' if cap['is_pop'] else '<span style="font-size: 0.75rem; background: rgba(76, 175, 80, 0.2); color: #4CAF50; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Диференціал (+5)</span>'
+            pop_badge = '<span style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: #38BDF8; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Popular Pick</span>' if cap['is_pop'] else '<span style="font-size: 0.75rem; background: rgba(76, 175, 80, 0.2); color: #4CAF50; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Differential Pick</span>'
             
             card_html = f'''<div style="border: 2px solid {r['border']}; border-radius: 10px; padding: 12px 14px; background: var(--secondary-background-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
