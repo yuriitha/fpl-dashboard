@@ -269,18 +269,18 @@ if top_captains:
 
 st.markdown("<hr style='margin: 12px 0 16px 0; opacity: 0.3;'>", unsafe_allow_html=True)
 
-# Helper for color mapping (Soft Indigo / Sapphire Intensity Gradient)
+# Helper for color mapping (Balanced Multi-Hue Gradient)
+# Peaceful dark slate -> navy -> sky blue -> ocean teal -> emerald -> golden amber
+custom_palette_colors = ['#0f172a', '#1e3a8a', '#0284c7', '#0d9488', '#10b981', '#f59e0b']
+predictor_cmap = mcolors.LinearSegmentedColormap.from_list('predictor_custom', custom_palette_colors)
+
 def get_color(val, min_val, max_val):
     if max_val == min_val:
         norm_val = 0.5
     else:
         norm_val = max(0.0, min(1.0, (val - min_val) / (max_val - min_val)))
-    
-    # Smooth, eye-friendly intensity scaling (Tailwind Blue-500: rgb(59, 130, 246))
-    # Unlikely scores: gentle 0.05 opacity (blends calmly with background)
-    # Top optimal scores: rich 0.55 opacity (highlights cleanly without eye strain)
-    alpha = 0.05 + 0.50 * (norm_val ** 1.4)
-    return f"rgba(59, 130, 246, {alpha:.3f})"
+    r, g, b, _ = predictor_cmap(norm_val)
+    return f"rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, 0.60)"
 
 for match in matches:
     home_team = match['home_team']
