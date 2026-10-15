@@ -123,22 +123,6 @@ if not available_tournaments:
     st.warning("No predictor data available. Checked API endpoints. Please make sure the endpoints are added to your FastAPI backend.")
     st.stop()
 
-# Sidebar Settings
-with st.sidebar:
-    st.markdown("### 🎨 Налаштування візуалізації")
-    palette_choice = st.selectbox(
-        "Палітра теплокарти (Colorblind)",
-        [
-            "Coolwarm (Айсберг - Корал)",
-            "Cividis (Colorblind-Safe)",
-            "Magma (Лавандовий - Персиковий)",
-            "Viridis (Colorblind-Safe)",
-            "Inferno (Бурштин)",
-            "Plasma (Colorblind-Safe)"
-        ],
-        index=0,
-        help="Кольорові палітри, оптимізовані для людей із порушенням сприйняття кольорів (дальтонізмом)."
-    )
 
 # UI Controls
 col1, col2, col3, col4, col5 = st.columns([1.8, 2.8, 2.6, 2.8, 2.0])
@@ -285,23 +269,11 @@ if top_captains:
 
 st.markdown("<hr style='margin: 12px 0 16px 0; opacity: 0.3;'>", unsafe_allow_html=True)
 
-# Helper for color mapping (Colorblind-Safe)
-cmap_name = "coolwarm"
-if "Cividis" in palette_choice:
-    cmap_name = "cividis"
-elif "Magma" in palette_choice:
-    cmap_name = "magma"
-elif "Viridis" in palette_choice:
-    cmap_name = "viridis"
-elif "Inferno" in palette_choice:
-    cmap_name = "inferno"
-elif "Plasma" in palette_choice:
-    cmap_name = "plasma"
-
+# Helper for color mapping (Reversed Coolwarm)
 try:
-    cmap = mpl.colormaps[cmap_name]
+    cmap = mpl.colormaps['coolwarm_r']
 except AttributeError:
-    cmap = cm.get_cmap(cmap_name)
+    cmap = cm.get_cmap('coolwarm_r')
 
 def get_color(val, min_val, max_val):
     if max_val == min_val:
