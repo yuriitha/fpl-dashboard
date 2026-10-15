@@ -6,8 +6,8 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import matplotlib as mpl
 import requests
+import math
 import numpy as np
-from scipy.stats import poisson
 
 st.set_page_config(page_title="Predictor", layout="wide", initial_sidebar_state="expanded")
 
@@ -75,12 +75,17 @@ def dixon_coles_adjustment(h, a, xg_home, xg_away, rho=-0.15):
         return max(0.0, 1.0 - rho)
     return 1.0
 
+def poisson_pmf(k, lam):
+    if lam <= 0:
+        return 1.0 if k == 0 else 0.0
+    return (lam ** k) * math.exp(-lam) / math.factorial(k)
+
 def compute_prob_matrix(xg_h, xg_a, max_g=6):
     probs = np.zeros((max_g + 1, max_g + 1))
     total_p = 0.0
     for h in range(max_g + 1):
         for a in range(max_g + 1):
-            p = poisson.pmf(h, xg_h) * poisson.pmf(a, xg_a) * dixon_coles_adjustment(h, a, xg_h, xg_a, rho=-0.15)
+            p = poisson_pmf(h, xg_h) * poisson_pmf(a, xg_a) * dixon_coles_adjustment(h, a, xg_h, xg_a, rho=-0.15)
             probs[h, a] = p
             total_p += p
     if total_p > 0:
