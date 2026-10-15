@@ -269,19 +269,18 @@ if top_captains:
 
 st.markdown("<hr style='margin: 12px 0 16px 0; opacity: 0.3;'>", unsafe_allow_html=True)
 
-# Helper for color mapping (Reversed Coolwarm)
-try:
-    cmap = mpl.colormaps['coolwarm_r']
-except AttributeError:
-    cmap = cm.get_cmap('coolwarm_r')
-
+# Helper for color mapping (Soft Indigo / Sapphire Intensity Gradient)
 def get_color(val, min_val, max_val):
     if max_val == min_val:
         norm_val = 0.5
     else:
-        norm_val = (val - min_val) / (max_val - min_val)
-    r, g, b, _ = cmap(norm_val)
-    return f"rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, 0.55)"
+        norm_val = max(0.0, min(1.0, (val - min_val) / (max_val - min_val)))
+    
+    # Smooth, eye-friendly intensity scaling (Tailwind Blue-500: rgb(59, 130, 246))
+    # Unlikely scores: gentle 0.05 opacity (blends calmly with background)
+    # Top optimal scores: rich 0.55 opacity (highlights cleanly without eye strain)
+    alpha = 0.05 + 0.50 * (norm_val ** 1.4)
+    return f"rgba(59, 130, 246, {alpha:.3f})"
 
 for match in matches:
     home_team = match['home_team']
