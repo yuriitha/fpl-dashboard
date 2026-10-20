@@ -165,7 +165,7 @@ with col_md:
         available_matchdays,
         index=default_md_idx,
         format_func=lambda md: f"Тур {md} (Поточний)" if md == current_md else f"Тур {md}",
-        key=f"md_selector_{selected_tournament}",
+        key=f"md_selector_{selected_tournament}_{current_md}",
         label_visibility="collapsed"
     )
 
