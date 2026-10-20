@@ -65,13 +65,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Helper for Dixon-Coles and Poisson probability
-def dixon_coles_adjustment(h, a, xg_home, xg_away, rho=-0.15):
+def dixon_coles_adjustment(h, a, xg_home, xg_away, rho=-0.10):
     if h == 0 and a == 0:
         return max(0.0, 1.0 - rho * xg_home * xg_away)
     elif h == 1 and a == 0:
-        return max(0.0, 1.0 + rho * xg_home)
-    elif h == 0 and a == 1:
         return max(0.0, 1.0 + rho * xg_away)
+    elif h == 0 and a == 1:
+        return max(0.0, 1.0 + rho * xg_home)
     elif h == 1 and a == 1:
         return max(0.0, 1.0 - rho)
     return 1.0
@@ -81,12 +81,12 @@ def poisson_pmf(k, lam):
         return 1.0 if k == 0 else 0.0
     return (lam ** k) * math.exp(-lam) / math.factorial(k)
 
-def compute_prob_matrix(xg_h, xg_a, max_g=6):
-    probs = np.zeros((max_g + 1, max_g + 1))
+def compute_prob_matrix(xg_h, xg_a, max_g=6, max_g_true=10):
+    probs = np.zeros((max_g_true + 1, max_g_true + 1))
     total_p = 0.0
-    for h in range(max_g + 1):
-        for a in range(max_g + 1):
-            p = poisson_pmf(h, xg_h) * poisson_pmf(a, xg_a) * dixon_coles_adjustment(h, a, xg_h, xg_a, rho=-0.15)
+    for h in range(max_g_true + 1):
+        for a in range(max_g_true + 1):
+            p = poisson_pmf(h, xg_h) * poisson_pmf(a, xg_a) * dixon_coles_adjustment(h, a, xg_h, xg_a, rho=-0.10)
             probs[h, a] = p
             total_p += p
     if total_p > 0:
