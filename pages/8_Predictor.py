@@ -95,7 +95,7 @@ def compute_prob_matrix(xg_h, xg_a, max_g=6, max_g_true=10):
 
 def calculate_smart_ev(ev, prob, risk):
     safety = max(0.0, (100.0 - risk) / 100.0)
-    return ev * (safety ** 0.60) * (1.0 + prob / 100.0)
+    return ev * (safety ** 0.30) * ((1.0 + prob / 100.0) ** 0.85)
 
 # Load Data
 API_BASE = "http://198.244.151.163:8000"
@@ -280,7 +280,7 @@ if top_captains:
             card_html = f'''<div style="border: 2px solid {r['border']}; border-radius: 10px; padding: 12px 14px; background: var(--secondary-background-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
     <span style="font-weight: 800; font-size: 0.95rem; color: {r['text_color']};">{r['icon']} {r['title']}</span>
-    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості Booster (EV * Safety^0.6 * (1+Prob))">⭐ {cap['captain_score']:.2f}</span>
+    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості Booster (EV * Safety^0.3 * (1+Prob)^0.85)">⭐ {cap['captain_score']:.2f}</span>
 </div>
 <div style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{cap['home_team']} vs {cap['away_team']}">
     {cap['home_team']} vs {cap['away_team']}
@@ -305,7 +305,7 @@ if top_captains:
         * Якщо матч закінчиться з нулем очок, бустер втрачається марно ($0 \\times 2 = 0$). Тому для бустера критично мати не лише високий EV, але й **високу надійність (низький ризик нуля)** та **високий шанс точного рахунку** для джекпоту.
         
         **Формула Booster Score (Smart EV):**
-        $$\\text{Booster Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right)^{0.6} \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)$$
+        $$\\text{Booster Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right)^{0.30} \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)^{0.85}$$
         
         * **1 результат на матч**: у кожному матчі визначається лише один найкращий прогноз, після чого матчі ранжуються між собою (матчі не повторюються).
         * **Врахування ризику**: опції з високим ризиком повного нуля отримують суттєвий штраф за рахунок множника надійності $\\text{Safety}$.
