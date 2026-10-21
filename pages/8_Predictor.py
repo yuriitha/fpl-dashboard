@@ -65,7 +65,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Helper for Dixon-Coles and Poisson probability
-def dixon_coles_adjustment(h, a, xg_home, xg_away, rho=-0.10):
+def dixon_coles_adjustment(h, a, xg_home, xg_away, rho=-0.08):
     if h == 0 and a == 0:
         return max(0.0, 1.0 - rho * xg_home * xg_away)
     elif h == 1 and a == 0:
@@ -86,7 +86,7 @@ def compute_prob_matrix(xg_h, xg_a, max_g=6, max_g_true=10):
     total_p = 0.0
     for h in range(max_g_true + 1):
         for a in range(max_g_true + 1):
-            p = poisson_pmf(h, xg_h) * poisson_pmf(a, xg_a) * dixon_coles_adjustment(h, a, xg_h, xg_a, rho=-0.10)
+            p = poisson_pmf(h, xg_h) * poisson_pmf(a, xg_a) * dixon_coles_adjustment(h, a, xg_h, xg_a, rho=-0.08)
             probs[h, a] = p
             total_p += p
     if total_p > 0:
@@ -95,7 +95,7 @@ def compute_prob_matrix(xg_h, xg_a, max_g=6, max_g_true=10):
 
 def calculate_smart_ev(ev, prob, risk):
     safety = max(0.0, (100.0 - risk) / 100.0)
-    return ev * (safety ** 0.30) * ((1.0 + prob / 100.0) ** 0.85)
+    return ev * (safety ** 1.00) * ((1.0 + prob / 100.0) ** 1.25)
 
 # Load Data
 API_BASE = "http://198.244.151.163:8000"
