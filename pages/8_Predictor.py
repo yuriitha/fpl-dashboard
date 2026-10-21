@@ -164,7 +164,7 @@ with col_md:
         "Select Matchday",
         available_matchdays,
         index=default_md_idx,
-        format_func=lambda md: f"Тур {md} (Поточний)" if md == current_md else f"Тур {md}",
+        format_func=lambda md: f"MD {md} (Current)" if md == current_md else f"MD {md}",
         key=f"md_selector_{selected_tournament}_{current_md}",
         label_visibility="collapsed"
     )
@@ -196,7 +196,7 @@ with col5:
 
 data = fetch_predictor_data(selected_tournament, selected_md)
 if not data:
-    st.warning(f"No predictor data available for {selected_tournament} Тур {selected_md}.")
+    st.warning(f"No predictor data available for {selected_tournament} MD {selected_md}.")
     st.stop()
 
 last_updated = data.get("last_updated", "Unknown")
@@ -280,7 +280,7 @@ if top_captains:
             card_html = f'''<div style="border: 2px solid {r['border']}; border-radius: 10px; padding: 12px 14px; background: var(--secondary-background-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
     <span style="font-weight: 800; font-size: 0.95rem; color: {r['text_color']};">{r['icon']} {r['title']}</span>
-    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості Booster (EV * Safety^0.3 * (1+Prob)^0.85)">⭐ {cap['captain_score']:.2f}</span>
+    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості Booster (EV * Safety^1.00 * (1+Prob)^1.25)">⭐ {cap['captain_score']:.2f}</span>
 </div>
 <div style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{cap['home_team']} vs {cap['away_team']}">
     {cap['home_team']} vs {cap['away_team']}
@@ -305,7 +305,7 @@ if top_captains:
         * Якщо матч закінчиться з нулем очок, бустер втрачається марно ($0 \\times 2 = 0$). Тому для бустера критично мати не лише високий EV, але й **високу надійність (низький ризик нуля)** та **високий шанс точного рахунку** для джекпоту.
         
         **Формула Booster Score (Smart EV):**
-        $$\\text{Booster Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right)^{0.30} \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)^{0.85}$$
+        $$\\text{Booster Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right)^{1.00} \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)^{1.25}$$
         
         * **1 результат на матч**: у кожному матчі визначається лише один найкращий прогноз, після чого матчі ранжуються між собою (матчі не повторюються).
         * **Врахування ризику**: опції з високим ризиком повного нуля отримують суттєвий штраф за рахунок множника надійності $\\text{Safety}$.
