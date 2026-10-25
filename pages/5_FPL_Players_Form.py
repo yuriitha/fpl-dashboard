@@ -179,9 +179,8 @@ DEFAULTS = {
     'f_xg3y_form':     GB['f_xg3y_form'],
     'f_a3y_form':      GB['f_a3y_form'],
     'f_xa3y_form':     GB['f_xa3y_form'],
-    'f_avail3y_form':  (15.0, 100.0),
+    'f_avail3y_form':  GB['f_avail3y_form'],
     'f_bcc3y_form':    GB['f_bcc3y_form'],
-    'f_xa3y_form':     GB['f_xa3y_form'],
 }
 
 
