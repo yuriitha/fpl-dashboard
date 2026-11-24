@@ -223,7 +223,8 @@ if not matches:
 
 # ========================== TOP 3 CAPTAIN PICKS (BOOSTER 2X) ==========================
 def calculate_captain_score(ev, prob, risk):
-    return calculate_smart_ev(ev, prob, risk)
+    safety = max(0.0, (100.0 - risk) / 100.0)
+    return ev * (safety ** 1.00) * ((1.0 + prob / 100.0) ** 0.75)
 
 captain_candidates = []
 for m in matches:
@@ -242,7 +243,7 @@ for m in matches:
         cand_scores = list(ev_m.keys())
 
     if cand_scores:
-        best_s = max(cand_scores, key=lambda s: calculate_captain_score(ev_m.get(s, 0), prob_m.get(s, 0), risk_m.get(s, 50.0)))
+        best_s = max(cand_scores, key=lambda s: calculate_smart_ev(ev_m.get(s, 0), prob_m.get(s, 0), risk_m.get(s, 50.0)))
         ev_val = ev_m.get(best_s, 0)
         prob_val = prob_m.get(best_s, 0)
         risk_val = risk_m.get(best_s, 50.0)
@@ -280,7 +281,7 @@ if top_captains:
             card_html = f'''<div style="border: 2px solid {r['border']}; border-radius: 10px; padding: 12px 14px; background: var(--secondary-background-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin-bottom: 12px;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
     <span style="font-weight: 800; font-size: 0.95rem; color: {r['text_color']};">{r['icon']} {r['title']}</span>
-    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості Booster (EV * Safety^1.00 * (1+Prob)^1.25)">⭐ {cap['captain_score']:.2f}</span>
+    <span style="font-size: 0.85rem; font-weight: 700; color: #38BDF8;" title="Індекс якості Booster (EV * Safety^1.00 * (1+Prob)^0.75)">⭐ {cap['captain_score']:.2f}</span>
 </div>
 <div style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{cap['home_team']} vs {cap['away_team']}">
     {cap['home_team']} vs {cap['away_team']}
@@ -304,8 +305,10 @@ if top_captains:
         * У кожному турі бали за один обраний матч **подвоюються ($2\\times$)**.
         * Якщо матч закінчиться з нулем очок, бустер втрачається марно ($0 \\times 2 = 0$). Тому для бустера критично мати не лише високий EV, але й **високу надійність (низький ризик нуля)** та **високий шанс точного рахунку** для джекпоту.
         
-        **Формула Booster Score (Smart EV):**
-        $$\\text{Booster Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right)^{1.00} \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)^{1.25}$$
+        **Формула Booster Score (Двоетапний підхід):**
+        1. Для кожного матчу береться оптимальний рахунок за `Smart EV (1.00, 1.25)`.
+        2. Далі матчі туру ранжуються між собою для вибору Бустера 2x за індексом:
+        $$\\text{Booster Score} = EV \\times \\left(\\frac{100 - \\text{Risk}}{100}\\right)^{1.00} \\times \\left(1 + \\frac{\\text{Prob}}{100}\\right)^{0.75}$$
         
         * **1 результат на матч**: у кожному матчі визначається лише один найкращий прогноз, після чого матчі ранжуються між собою (матчі не повторюються).
         * **Врахування ризику**: опції з високим ризиком повного нуля отримують суттєвий штраф за рахунок множника надійності $\\text{Safety}$.
